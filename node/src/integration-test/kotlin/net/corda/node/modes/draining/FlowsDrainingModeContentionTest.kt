@@ -1,10 +1,10 @@
 package net.corda.node.modes.draining
 
 import co.paralleluniverse.fibers.Suspendable
-import net.corda.MESSAGE_CONTRACT_PROGRAM_ID
-import net.corda.Message
-import net.corda.MessageContract
-import net.corda.MessageState
+import net.corda.testMessage.MESSAGE_CONTRACT_PROGRAM_ID
+import net.corda.testMessage.Message
+import net.corda.testMessage.MessageContract
+import net.corda.testMessage.MessageState
 import net.corda.core.contracts.Command
 import net.corda.core.contracts.StateAndContract
 import net.corda.core.flows.*
@@ -18,6 +18,8 @@ import net.corda.core.utilities.unwrap
 import net.corda.RpcInfo
 import net.corda.client.rpc.CordaRPCClient
 import net.corda.node.services.Permissions.Companion.all
+import net.corda.testing.core.ALICE_NAME
+import net.corda.testing.core.BOB_NAME
 import net.corda.testing.core.singleIdentity
 import net.corda.testing.driver.DriverParameters
 import net.corda.testing.driver.PortAllocation
@@ -50,14 +52,10 @@ class FlowsDrainingModeContentionTest {
 
     @Test
     fun `draining mode does not deadlock with acks between 2 nodes`() {
-
         val message = "Ground control to Major Tom"
-
         driver(DriverParameters(isDebug = true, startNodesInProcess = true, portAllocation = portAllocation, extraCordappPackagesToScan = listOf(MessageState::class.packageName))) {
-
-            val nodeA = startNode(rpcUsers = users).getOrThrow()
-            val nodeB = startNode(rpcUsers = users).getOrThrow()
-            defaultNotaryNode.getOrThrow()
+            val nodeA = startNode(providedName = ALICE_NAME, rpcUsers = users).getOrThrow()
+            val nodeB = startNode(providedName = BOB_NAME, rpcUsers = users).getOrThrow()
 
             val nodeARpcInfo = RpcInfo(nodeA.rpcAddress, user.username, user.password)
             val flow = nodeA.rpc.startFlow(::ProposeTransactionAndWaitForCommit, message, nodeARpcInfo, nodeB.nodeInfo.singleIdentity(), defaultNotaryIdentity)

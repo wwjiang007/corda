@@ -14,24 +14,25 @@ import io.atomix.copycat.server.cluster.Member
 import io.atomix.copycat.server.storage.Storage
 import io.atomix.copycat.server.storage.StorageLevel
 import net.corda.core.contracts.StateRef
+import net.corda.core.contracts.TimeWindow
 import net.corda.core.crypto.SecureHash
-import net.corda.core.crypto.sha256
 import net.corda.core.flows.NotarisationRequestSignature
-import net.corda.core.flows.NotaryError
-import net.corda.core.flows.NotaryInternalException
-import net.corda.core.flows.StateConsumptionDetails
 import net.corda.core.identity.Party
-import net.corda.core.node.services.UniquenessProvider
+import net.corda.core.internal.notary.NotaryInternalException
+import net.corda.core.internal.notary.UniquenessProvider
 import net.corda.core.schemas.PersistentStateRef
 import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.core.serialization.serialize
 import net.corda.core.utilities.contextLogger
+import net.corda.core.utilities.debug
 import net.corda.node.services.config.RaftConfig
+import net.corda.node.services.transactions.RaftTransactionCommitLog.Commands.CommitTransaction
 import net.corda.node.utilities.AppendOnlyPersistentMap
 import net.corda.nodeapi.internal.config.NodeSSLConfiguration
 import net.corda.nodeapi.internal.config.SSLConfiguration
 import net.corda.nodeapi.internal.persistence.CordaPersistence
 import net.corda.nodeapi.internal.persistence.NODE_DATABASE_PREFIX
+import java.io.Serializable
 import java.nio.file.Path
 import java.time.Clock
 import java.util.concurrent.CompletableFuture
@@ -94,7 +95,7 @@ class RaftUniquenessProvider(
             var value: String = "",
             @Column(name = "raft_log_index")
             var index: Long = 0
-    )
+    ) : Serializable
 
     /** Directory storing the Raft log and state machine snapshots */
     private val storagePath: Path = transportConfiguration.baseDirectory
@@ -109,7 +110,7 @@ class RaftUniquenessProvider(
         get() = _clientFuture.get()
 
     fun start() {
-        log.info("Creating Copycat server, log stored in: ${storagePath.toFile()}")
+        log.info("Creating Copycat server, log stored in: ${storagePath.toAbsolutePath()}")
         val stateMachineFactory = {
             RaftTransactionCommitLog(db, clock, RaftUniquenessProvider.Companion::createMap)
         }
@@ -186,22 +187,23 @@ class RaftUniquenessProvider(
         })
     }
 
-
-    override fun commit(states: List<StateRef>, txId: SecureHash, callerIdentity: Party, requestSignature: NotarisationRequestSignature) {
-        log.debug("Attempting to commit input states: ${states.joinToString()}")
-        val commitCommand = RaftTransactionCommitLog.Commands.CommitTransaction(
+    override fun commit(
+            states: List<StateRef>,
+            txId: SecureHash,
+            callerIdentity: Party,
+            requestSignature: NotarisationRequestSignature,
+            timeWindow: TimeWindow?) {
+        log.debug { "Attempting to commit input states: ${states.joinToString()}" }
+        val commitCommand = CommitTransaction(
                 states,
                 txId,
                 callerIdentity.name.toString(),
-                requestSignature.serialize().bytes
+                requestSignature.serialize().bytes,
+                timeWindow
         )
-        val conflicts = client.submit(commitCommand).get()
-        if (conflicts.isNotEmpty()) {
-            val conflictingStates = conflicts.mapValues { StateConsumptionDetails(it.value.sha256()) }
-            val error = NotaryError.Conflict(txId, conflictingStates)
-            throw NotaryInternalException(error)
-        }
-        log.debug("All input states of transaction $txId have been committed")
+        val commitError = client.submit(commitCommand).get()
+        if (commitError != null) throw NotaryInternalException(commitError)
+        log.debug { "All input states of transaction $txId have been committed" }
     }
 }
 

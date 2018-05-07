@@ -6,8 +6,8 @@ import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner
 import net.corda.core.cordapp.Cordapp
 import net.corda.core.internal.objectOrNewInstance
 import net.corda.core.serialization.*
-import net.corda.nodeapi.internal.serialization.CordaSerializationMagic
 import net.corda.core.utilities.ByteSequence
+import net.corda.nodeapi.internal.serialization.CordaSerializationMagic
 import net.corda.nodeapi.internal.serialization.DefaultWhitelist
 import net.corda.nodeapi.internal.serialization.MutableClassWhitelist
 import net.corda.nodeapi.internal.serialization.SerializationScheme
@@ -29,25 +29,42 @@ fun SerializerFactory.addToWhitelist(vararg types: Class<*>) {
     }
 }
 
-abstract class AbstractAMQPSerializationScheme(val cordappLoader: List<Cordapp>) : SerializationScheme {
+open class SerializerFactoryFactory {
+    open fun make(context: SerializationContext) =
+            SerializerFactory(context.whitelist, context.deserializationClassLoader)
+}
 
+abstract class AbstractAMQPSerializationScheme(
+        val cordappLoader: List<Cordapp>,
+        val sff: SerializerFactoryFactory = SerializerFactoryFactory()
+) : SerializationScheme {
     // TODO: This method of initialisation for the Whitelist and plugin serializers will have to change
     // when we have per-cordapp contexts and dynamic app reloading but for now it's the easiest way
     companion object {
+
+        const val SCAN_SPEC_PROP_NAME = "amqp.custom.serialization.scanSpec"
+
         private val serializationWhitelists: List<SerializationWhitelist> by lazy {
             ServiceLoader.load(SerializationWhitelist::class.java, this::class.java.classLoader).toList() + DefaultWhitelist
         }
 
         private val customSerializers: List<SerializationCustomSerializer<*, *>> by lazy {
-            FastClasspathScanner().addClassLoader(this::class.java.classLoader).scan()
-                    .getNamesOfClassesImplementing(SerializationCustomSerializer::class.java)
-                    .mapNotNull { this::class.java.classLoader.loadClass(it).asSubclass(SerializationCustomSerializer::class.java) }
-                    .filterNot { Modifier.isAbstract(it.modifiers) }
-                    .map { it.kotlin.objectOrNewInstance() }
+
+            val scanSpec: String? = System.getProperty(SCAN_SPEC_PROP_NAME)
+
+            if (scanSpec == null) {
+                emptyList()
+            } else {
+                FastClasspathScanner(scanSpec).addClassLoader(this::class.java.classLoader).scan()
+                        .getNamesOfClassesImplementing(SerializationCustomSerializer::class.java)
+                        .mapNotNull { this::class.java.classLoader.loadClass(it).asSubclass(SerializationCustomSerializer::class.java) }
+                        .filterNot { Modifier.isAbstract(it.modifiers) }
+                        .map { it.kotlin.objectOrNewInstance() }
+            }
         }
     }
 
-    private fun registerCustomSerializers(factory: SerializerFactory) {
+    private fun registerCustomSerializers(context: SerializationContext, factory: SerializerFactory) {
         with(factory) {
             register(publicKeySerializer)
             register(net.corda.nodeapi.internal.serialization.amqp.custom.PrivateKeySerializer)
@@ -104,8 +121,7 @@ abstract class AbstractAMQPSerializationScheme(val cordappLoader: List<Cordapp>)
 
     protected abstract fun rpcClientSerializerFactory(context: SerializationContext): SerializerFactory
     protected abstract fun rpcServerSerializerFactory(context: SerializationContext): SerializerFactory
-    open protected val publicKeySerializer: CustomSerializer.Implements<PublicKey>
-            = net.corda.nodeapi.internal.serialization.amqp.custom.PublicKeySerializer
+    protected open val publicKeySerializer: CustomSerializer.Implements<PublicKey> = net.corda.nodeapi.internal.serialization.amqp.custom.PublicKeySerializer
 
     private fun getSerializerFactory(context: SerializationContext): SerializerFactory {
         return serializerFactoriesForContexts.computeIfAbsent(Pair(context.whitelist, context.deserializationClassLoader)) {
@@ -116,19 +132,22 @@ abstract class AbstractAMQPSerializationScheme(val cordappLoader: List<Cordapp>)
                     rpcClientSerializerFactory(context)
                 SerializationContext.UseCase.RPCServer ->
                     rpcServerSerializerFactory(context)
-                else -> SerializerFactory(context.whitelist, context.deserializationClassLoader)
+                else -> sff.make(context)
+            }.also {
+                registerCustomSerializers(context, it)
             }
-        }.also { registerCustomSerializers(it) }
+        }
     }
 
     override fun <T : Any> deserialize(byteSequence: ByteSequence, clazz: Class<T>, context: SerializationContext): T {
         val serializerFactory = getSerializerFactory(context)
-        return DeserializationInput(serializerFactory).deserialize(byteSequence, clazz)
+        return DeserializationInput(serializerFactory).deserialize(byteSequence, clazz, context)
     }
 
     override fun <T : Any> serialize(obj: T, context: SerializationContext): SerializedBytes<T> {
         val serializerFactory = getSerializerFactory(context)
-        return SerializationOutput(serializerFactory).serialize(obj)
+
+        return SerializationOutput(serializerFactory).serialize(obj, context)
     }
 
     protected fun canDeserializeVersion(magic: CordaSerializationMagic) = magic == amqpMagic

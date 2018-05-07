@@ -20,6 +20,7 @@ object DefaultWhitelist : SerializationWhitelist {
                     Notification.Kind::class.java,
                     ArrayList::class.java,
                     Pair::class.java,
+                    Triple::class.java,
                     ByteArray::class.java,
                     UUID::class.java,
                     LinkedHashSet::class.java,
@@ -65,5 +66,5 @@ object DefaultWhitelist : SerializationWhitelist {
                     // Implementation of X509Certificate.
                     X509CertImpl::class.java,
                     CRLReason::class.java
-                    )
+            )
 }

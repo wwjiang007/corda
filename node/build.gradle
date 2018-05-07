@@ -73,7 +73,7 @@ dependencies {
     compile "org.apache.logging.log4j:log4j-web:${log4j_version}"
     compile "org.slf4j:jul-to-slf4j:$slf4j_version"
 
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
 
@@ -107,7 +107,7 @@ dependencies {
     }
 
     // Coda Hale's Metrics: for monitoring of key statistics
-    compile "io.dropwizard.metrics:metrics-core:3.1.2"
+    compile "io.dropwizard.metrics:metrics-core:$metrics_version"
 
     // JimFS: in memory java.nio filesystem. Used for test and simulation utilities.
     compile "com.google.jimfs:jimfs:1.1"
@@ -143,12 +143,9 @@ dependencies {
     compileOnly "co.paralleluniverse:capsule:$capsule_version"
 
     // Java Atomix: RAFT library
-    compile 'io.atomix.copycat:copycat-client:1.2.3'
-    compile 'io.atomix.copycat:copycat-server:1.2.3'
-    compile 'io.atomix.catalyst:catalyst-netty:1.1.2'
-
-    // Netty: All of it.
-    compile "io.netty:netty-all:$netty_version"
+    compile 'io.atomix.copycat:copycat-client:1.2.8'
+    compile 'io.atomix.copycat:copycat-server:1.2.8'
+    compile 'io.atomix.catalyst:catalyst-netty:1.2.1'
 
     // OkHTTP: Simple HTTP library.
     compile "com.squareup.okhttp3:okhttp:$okhttp_version"

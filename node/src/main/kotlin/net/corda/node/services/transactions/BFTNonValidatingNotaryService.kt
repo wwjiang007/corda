@@ -7,7 +7,9 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.SignedData
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
-import net.corda.core.node.services.NotaryService
+import net.corda.core.internal.notary.NotaryInternalException
+import net.corda.core.internal.notary.NotaryService
+import net.corda.core.internal.notary.verifySignature
 import net.corda.core.schemas.PersistentStateRef
 import net.corda.core.serialization.deserialize
 import net.corda.core.serialization.serialize
@@ -139,9 +141,9 @@ class BFTNonValidatingNotaryService(
                 val id = transaction.id
                 val inputs = transaction.inputs
                 val notary = transaction.notary
-                if (transaction is FilteredTransaction) NotaryService.validateTimeWindow(services.clock, transaction.timeWindow)
+                val timeWindow = (transaction as? FilteredTransaction)?.timeWindow
                 if (notary !in services.myInfo.legalIdentities) throw NotaryInternalException(NotaryError.WrongNotary)
-                commitInputStates(inputs, id, callerIdentity.name, requestSignature)
+                commitInputStates(inputs, id, callerIdentity.name, requestSignature, timeWindow)
                 log.debug { "Inputs committed successfully, signing $id" }
                 BFTSMaRt.ReplicaResponse.Signature(sign(id))
             } catch (e: NotaryInternalException) {

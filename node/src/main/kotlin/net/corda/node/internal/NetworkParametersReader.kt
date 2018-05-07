@@ -26,7 +26,13 @@ class NetworkParametersReader(private val trustRoot: X509Certificate,
     val networkParameters by lazy { retrieveNetworkParameters() }
 
     private fun retrieveNetworkParameters(): NetworkParameters {
-        val advertisedParametersHash = networkMapClient?.getNetworkMap()?.payload?.networkParameterHash
+        val advertisedParametersHash = try {
+            networkMapClient?.getNetworkMap()?.payload?.networkParameterHash
+        } catch (e: Exception) {
+            logger.info("Unable to download network map", e)
+            // If NetworkMap is down while restarting the node, we should be still able to continue with parameters from file
+            null
+        }
         val signedParametersFromFile = if (networkParamsFile.exists()) {
             networkParamsFile.readObject<SignedNetworkParameters>()
         } else {
@@ -44,7 +50,7 @@ class NetworkParametersReader(private val trustRoot: X509Certificate,
                 readParametersUpdate(advertisedParametersHash, signedParametersFromFile.raw.hash).verifiedNetworkMapCert(trustRoot)
             }
         } else { // No compatibility zone configured. Node should proceed with parameters from file.
-            signedParametersFromFile?.verifiedNetworkMapCert(trustRoot) ?: throw IllegalArgumentException("Couldn't find network parameters file and compatibility zone wasn't configured")
+            signedParametersFromFile?.verifiedNetworkMapCert(trustRoot) ?: throw IllegalArgumentException("Couldn't find network parameters file and compatibility zone wasn't configured/isn't reachable")
         }
         logger.info("Loaded network parameters: $parameters")
         return parameters

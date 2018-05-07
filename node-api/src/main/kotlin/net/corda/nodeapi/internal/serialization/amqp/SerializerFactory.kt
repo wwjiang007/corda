@@ -2,11 +2,14 @@ package net.corda.nodeapi.internal.serialization.amqp
 
 import com.google.common.primitives.Primitives
 import com.google.common.reflect.TypeResolver
+import net.corda.core.internal.getStackTraceAsString
 import net.corda.core.internal.uncheckedCast
 import net.corda.core.serialization.ClassWhitelist
+import net.corda.core.utilities.loggerFor
 import net.corda.nodeapi.internal.serialization.carpenter.CarpenterMetaSchema
 import net.corda.nodeapi.internal.serialization.carpenter.ClassCarpenter
 import net.corda.nodeapi.internal.serialization.carpenter.MetaCarpenter
+import net.corda.nodeapi.internal.serialization.carpenter.MetaCarpenterException
 import org.apache.qpid.proton.amqp.*
 import java.io.NotSerializableException
 import java.lang.reflect.*
@@ -58,8 +61,7 @@ open class SerializerFactory(
         get() = classCarpenter.classloader
 
     private fun getEvolutionSerializer(typeNotation: TypeNotation, newSerializer: AMQPSerializer<Any>,
-                                       schemas: SerializationSchemas)
-            = evolutionSerializerGetter.getEvolutionSerializer(this, typeNotation, newSerializer, schemas)
+                                       schemas: SerializationSchemas) = evolutionSerializerGetter.getEvolutionSerializer(this, typeNotation, newSerializer, schemas)
 
     fun getSerializersByDescriptor() = serializersByDescriptor
 
@@ -98,7 +100,8 @@ open class SerializerFactory(
                     makeMapSerializer(declaredTypeAmended)
                 }
             }
-            Enum::class.java.isAssignableFrom(actualClass ?: declaredClass) -> serializersByType.computeIfAbsent(actualClass ?: declaredClass) {
+            Enum::class.java.isAssignableFrom(actualClass
+                    ?: declaredClass) -> serializersByType.computeIfAbsent(actualClass ?: declaredClass) {
                 whitelist.requireWhitelisted(actualType)
                 EnumSerializer(actualType, actualClass ?: declaredClass, this)
             }
@@ -198,7 +201,7 @@ open class SerializerFactory(
      * Register a custom serializer for any type that cannot be serialized or deserialized by the default serializer
      * that expects to find getters and a constructor with a parameter for each property.
      */
-    fun register(customSerializer: CustomSerializer<out Any>) {
+    open fun register(customSerializer: CustomSerializer<out Any>) {
         if (!serializersByDescriptor.containsKey(customSerializer.typeDescriptor)) {
             customSerializers += customSerializer
             serializersByDescriptor[customSerializer.typeDescriptor] = customSerializer
@@ -238,7 +241,19 @@ open class SerializerFactory(
 
         if (metaSchema.isNotEmpty()) {
             val mc = MetaCarpenter(metaSchema, classCarpenter)
-            mc.build()
+            try {
+                mc.build()
+            } catch (e: MetaCarpenterException) {
+                // preserve the actual message locally
+                loggerFor<SerializerFactory>().apply {
+                    error("${e.message} [hint: enable trace debugging for the stack trace]")
+                    trace(e.getStackTraceAsString())
+                }
+
+                // prevent carpenter exceptions escaping into the world, convert things into a nice
+                // NotSerializableException for when this escapes over the wire
+                throw NotSerializableException(e.name)
+            }
             processSchema(schemaAndDescriptor, true)
         }
     }
@@ -270,12 +285,12 @@ open class SerializerFactory(
                 } else {
                     val singleton = clazz.objectInstance()
                     if (singleton != null) {
-                       whitelist.requireWhitelisted(clazz)
-                       SingletonSerializer(clazz, singleton, this)
-                   } else {
-                       whitelist.requireWhitelisted(type)
-                       ObjectSerializer(type, this)
-                   }
+                        whitelist.requireWhitelisted(clazz)
+                        SingletonSerializer(clazz, singleton, this)
+                    } else {
+                        whitelist.requireWhitelisted(type)
+                        ObjectSerializer(type, this)
+                    }
                 }
             }
         }

@@ -12,7 +12,6 @@ import net.corda.finance.DOLLARS
 import net.corda.finance.USD
 import net.corda.finance.contracts.getCashBalance
 import net.corda.finance.contracts.getCashBalances
-import net.corda.finance.flows.CashException
 import net.corda.finance.flows.CashIssueFlow
 import net.corda.finance.flows.CashPaymentFlow
 import net.corda.finance.schemas.CashSchemaV1
@@ -152,15 +151,6 @@ class CordaRPCClientTest : NodeBasedTest(listOf("net.corda.finance.contracts", C
             println("PROGRESS $it")
         }
         println("Result: ${flowHandle.returnValue.getOrThrow()}")
-    }
-
-    @Test
-    fun `sub-type of FlowException thrown by flow`() {
-        login(rpcUser.username, rpcUser.password)
-        val handle = connection!!.proxy.startFlow(::CashPaymentFlow, 100.DOLLARS, identity)
-        assertThatExceptionOfType(CashException::class.java).isThrownBy {
-            handle.returnValue.getOrThrow()
-        }
     }
 
     @Test

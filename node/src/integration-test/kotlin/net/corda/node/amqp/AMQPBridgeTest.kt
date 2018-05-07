@@ -77,7 +77,7 @@ class AMQPBridgeTest {
 
         fun formatMessage(expected: String, actual: Int, received: List<Int>): String {
             return "Expected message with id $expected, got $actual, previous message receive sequence: " +
-            "${received.joinToString(",  ", "[", "]")}."
+                    "${received.joinToString(",  ", "[", "]")}."
         }
 
         val received1 = receive.next()
@@ -173,13 +173,14 @@ class AMQPBridgeTest {
             doReturn(temporaryFolder.root.toPath() / "artemis").whenever(it).baseDirectory
             doReturn(ALICE_NAME).whenever(it).myLegalName
             doReturn("trustpass").whenever(it).trustStorePassword
+            doReturn(true).whenever(it).crlCheckSoftFail
             doReturn("cordacadevpass").whenever(it).keyStorePassword
             doReturn(artemisAddress).whenever(it).p2pAddress
             doReturn(null).whenever(it).jmxMonitoringHttpPort
             doReturn(emptyList<CertChainPolicyConfig>()).whenever(it).certificateChainCheckPolicies
         }
         artemisConfig.configureWithDevSSLCertificate()
-        val artemisServer = ArtemisMessagingServer(artemisConfig, artemisPort, MAX_MESSAGE_SIZE)
+        val artemisServer = ArtemisMessagingServer(artemisConfig, NetworkHostAndPort("0.0.0.0", artemisPort), MAX_MESSAGE_SIZE)
         val artemisClient = ArtemisMessagingClient(artemisConfig, artemisAddress, MAX_MESSAGE_SIZE)
         artemisServer.start()
         artemisClient.start()
@@ -210,6 +211,7 @@ class AMQPBridgeTest {
                 serverConfig.loadSslKeyStore().internal,
                 serverConfig.keyStorePassword,
                 serverConfig.loadTrustStore().internal,
+                crlCheckSoftFail = true,
                 trace = true
         )
     }

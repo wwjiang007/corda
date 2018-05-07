@@ -1,7 +1,7 @@
 package net.corda.node.internal
 
 import com.jcabi.manifests.Manifests
-import joptsimple.OptionException
+import net.corda.core.crypto.Crypto
 import net.corda.core.internal.Emoji
 import net.corda.core.internal.concurrent.thenMatch
 import net.corda.core.internal.createDirectories
@@ -15,7 +15,7 @@ import net.corda.node.services.config.shouldStartLocalShell
 import net.corda.node.services.config.shouldStartSSHDaemon
 import net.corda.node.services.transactions.bftSMaRtSerialFilter
 import net.corda.node.utilities.registration.HTTPNetworkRegistrationService
-import net.corda.node.utilities.registration.NetworkRegistrationHelper
+import net.corda.node.utilities.registration.NodeRegistrationHelper
 import net.corda.nodeapi.internal.addShutdownHook
 import net.corda.nodeapi.internal.config.UnknownConfigurationKeysException
 import net.corda.tools.shell.InteractiveShell
@@ -29,14 +29,13 @@ import java.net.InetAddress
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
-import kotlin.system.exitProcess
 
 /** This class is responsible for starting a Node from command line arguments. */
 open class NodeStartup(val args: Array<String>) {
     companion object {
         private val logger by lazy { loggerFor<Node>() } // I guess this is lazy to allow for logging init, but why Node?
-        val LOGS_DIRECTORY_NAME = "logs"
-        val LOGS_CAN_BE_FOUND_IN_STRING = "Logs can be found in"
+        const val LOGS_DIRECTORY_NAME = "logs"
+        const val LOGS_CAN_BE_FOUND_IN_STRING = "Logs can be found in"
     }
 
     /**
@@ -49,7 +48,7 @@ open class NodeStartup(val args: Array<String>) {
             println("Corda will now exit...")
             return false
         }
-        val (argsParser, cmdlineOptions) = parseArguments()
+        val cmdlineOptions = NodeArgsParser().parseOrExit(*args)
 
         // We do the single node check before we initialise logging so that in case of a double-node start it
         // doesn't mess with the running node's logs.
@@ -57,18 +56,17 @@ open class NodeStartup(val args: Array<String>) {
 
         initLogging(cmdlineOptions)
 
+        // Register all cryptography [Provider]s.
+        // Required to install our [SecureRandom] before e.g., UUID asks for one.
+        // This needs to go after initLogging(netty clashes with our logging).
+        Crypto.registerProviders()
+
         val versionInfo = getVersionInfo()
 
         if (cmdlineOptions.isVersion) {
             println("${versionInfo.vendor} ${versionInfo.releaseVersion}")
             println("Revision ${versionInfo.revision}")
             println("Platform Version ${versionInfo.platformVersion}")
-            return true
-        }
-
-        // Maybe render command line help.
-        if (cmdlineOptions.help) {
-            argsParser.printHelp(System.out)
             return true
         }
 
@@ -104,9 +102,9 @@ open class NodeStartup(val args: Array<String>) {
         try {
             banJavaSerialisation(conf)
             preNetworkRegistration(conf)
-            if (cmdlineOptions.nodeRegistrationConfig != null) {
+            if (cmdlineOptions.nodeRegistrationOption != null) {
                 // Null checks for [compatibilityZoneURL], [rootTruststorePath] and [rootTruststorePassword] has been done in [CmdLineOptions.loadConfig]
-                registerWithNetwork(conf, cmdlineOptions.nodeRegistrationConfig)
+                registerWithNetwork(conf, cmdlineOptions.nodeRegistrationOption)
                 return true
             }
             logStartupInfo(versionInfo, cmdlineOptions, conf)
@@ -200,7 +198,7 @@ open class NodeStartup(val args: Array<String>) {
         println("*       Registering as a new participant with Corda network      *")
         println("*                                                                *")
         println("******************************************************************")
-        NetworkRegistrationHelper(conf, HTTPNetworkRegistrationService(compatibilityZoneURL), nodeRegistrationConfig).buildKeystore()
+        NodeRegistrationHelper(conf, HTTPNetworkRegistrationService(compatibilityZoneURL), nodeRegistrationConfig).buildKeystore()
     }
 
     open protected fun loadConfigFile(cmdlineOptions: CmdLineOptions): NodeConfiguration = cmdlineOptions.loadConfig()
@@ -244,18 +242,6 @@ open class NodeStartup(val args: Array<String>) {
         val ourProcessID: String = ManagementFactory.getRuntimeMXBean().name.split("@")[0]
         pidFileRw.setLength(0)
         pidFileRw.write(ourProcessID.toByteArray())
-    }
-
-    private fun parseArguments(): Pair<ArgsParser, CmdLineOptions> {
-        val argsParser = ArgsParser()
-        val cmdlineOptions = try {
-            argsParser.parse(*args)
-        } catch (ex: OptionException) {
-            println("Invalid command line arguments: ${ex.message}")
-            argsParser.printHelp(System.out)
-            exitProcess(1)
-        }
-        return Pair(argsParser, cmdlineOptions)
     }
 
     open protected fun initLogging(cmdlineOptions: CmdLineOptions) {

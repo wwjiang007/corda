@@ -77,8 +77,7 @@ class RPCSecurityManagerImpl(config: AuthServiceConfig) : RPCSecurityManager {
          * Instantiate RPCSecurityManager initialised with users data from a list of [User]
          */
         fun fromUserList(id: AuthServiceId, users: List<User>) =
-                RPCSecurityManagerImpl(
-                    AuthServiceConfig.fromUsers(users).copy(id = id))
+                RPCSecurityManagerImpl(AuthServiceConfig.fromUsers(users).copy(id = id))
 
         // Build internal Shiro securityManager instance
         private fun buildImpl(config: AuthServiceConfig): DefaultSecurityManager {
@@ -186,7 +185,7 @@ private object RPCPermissionResolver : PermissionResolver {
     }
 }
 
-private class ShiroAuthorizingSubject(
+class ShiroAuthorizingSubject(
         private val subjectId: PrincipalCollection,
         private val manager: DefaultSecurityManager) : AuthorizingSubject {
 
@@ -201,7 +200,7 @@ private fun buildCredentialMatcher(type: PasswordEncryption) = when (type) {
     PasswordEncryption.SHIRO_1_CRYPT -> PasswordMatcher()
 }
 
-private class InMemoryRealm(users: List<User>,
+class InMemoryRealm(users: List<User>,
                             realmId: String,
                             passwordEncryption: PasswordEncryption = PasswordEncryption.NONE) : AuthorizingRealm() {
 

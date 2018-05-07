@@ -4,13 +4,16 @@ import net.corda.core.serialization.ClassWhitelist
 import net.corda.core.serialization.SerializedBytes
 import net.corda.nodeapi.internal.serialization.AllWhitelist
 import net.corda.nodeapi.internal.serialization.carpenter.ClassCarpenter
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Test
-import java.io.File
 import java.io.NotSerializableException
 import java.lang.reflect.Type
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.test.assertEquals
+import net.corda.nodeapi.internal.serialization.amqp.testutils.serializeAndReturnSchema
+import net.corda.nodeapi.internal.serialization.amqp.testutils.serialize
+import net.corda.nodeapi.internal.serialization.amqp.testutils.deserializeAndReturnEnvelope
+import net.corda.nodeapi.internal.serialization.amqp.testutils.deserialize
 
 class InStatic : Exception("Help!, help!, I'm being repressed")
 
@@ -73,8 +76,7 @@ class StaticInitialisationOfSerializedObjectTest {
     fun deserializeTest() {
         data class D(val c: C2)
 
-        val path = EvolvabilityTests::class.java.getResource("StaticInitialisationOfSerializedObjectTest.deserializeTest")
-        val f = File(path.toURI())
+        val url = EvolvabilityTests::class.java.getResource("StaticInitialisationOfSerializedObjectTest.deserializeTest")
 
         // Original version of the class for the serialised version of this class
         //
@@ -90,9 +92,9 @@ class StaticInitialisationOfSerializedObjectTest {
         }
 
         val sf2 = SerializerFactory(WL(), ClassLoader.getSystemClassLoader())
-        val bytes = f.readBytes()
+        val bytes = url.readBytes()
 
-        Assertions.assertThatThrownBy {
+        assertThatThrownBy {
             DeserializationInput(sf2).deserialize(SerializedBytes<D>(bytes))
         }.isInstanceOf(NotSerializableException::class.java)
     }
@@ -109,8 +111,7 @@ class StaticInitialisationOfSerializedObjectTest {
     fun deserializeTest2() {
         data class D(val c: C2)
 
-        val path = EvolvabilityTests::class.java.getResource("StaticInitialisationOfSerializedObjectTest.deserializeTest2")
-        val f = File(path.toURI())
+        val url = EvolvabilityTests::class.java.getResource("StaticInitialisationOfSerializedObjectTest.deserializeTest2")
 
         // Original version of the class for the serialised version of this class
         //
@@ -132,12 +133,12 @@ class StaticInitialisationOfSerializedObjectTest {
         }
 
         val sf2 = TestSerializerFactory(WL1(), WL2())
-        val bytes = f.readBytes()
+        val bytes = url.readBytes()
 
         // Deserializing should throw because C is not on the whitelist NOT because
         // we ever went anywhere near statically constructing it prior to not actually
         // creating an instance of it
-        Assertions.assertThatThrownBy {
+        assertThatThrownBy {
             DeserializationInput(sf2).deserialize(SerializedBytes<D>(bytes))
         }.isInstanceOf(NotSerializableException::class.java)
     }

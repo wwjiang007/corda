@@ -17,6 +17,7 @@ import kotlin.reflect.KParameter
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.isAccessible
+import kotlin.reflect.jvm.javaConstructor
 import kotlin.reflect.jvm.javaType
 
 /**
@@ -33,6 +34,7 @@ internal fun constructorForDeserialization(type: Type): KFunction<Any>? {
         var annotatedCount = 0
         val kotlinConstructors = clazz.kotlin.constructors
         val hasDefault = kotlinConstructors.any { it.parameters.isEmpty() }
+
         for (kotlinConstructor in kotlinConstructors) {
             if (preferredCandidate == null && kotlinConstructors.size == 1) {
                 preferredCandidate = kotlinConstructor
@@ -93,7 +95,7 @@ data class PropertyDescriptor(var field: Field?, var setter: Method?, var getter
 
     constructor() : this(null, null, null, null)
 
-    fun preferredGetter() : Method? = getter ?: iser
+    fun preferredGetter(): Method? = getter ?: iser
 }
 
 object PropertyDescriptorsRegex {
@@ -158,11 +160,10 @@ fun Class<out Any?>.propertyDescriptors(): Map<String, PropertyDescriptor> {
             PropertyDescriptorsRegex.re.find(func.name)?.apply {
                 // matching means we have an func getX where the property could be x or X
                 // so having pre-loaded all of the properties we try to match to either case. If that
-                // fails the getter doesn't refer to a property directly, but may to a cosntructor
+                // fails the getter doesn't refer to a property directly, but may refer to a constructor
                 // parameter that shadows a property
                 val properties =
-                        classProperties[groups[2]!!.value] ?:
-                        classProperties[groups[2]!!.value.decapitalize()] ?:
+                        classProperties[groups[2]!!.value] ?: classProperties[groups[2]!!.value.decapitalize()] ?:
                         // take into account those constructor properties that don't directly map to a named
                         // property which are, by default, already added to the map
                         classProperties.computeIfAbsent(groups[2]!!.value) { PropertyDescriptor() }
@@ -219,26 +220,33 @@ internal fun <T : Any> propertiesForSerializationFromConstructor(
 
     val classProperties = clazz.propertyDescriptors()
 
+    // Annoyingly there isn't a better way to ascertain that the constructor for the class
+    // has a synthetic parameter inserted to capture the reference to the outer class. You'd
+    // think you could inspect the parameter and check the isSynthetic flag but that is always
+    // false so given the naming convention is specified by the standard we can just check for
+    // this
+    if (kotlinConstructor.javaConstructor?.parameterCount ?: 0 > 0 &&
+            kotlinConstructor.javaConstructor?.parameters?.get(0)?.name == "this$0"
+    ) {
+        throw SyntheticParameterException(type)
+    }
+
     if (classProperties.isNotEmpty() && kotlinConstructor.parameters.isEmpty()) {
         return propertiesForSerializationFromSetters(classProperties, type, factory)
     }
 
     return mutableListOf<PropertyAccessor>().apply {
         kotlinConstructor.parameters.withIndex().forEach { param ->
-            // If a parameter doesn't have a name *at all* then chances are it's a synthesised
-            // one. A good example of this is non static nested classes in Java where instances
-            // of the nested class require access to the outer class without breaking
-            // encapsulation. Thus a parameter is inserted into the constructor that passes a
-            // reference to the enclosing class. In this case we can't do anything with
-            // it so just ignore it as it'll be supplied at runtime anyway on invocation
-            val name = param.value.name ?: return@forEach
+            // name cannot be null, if it is then this is a synthetic field and we will have bailed
+            // out prior to this
+            val name = param.value.name!!
 
             // We will already have disambiguated getA for property A or a but we still need to cope
             // with the case we don't know the case of A when the parameter doesn't match a property
             // but has a getter
-            val matchingProperty = classProperties[name] ?: classProperties[name.capitalize()] ?:
-                    throw NotSerializableException(
-                            "Constructor parameter - \"$name\" -  doesn't refer to a property of \"$clazz\"")
+            val matchingProperty = classProperties[name] ?: classProperties[name.capitalize()]
+            ?: throw NotSerializableException(
+                    "Constructor parameter - \"$name\" -  doesn't refer to a property of \"$clazz\"")
 
             // If the property has a getter we'll use that to retrieve it's value from the instance, if it doesn't
             // *for *know* we switch to a reflection based method
@@ -258,8 +266,8 @@ internal fun <T : Any> propertiesForSerializationFromConstructor(
 
                 Pair(PublicPropertyReader(getter), returnType)
             } else {
-                val field = classProperties[name]!!.field ?:
-                        throw NotSerializableException("No property matching constructor parameter named - \"$name\" - " +
+                val field = classProperties[name]!!.field
+                        ?: throw NotSerializableException("No property matching constructor parameter named - \"$name\" - " +
                                 "of \"$clazz\". If using Java, check that you have the -parameters option specified " +
                                 "in the Java compiler. Alternately, provide a proxy serializer " +
                                 "(SerializationCustomSerializer) if recompiling isn't an option")
@@ -296,7 +304,7 @@ fun propertiesForSerializationFromSetters(
                         "takes too many arguments")
             }
 
-            val setterType = setter.parameterTypes[0]!!
+            val setterType = setter.genericParameterTypes[0]!!
 
             if ((property.value.field != null) &&
                     (!(TypeToken.of(property.value.field?.genericType!!).isSupertypeOf(setterType)))) {
@@ -305,11 +313,11 @@ fun propertiesForSerializationFromSetters(
                         "${property.value.field?.genericType!!}")
             }
 
-            // make sure the setter returns the same type (within inheritance bounds) the getter accepts
-            if (!(TypeToken.of (setterType).isSupertypeOf(getter.returnType))) {
+            // Make sure the getter returns the same type (within inheritance bounds) the setter accepts.
+            if (!(TypeToken.of(getter.genericReturnType).isSupertypeOf(setterType))) {
                 throw NotSerializableException("Defined setter for parameter ${property.value.field?.name} " +
                         "takes parameter of type $setterType yet the defined getter returns a value of type " +
-                        "${getter.returnType}")
+                        "${getter.returnType} [${getter.genericReturnType}]")
             }
             this += PropertyAccessorGetterSetter(
                     idx++,
@@ -471,10 +479,10 @@ internal fun Type.asParameterizedType(): ParameterizedType {
 }
 
 internal fun Type.isSubClassOf(type: Type): Boolean {
-    return TypeToken.of(this).isSubtypeOf(type)
+    return TypeToken.of(this).isSubtypeOf(TypeToken.of(type).rawType)
 }
 
-// ByteArrays, primtives and boxed primitives are not stored in the object history
+// ByteArrays, primitives and boxed primitives are not stored in the object history
 internal fun suitableForObjectReference(type: Type): Boolean {
     val clazz = type.asClass()
     return type != ByteArray::class.java && (clazz != null && !clazz.isPrimitive && !Primitives.unwrap(clazz).isPrimitive)

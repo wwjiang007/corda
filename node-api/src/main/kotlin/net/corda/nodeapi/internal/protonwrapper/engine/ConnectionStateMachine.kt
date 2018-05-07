@@ -351,7 +351,7 @@ internal class ConnectionStateMachine(serverMode: Boolean,
                 val connection = event.connection
                 val channel = connection?.context as? Channel
                 if (channel != null) {
-                    val appProperties = HashMap(amqpMessage.applicationProperties.value)
+                    val appProperties = HashMap(amqpMessage.applicationProperties.value as Map<String, Any?>)
                     appProperties["_AMQ_VALIDATED_USER"] = remoteLegalName
                     val localAddress = channel.localAddress() as InetSocketAddress
                     val remoteAddress = channel.remoteAddress() as InetSocketAddress
@@ -359,9 +359,9 @@ internal class ConnectionStateMachine(serverMode: Boolean,
                             payload,
                             link.source.address,
                             remoteLegalName,
-                            NetworkHostAndPort(localAddress.hostString, localAddress.port),
-                            localLegalName,
                             NetworkHostAndPort(remoteAddress.hostString, remoteAddress.port),
+                            localLegalName,
+                            NetworkHostAndPort(localAddress.hostString, localAddress.port),
                             appProperties,
                             channel,
                             delivery)
@@ -428,7 +428,6 @@ internal class ConnectionStateMachine(serverMode: Boolean,
     }
 
     fun transportWriteMessage(msg: SendableMessageImpl) {
-        log.debug { "Queue application message write uuid: ${msg.applicationProperties["_AMQ_DUPL_ID"]} ${javax.xml.bind.DatatypeConverter.printHexBinary(msg.payload)}" }
         msg.buf = encodePayloadBytes(msg)
         val messageQueue = messageQueues.getOrPut(msg.topic, { LinkedList() })
         messageQueue.offer(msg)

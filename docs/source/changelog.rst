@@ -1,13 +1,74 @@
 Changelog
 =========
 
-Unreleased
-----------
+Here's a summary of what's changed in each Corda release. For guidance on how to upgrade code from the previous
+release, see :doc:`upgrade-notes`.
 
-Here are brief summaries of what's changed between each snapshot release. This includes guidance on how to upgrade code
-from the previous milestone release.
+Unreleased
+==========
+
+* Refactor AMQP Serializer to pass context object down the serialization call hierarchy. Will allow per thread
+  extensions to be set and used by the RPC work (Observable Context Key)
+
+* Refactor RPC Server Kryo observable serializer into it's own sub module
+
+* The Vault Criteria API has been extended to take a more precise specification of which class contains a field. This primarily impacts Java users; Kotlin users need take no action. The old methods have been deprecated but still work - the new methods avoid bugs that can occur when JPA schemas inherit from each other.
+
+* Refactor RPC Client Kryo observable serializer into it's own sub module
+
+* Fix CORDA-1403 where a property of a class that implemented a generic interface could not be deserialized in
+  a factory without a serializer as the subtype check for the class instance failed. Fix is to compare the raw
+  type.
+  
+* Due to ongoing work the experimental interfaces for defining custom notary services have been moved to the internal package.
+  CorDapps implementing custom notary services will need to be updated, see ``samples/notary-demo`` for an example.
+  Further changes may be required in the future.
+  
+* Fixed incorrect exception handling in ``NodeVaultService._query()``.
+
+* Avoided a memory leak deriving from incorrect MappedSchema caching strategy.
+
+* Added program line argument ``on-unknown-config-keys`` to allow specifying behaviour on unknown node configuration property keys.
+  Values are: [FAIL, WARN, IGNORE], default to FAIL if unspecified.
+
+* Fix CORDA-1229. Setter-based serialization was broken with generic types when the property was stored
+  as the raw type, List for example.
+
+* java.security.cert.CRLReason added to the default Whitelist.
+
+* java.security.cert.X509CRL serialization support added.
+
+* Replaced the ``PersistentMap`` in ``NodeSchedulerService`` with an implementation that only loads the next scheduled
+  state from the database into memory, rather than them all.
+
+* Upgraded H2 to v1.4.197.
+
+* Shell (embedded available only in dev mode or via SSH) connects to the node via RPC instead of using the ``CordaRPCOps`` object directly.
+  To enable RPC connectivity ensure node’s ``rpcSettings.address`` and ``rpcSettings.adminAddress`` settings are present.
+
+* Changes to the network bootstrapper:
+  * The whitelist.txt file is no longer needed. The existing network parameters file is used to update the current contracts
+    whitelist.
+  * The CorDapp jars are also copied to each nodes' `cordapps` directory.
+
+* Errors thrown by a Corda node will now reported to a calling RPC client with attention to serialization and obfuscation of internal data.
+
+* Serializing an inner class (non-static nested class in Java, inner class in Kotlin) will be rejected explicitly by the serialization
+  framework. Prior to this change it didn't work, but the error thrown was opaque (complaining about too few arguments
+  to a constructor). Whilst this was possible in the older Kryo implementation (Kryo passing null as the synthesised
+  reference to the outer class) as per the Java documentation `here <https://docs.oracle.com/javase/tutorial/java/javaOO/nested.html>`_
+  we are disallowing this as the paradigm in general makes little sense for Contract States
+
+* Fix CORDA-1258. Custom serializers were spuriously registered every time a serialization factory was fetched from the cache rather than
+  only once when it was created. Whilst registering serializers that already exist is essentially a no-op, it's a performance overhead for
+  a very frequent operation that hits a synchronisation point (and is thus flagged as contended by our perfomance suite)
 
 * Node can be shut down abruptly by ``shutdown`` function in `CordaRPCOps` or gracefully (draining flows first) through ``gracefulShutdown`` command from shell.
+
+* Carpenter Exceptions will be caught internally by the Serializer and rethrown as a ``NotSerializableException``
+
+  * Specific details of the error encountered are logged to the node's log file. More information can be enabled by setting the debug level to
+    ``trace`` ; this will cause the full stack trace of the error to be dumped into the log.
 
 * Parsing of ``NodeConfiguration`` will now fail if unknown configuration keys are found.
 
@@ -15,11 +76,33 @@ from the previous milestone release.
 
 * Introduced a placeholder for custom properties within ``node.conf``; the property key is "custom".
 
+* Property keys with double quotes (e.g. `"key"`) in ``node.conf`` are no longer allowed, for rationale refer to :doc:`corda-configuration-file`.
+
 * java.math.BigInteger serialization support added.
 
-* java.security.cert.CRLReason added to the default Whitelist.
+* Fix CORDA-1355: Reduce amount of classpath scanning during integration tests execution.
 
-* java.security.cert.X509CRL serialization support added.
+.. _changelog_v3.1:
+
+Version 3.1
+-----------
+
+* Update the fast-classpath-scanner dependent library version from 2.0.21 to 2.12.3
+
+  .. note:: Whilst this is not the latest version of this library, that being 2.18.1 at time of writing, versions later
+  than 2.12.3 (including 2.12.4) exhibit a different issue.
+
+* Updated the api scanner gradle plugin to work the same way as the version in master. These changes make the api scanner more
+  accurate and fix a couple of bugs, and change the format of the api-current.txt file slightly. Backporting these changes
+  to the v3 branch will make it easier for us to ensure that apis are stable for future versions. These changes are
+  released in gradle plugins version 3.0.10. For more information on the api scanner see
+  the `documentation <https://github.com/corda/corda-gradle-plugins/tree/master/api-scanner>`_.
+
+* Fixed security vulnerability when using the ``HashAttachmentConstraint``. Added strict check that the contract JARs
+  referenced in a transaction were deployed on the node.
+
+* Fixed node's behaviour on startup when there is no connectivity to network map. Node continues to work normally if it has
+  all the needed network data, waiting in the background for network map to become available.
 
 .. _changelog_v3:
 
@@ -227,6 +310,8 @@ Version 3.0
 
 * ``TransactionSignature`` includes a new ``partialMerkleTree`` property, required for future support of signing over
   multiple transactions at once.
+
+* Updating Jolokia dependency to latest version (includes security fixes)
 
 .. _changelog_v1:
 

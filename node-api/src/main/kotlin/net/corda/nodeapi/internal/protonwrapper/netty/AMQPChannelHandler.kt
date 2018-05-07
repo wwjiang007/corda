@@ -103,7 +103,6 @@ internal class AMQPChannelHandler(private val serverMode: Boolean,
 
     override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
         try {
-            log.debug { "Received $msg" }
             if (msg is ByteBuf) {
                 eventProcessor!!.transportProcessInput(msg)
             }
@@ -116,16 +115,15 @@ internal class AMQPChannelHandler(private val serverMode: Boolean,
     override fun write(ctx: ChannelHandlerContext, msg: Any, promise: ChannelPromise) {
         try {
             try {
-                log.debug { "Sent $msg" }
                 when (msg) {
                 // Transfers application packet into the AMQP engine.
                     is SendableMessageImpl -> {
                         val inetAddress = InetSocketAddress(msg.destinationLink.host, msg.destinationLink.port)
                         require(inetAddress == remoteAddress) {
-                            "Message for incorrect endpoint"
+                            "Message for incorrect endpoint $inetAddress expected $remoteAddress"
                         }
                         require(CordaX500Name.parse(msg.destinationLegalName) == CordaX500Name.build(remoteCert!!.subjectX500Principal)) {
-                            "Message for incorrect legal identity"
+                            "Message for incorrect legal identity ${msg.destinationLegalName} expected ${remoteCert!!.subjectX500Principal}"
                         }
                         log.debug { "channel write ${msg.applicationProperties["_AMQ_DUPL_ID"]}" }
                         eventProcessor!!.transportWriteMessage(msg)
