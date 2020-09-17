@@ -7,7 +7,7 @@ import org.crsh.shell.impl.command.CRaSHSession
 /**
  * Simply extends CRaSH BaseCommand to add easy access to the RPC ops class.
  */
-abstract class InteractiveShellCommand<T : RPCOps> : BaseCommand() {
+internal abstract class InteractiveShellCommand<T : RPCOps> : BaseCommand() {
 
     abstract val rpcOpsClass: Class<out T>
 
