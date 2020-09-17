@@ -29,6 +29,7 @@ import net.corda.core.internal.messaging.FlowManagerRPCOps
 import net.corda.core.internal.packageName_
 import net.corda.core.internal.rootCause
 import net.corda.core.internal.uncheckedCast
+import net.corda.core.messaging.BusinessNetworkOperatorRPCOps
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.messaging.DataFeed
 import net.corda.core.messaging.FlowProgressHandle
@@ -172,6 +173,11 @@ object InteractiveShell {
                 "checkpoints",
                 "Commands to extract information about checkpoints stored within the node",
                 CheckpointShellCommand::class.java
+        )
+        ExternalResolver.INSTANCE.addCommand(
+                "bn",
+                "Commands for Business Network related operations.",
+                BusinessNetworkShellCommand::class.java
         )
 
         val shellSafety = ShellSafety().apply {
@@ -558,6 +564,11 @@ object InteractiveShell {
         rpcOps: AttachmentTrustInfoRPCOps
     ): Any {
         return AttachmentTrustTable(out, rpcOps.attachmentTrustInfos)
+    }
+
+    @JvmStatic
+    fun runCreateBusinessNetwork(rpcOps: BusinessNetworkOperatorRPCOps) {
+        rpcOps.createBusinessNetwork()
     }
 
     @JvmStatic

@@ -73,6 +73,8 @@ import net.corda.djvm.source.UserSource
 import net.corda.node.CordaClock
 import net.corda.node.VersionInfo
 import net.corda.node.internal.attachments.AttachmentTrustInfoRPCOpsImpl
+import net.corda.core.messaging.BusinessNetworkOperatorRPCOps
+import net.corda.node.internal.bnsample.BusinessNetworkOperatorRPCOpsImpl
 import net.corda.node.internal.checkpoints.FlowManagerRPCOpsImpl
 import net.corda.node.internal.classloading.requireAnnotation
 import net.corda.node.internal.cordapp.CordappConfigFileProvider
@@ -416,7 +418,9 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
 
         val attachmentTrustInfoRPCOps = Pair(AttachmentTrustInfoRPCOps::class.java, AttachmentTrustInfoRPCOpsImpl(services.attachmentTrustCalculator))
 
-        return listOf(cordaRPCOpsImpl, checkpointRPCOpsImpl, attachmentTrustInfoRPCOps).map { rpcOpsImplPair ->
+        //val businessNetworkOperatorRPCOps = Pair(BusinessNetworkOperatorRPCOps::class.java, BusinessNetworkOperatorRPCOpsImpl())
+
+        return listOf(cordaRPCOpsImpl, checkpointRPCOpsImpl, attachmentTrustInfoRPCOps/*, businessNetworkOperatorRPCOps*/).map { rpcOpsImplPair ->
             // Mind that order of proxies is important
             val targetInterface = rpcOpsImplPair.first
             val stage1Proxy = AuthenticatedRpcOpsProxy.proxy(rpcOpsImplPair.second, targetInterface)
