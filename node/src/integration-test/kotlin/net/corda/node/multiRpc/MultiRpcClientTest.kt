@@ -7,6 +7,7 @@ import com.nhaarman.mockito_kotlin.verify
 import net.corda.client.rpc.ConnectionFailureException
 import net.corda.client.rpc.ext.MultiRPCClient
 import net.corda.client.rpc.ext.RPCConnectionListener
+import net.corda.core.internal.messaging.AttachmentTrustInfoRPCOps
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.services.NetworkMapCache
 import net.corda.core.serialization.internal.SerializationEnvironment
@@ -14,6 +15,7 @@ import net.corda.core.serialization.internal._rpcClientSerializationEnv
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.seconds
 import net.corda.core.messaging.BusinessNetworkOperatorRPCOps
+import net.corda.node.internal.bnsample.BusinessNetworkOperatorRPCOpsImpl
 import net.corda.node.services.Permissions.Companion.all
 import net.corda.testing.common.internal.eventually
 import net.corda.testing.core.ALICE_NAME
@@ -66,13 +68,13 @@ class MultiRpcClientTest {
         val rpcUser = User("MultiRpcClientTest", "MultiRpcClientTestPwd", setOf(all()))
 
         // Create client with RPC address specified
-        val client = MultiRPCClient(rpcAddress, BusinessNetworkOperatorRPCOps::class.java, rpcUser.username, rpcUser.password)
+        val client = MultiRPCClient(rpcAddress, AttachmentTrustInfoRPCOps::class.java, rpcUser.username, rpcUser.password)
 
         // Ensure that RPC client definitely sets serialisation environment
         assertNotNull(_rpcClientSerializationEnv.get())
 
         // Right from the start attach a listener such that it will be informed of all the activity happening for this RPC client
-        val listener = mock<RPCConnectionListener<BusinessNetworkOperatorRPCOps>>()
+        val listener = mock<RPCConnectionListener<AttachmentTrustInfoRPCOps>>()
         client.addConnectionListener(listener)
 
         client.use {
@@ -88,7 +90,7 @@ class MultiRpcClientTest {
 
                 val conn = connFuture.get()
                 conn.use {
-                    assertNotNull(it.proxy.createBusinessNetwork())
+                    assertNotNull(it.proxy.attachmentTrustInfos)
                 }
                 verify(listener, times(1)).onDisconnect(argThat { connectionOpt === conn && throwableOpt == null })
                 // Ensuring that calling start even after close will result in the same future

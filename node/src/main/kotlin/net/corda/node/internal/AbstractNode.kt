@@ -418,9 +418,9 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
 
         val attachmentTrustInfoRPCOps = Pair(AttachmentTrustInfoRPCOps::class.java, AttachmentTrustInfoRPCOpsImpl(services.attachmentTrustCalculator))
 
-        //val businessNetworkOperatorRPCOps = Pair(BusinessNetworkOperatorRPCOps::class.java, BusinessNetworkOperatorRPCOpsImpl())
+        val businessNetworkOperatorRPCOps = Pair(BusinessNetworkOperatorRPCOps::class.java, BusinessNetworkOperatorRPCOpsImpl())
 
-        return listOf(cordaRPCOpsImpl, checkpointRPCOpsImpl, attachmentTrustInfoRPCOps/*, businessNetworkOperatorRPCOps*/).map { rpcOpsImplPair ->
+        return listOf(cordaRPCOpsImpl, checkpointRPCOpsImpl, attachmentTrustInfoRPCOps, businessNetworkOperatorRPCOps).map { rpcOpsImplPair ->
             // Mind that order of proxies is important
             val targetInterface = rpcOpsImplPair.first
             val stage1Proxy = AuthenticatedRpcOpsProxy.proxy(rpcOpsImplPair.second, targetInterface)
