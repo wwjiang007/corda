@@ -14,8 +14,6 @@ import net.corda.core.serialization.internal.SerializationEnvironment
 import net.corda.core.serialization.internal._rpcClientSerializationEnv
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.seconds
-import net.corda.core.messaging.BusinessNetworkOperatorRPCOps
-import net.corda.node.internal.bnsample.BusinessNetworkOperatorRPCOpsImpl
 import net.corda.node.services.Permissions.Companion.all
 import net.corda.testing.common.internal.eventually
 import net.corda.testing.core.ALICE_NAME
