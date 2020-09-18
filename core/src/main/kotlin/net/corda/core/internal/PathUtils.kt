@@ -11,8 +11,7 @@ import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.attribute.FileAttribute
 import java.nio.file.attribute.FileTime
-import java.util.stream.Stream
-import kotlin.streams.toList
+
 
 /**
  * Allows you to write code like: Paths.get("someDir") / "subdir" / "filename" but using the Paths API to avoid platform
@@ -42,7 +41,7 @@ fun Path.exists(vararg options: LinkOption): Boolean = Files.exists(this, *optio
 
 /** Copy the file into the target directory using [Files.copy]. */
 fun Path.copyToDirectory(targetDir: Path, vararg options: CopyOption): Path {
-    require(targetDir.isDirectory()) { "$targetDir is not a directory" }
+    //require(targetDir.isDirectory()) { "$targetDir is not a directory" }
     /*
      * We must use fileName.toString() here because resolve(Path)
      * will throw ProviderMismatchException if the Path parameter
@@ -78,9 +77,6 @@ inline val Path.isReadable: Boolean get() = Files.isReadable(this)
 /** @see Files.size */
 inline val Path.size: Long get() = Files.size(this)
 
-/** @see Files.readAttributes */
-fun Path.attributes(vararg options: LinkOption): BasicFileAttributes = Files.readAttributes(this, BasicFileAttributes::class.java, *options)
-
 /** @see Files.getLastModifiedTime */
 fun Path.lastModifiedTime(vararg options: LinkOption): FileTime = Files.getLastModifiedTime(this, *options)
 
@@ -89,20 +85,6 @@ fun Path.isDirectory(vararg options: LinkOption): Boolean = Files.isDirectory(th
 
 /** @see Files.isSameFile */
 fun Path.isSameAs(other: Path): Boolean = Files.isSameFile(this, other)
-
-/**
- * Same as [Files.list] except it also closes the [Stream].
- * @return the output of [block]
- */
-inline fun <R> Path.list(block: (Stream<Path>) -> R): R = Files.list(this).use(block)
-
-/** Same as [list] but materialises all the entiries into a list. */
-fun Path.list(): List<Path> = list { it.toList() }
-
-/** @see Files.walk */
-inline fun <R> Path.walk(maxDepth: Int = Int.MAX_VALUE, vararg options: FileVisitOption, block: (Stream<Path>) -> R): R {
-    return Files.walk(this, maxDepth, *options).use(block)
-}
 
 /** @see Files.delete */
 fun Path.delete(): Unit = Files.delete(this)
@@ -142,42 +124,8 @@ fun Path.writer(charset: Charset = UTF_8, vararg options: OpenOption): BufferedW
 /** @see Files.readAllBytes */
 fun Path.readAll(): ByteArray = Files.readAllBytes(this)
 
-/** Read in this entire file as a string using the given encoding. */
-fun Path.readText(charset: Charset = UTF_8): String = reader(charset).use(Reader::readText)
-
 /** @see Files.write */
 fun Path.write(bytes: ByteArray, vararg options: OpenOption): Path = Files.write(this, bytes, *options)
-
-/** Write the given string to this file. */
-fun Path.writeText(text: String, charset: Charset = UTF_8, vararg options: OpenOption) {
-    writer(charset, *options).use { it.write(text) }
-}
-
-/**
- * Same as [inputStream] except it also closes the [InputStream].
- * @return the output of [block]
- */
-inline fun <R> Path.read(vararg options: OpenOption, block: (InputStream) -> R): R = inputStream(*options).use(block)
-
-/**
- * Same as [outputStream] except it also closes the [OutputStream].
- * @param createDirs if true then the parent directory of this file is created. Defaults to false.
- * @return the output of [block]
- */
-inline fun Path.write(createDirs: Boolean = false, vararg options: OpenOption = emptyArray(), block: (OutputStream) -> Unit) {
-    if (createDirs) {
-        normalize().parent?.createDirectories()
-    }
-    outputStream(*options).use(block)
-}
-
-/**
- * Same as [Files.lines] except it also closes the [Stream]
- * @return the output of [block]
- */
-inline fun <R> Path.readLines(charset: Charset = UTF_8, block: (Stream<String>) -> R): R {
-    return Files.lines(this, charset).use(block)
-}
 
 /** @see Files.readAllLines */
 fun Path.readAllLines(charset: Charset = UTF_8): List<String> = Files.readAllLines(this, charset)
@@ -192,8 +140,6 @@ fun Path.writeLines(lines: Iterable<CharSequence>, charset: Charset = UTF_8, var
  */
 inline fun <reified T : Any> Path.readObject(): T = readAll().deserialize()
 
-/** Calculate the hash of the contents of this file. */
-inline val Path.hash: SecureHash get() = read { it.hash() }
 
 /* Check if the Path is symbolic link */
 fun Path.safeSymbolicRead(): Path {
