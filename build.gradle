@@ -393,6 +393,9 @@ allprojects {
 
     repositories {
         mavenLocal()
+        maven {
+            url 'https://software.r3.com/artifactory/corda-dependencies-dev'
+        }
         // Use system environment to activate caching with Artifactory,
         // because it is actually easier to pass that during parallel build.
         // NOTE: it has to be a name of a virtual repository with all
