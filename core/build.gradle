@@ -24,20 +24,10 @@ configurations {
     smokeTestCompile.extendsFrom compile
     smokeTestRuntimeOnly.extendsFrom runtimeOnly
 
-    compile {
-        //exclude module: 'kotlin-stdlib'
-        //exclude module: 'kotlin-stdlib-jdk7'
-        //exclude module: 'kotlin-stdlib-jdk8'
-    }
-
     [ runtimeClasspath, testRuntimeClasspath, osgiTestRuntimeClasspath ].forEach { cfg ->
         cfg.resolutionStrategy {
             dependencySubstitution {
-                substitute module('org.jetbrains.kotlin:kotlin-stdlib-jdk8') with module("org.jetbrains.kotlin:kotlin-osgi-bundle:$kotlin_version")
-                substitute module('org.jetbrains.kotlin:kotlin-stdlib-jdk7') with module("org.jetbrains.kotlin:kotlin-osgi-bundle:$kotlin_version")
-                substitute module('org.jetbrains.kotlin:kotlin-stdlib-common') with module("org.jetbrains.kotlin:kotlin-osgi-bundle:$kotlin_version")
                 substitute module('org.jetbrains.kotlin:kotlin-stdlib') with module("org.jetbrains.kotlin:kotlin-osgi-bundle:$kotlin_version")
-                substitute module('org.jetbrains.kotlin:kotlin-reflect') with module("org.jetbrains.kotlin:kotlin-osgi-bundle:$kotlin_version")
             }
             cacheChangingModulesFor 0, 'seconds'
         }
@@ -56,8 +46,6 @@ dependencies {
 
     // Guava: Google test library (collections test suite)
     testCompile "com.google.guava:guava-testlib:$guava_version"
-
-    compile "org.jetbrains.kotlin:kotlin-osgi-bundle:$kotlin_version"
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
@@ -97,21 +85,27 @@ dependencies {
     // JPA 2.2 annotations.
     compile "javax.persistence:javax.persistence-api:2.2"
 
-    // required to use @Type annotation
-    compile "org.hibernate:hibernate-core:$hibernate_version"
-
     // FastThreadLocal
     compile "io.netty:netty-common:$netty_version"
 
-    compile group: 'com.sun.xml.security', name: 'xml-security-impl', version: '1.0'
-
     compile group: "io.github.classgraph", name: "classgraph", version: class_graph_version
+
+
+    // required to use @Type annotation
+    compile "org.hibernate:hibernate-osgi:$hibernate_version"
+
+    compile "org.jetbrains.kotlin:kotlin-osgi-bundle:$kotlin_version"
+
+    compile group: 'javax.xml.bind', name: 'jaxb-api-osgi', version: '2.2.7'
+    compile group: 'org.apache.servicemix.bundles', name: 'org.apache.servicemix.bundles.antlr', version: '2.7.7_5'
+    compile group: 'org.apache.servicemix.bundles', name: 'org.apache.servicemix.bundles.dom4j', version: '2.1.1_1'
+    //bundle for javax.xml.stream
+    compile group: 'org.apache.servicemix.specs', name: 'org.apache.servicemix.specs.stax-api-1.0', version: '1.9.0'
+
 
     // Compile corda-core as an OSGi bundle
     compileOnly "org.osgi:osgi.annotation:$osgi_version"
     compileOnly "org.osgi:osgi.core:$osgi_version"
-//    compileOnly "org.osgi:org.osgi.service.component.annotations:$osgi_component_annotations_version"
-
     testCompile "org.ow2.asm:asm:$asm_version"
 
     // JDK11: required by Quasar at run-time
@@ -133,19 +127,19 @@ task copyQuasarJar(type: Copy) {
 }
 
 jar {
-    manifest {
-        instruction "Import-Package", "!net.i2p.crypto.*",
-                "!org.hibernate",
-                "!org.hibernate.annotations",
-                "!sun.activation.registries",
-                "!sun.management",
-                "!javax.interceptor",
-                "*"
-    }
-
     finalizedBy(copyQuasarJar)
     archiveBaseName = 'corda-core'
     archiveClassifier = ''
+}
+
+tasks.named('jar', Jar) {
+    bnd """
+Bundle-Name: Corda Core OSGi
+Bundle-SymbolicName: net.corda.core
+Import-Package: \\
+    !net.i2p.crypto.eddsa.math,\\
+    *
+"""
 }
 
 configurations {
