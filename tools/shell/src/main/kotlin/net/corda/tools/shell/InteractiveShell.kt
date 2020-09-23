@@ -29,7 +29,6 @@ import net.corda.core.internal.messaging.FlowManagerRPCOps
 import net.corda.core.internal.packageName_
 import net.corda.core.internal.rootCause
 import net.corda.core.internal.uncheckedCast
-import net.corda.core.messaging.BusinessNetworkOperatorRPCOps
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.messaging.DataFeed
 import net.corda.core.messaging.FlowProgressHandle
@@ -37,6 +36,7 @@ import net.corda.core.messaging.StateMachineUpdate
 import net.corda.core.messaging.pendingFlowsCount
 import net.corda.tools.shell.utlities.ANSIProgressRenderer
 import net.corda.tools.shell.utlities.StdoutANSIProgressRenderer
+import net.corda.nodeapi.internal.businessnetwork.BusinessNetworkOperationsRPCOps
 import org.crsh.command.InvocationContext
 import org.crsh.command.ShellSafety
 import org.crsh.console.jline.JLineProcessor
@@ -567,7 +567,12 @@ object InteractiveShell {
     }
 
     @JvmStatic
-    fun runCreateBusinessNetwork(rpcOps: BusinessNetworkOperatorRPCOps) {
+    fun runCreateBusinessNetwork(rpcOps: BusinessNetworkOperationsRPCOps) {
+        rpcOps.createBusinessNetwork()
+    }
+
+    @JvmStatic
+    fun runCreateGroup(rpcOps: BusinessNetworkOperationsRPCOps) {
         rpcOps.createBusinessNetwork()
     }
 

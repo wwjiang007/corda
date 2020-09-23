@@ -1,7 +1,6 @@
-package net.corda.node.internal.bnsample
+package net.corda.nodeapi.internal.businessnetwork
 
 import net.corda.client.rpc.ext.MultiRPCClient
-import net.corda.core.messaging.BusinessNetworkOperatorRPCOps
 import net.corda.core.utilities.getOrThrow
 import net.corda.node.services.Permissions
 import net.corda.testing.core.ALICE_NAME
@@ -20,11 +19,11 @@ class BusinessNetworkTest {
 
         val rpcAddress = incrementalPortAllocation().nextHostAndPort()
 
-        val client = MultiRPCClient(rpcAddress, BusinessNetworkOperatorRPCOps::class.java,
+        val client = MultiRPCClient(rpcAddress, BusinessNetworkOperationsRPCOps::class.java,
                 user.username, user.password)
 
         client.use {
-            driver(DriverParameters(notarySpecs = emptyList(), startNodesInProcess = false)) {
+             driver(DriverParameters(notarySpecs = emptyList(), startNodesInProcess = false)) {
                 startNode(providedName = ALICE_NAME,
                         defaultParameters = NodeParameters(rpcAddress = rpcAddress, rpcUsers = listOf(user))).getOrThrow()
 
@@ -33,6 +32,8 @@ class BusinessNetworkTest {
                 conn.use {
                     val text = it.proxy.createBusinessNetwork()
                     assertEquals("Business network created!", text)
+                    val nodeInfo = it.proxy.getNodeInfo()
+                    assertEquals(ALICE_NAME, nodeInfo.legalIdentities.first().name)
                 }
             }
         }
