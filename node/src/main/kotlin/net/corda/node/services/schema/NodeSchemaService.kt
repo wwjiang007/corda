@@ -4,6 +4,8 @@ import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.FungibleAsset
 import net.corda.core.contracts.FungibleState
 import net.corda.core.contracts.LinearState
+import net.corda.core.flows.bn.BNMembership
+import net.corda.core.flows.bn.BNMembershipSchemaV1
 import net.corda.core.schemas.*
 import net.corda.core.schemas.MappedSchemaValidator.crossReferencesToOtherMappedSchema
 import net.corda.core.serialization.SingletonSerializeAsToken
@@ -50,7 +52,9 @@ class NodeSchemaService(private val extraSchemas: Set<MappedSchema> = emptySet()
                     PersistentIdentityService.PersistentHashToPublicKey::class.java,
                     ContractUpgradeServiceImpl.DBContractUpgrade::class.java,
                     DBNetworkParametersStorage.PersistentNetworkParameters::class.java,
-                    PublicKeyHashToExternalId::class.java
+                    PublicKeyHashToExternalId::class.java,
+
+                    BNMembership::class.java
             )) {
         override val migrationResource = "node-core.changelog-master"
     }
@@ -60,7 +64,8 @@ class NodeSchemaService(private val extraSchemas: Set<MappedSchema> = emptySet()
             setOf(CommonSchemaV1,
                     VaultSchemaV1,
                     NodeInfoSchemaV1,
-                    NodeCoreV1)
+                    NodeCoreV1,
+                    BNMembershipSchemaV1)
 
     val internalSchemas = requiredSchemas + extraSchemas.filter { schema ->
                 schema::class.qualifiedName?.startsWith("net.corda.notary.") ?: false

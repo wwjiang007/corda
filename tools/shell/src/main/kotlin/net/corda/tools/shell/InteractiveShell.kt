@@ -18,6 +18,7 @@ import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StateMachineRunId
+import net.corda.core.flows.bn.Membership
 import net.corda.core.internal.Emoji
 import net.corda.core.internal.VisibleForTesting
 import net.corda.core.internal.concurrent.doneFuture
@@ -287,7 +288,7 @@ object InteractiveShell {
     }
 
     private fun createOutputMapper(outputFormat: OutputFormat): ObjectMapper {
-        val factory = when(outputFormat) {
+        val factory = when (outputFormat) {
             OutputFormat.JSON -> JsonFactory()
             OutputFormat.YAML -> YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
         }
@@ -334,13 +335,13 @@ object InteractiveShell {
         if (matches.isEmpty()) {
             output.println("No matching flow found, run 'flow list' to see your options.", Decoration.bold, Color.red)
             return
-        } else if (matches.size > 1 && matches.find { it.endsWith(nameFragment)} == null) {
+        } else if (matches.size > 1 && matches.find { it.endsWith(nameFragment) } == null) {
             output.println("Ambiguous name provided, please be more specific. Your options are:")
             matches.forEachIndexed { i, s -> output.println("${i + 1}. $s", Decoration.bold, Color.yellow) }
             return
         }
 
-        val flowName = matches.find { it.endsWith(nameFragment)} ?: matches.single()
+        val flowName = matches.find { it.endsWith(nameFragment) } ?: matches.single()
         val flowClazz: Class<FlowLogic<*>> = if (classLoader != null) {
             uncheckedCast(Class.forName(flowName, true, classLoader))
         } else {
@@ -488,7 +489,7 @@ object InteractiveShell {
 
     private fun <T> getMatchingConstructorParamsAndTypes(parser: StringToMethodCallParser<FlowLogic<T>>,
                                                          inputData: String,
-                                                         clazz: Class<out FlowLogic<T>>) : List<Pair<String, Type>> {
+                                                         clazz: Class<out FlowLogic<T>>): List<Pair<String, Type>> {
         val errors = ArrayList<String>()
         val classPackage = clazz.packageName_
         lateinit var paramNamesFromConstructor: List<String>
@@ -509,19 +510,14 @@ object InteractiveShell {
                 val nameTypeList = paramNamesFromConstructor.zip(ctor.genericParameterTypes)
                 parser.validateIsMatchingCtor(clazz.name, nameTypeList, inputData)
                 return nameTypeList
-
-            }
-            catch (e: StringToMethodCallParser.UnparseableCallException.MissingParameter) {
+            } catch (e: StringToMethodCallParser.UnparseableCallException.MissingParameter) {
                 errors.add("${getPrototype()}: missing parameter ${e.paramName}")
-            }
-            catch (e: StringToMethodCallParser.UnparseableCallException.TooManyParameters) {
+            } catch (e: StringToMethodCallParser.UnparseableCallException.TooManyParameters) {
                 errors.add("${getPrototype()}: too many parameters")
-            }
-            catch (e: StringToMethodCallParser.UnparseableCallException.ReflectionDataMissing) {
+            } catch (e: StringToMethodCallParser.UnparseableCallException.ReflectionDataMissing) {
                 val argTypes = ctor.genericParameterTypes.map { it.typeName }
                 errors.add("$argTypes: <constructor missing parameter reflection data>")
-            }
-            catch (e: StringToMethodCallParser.UnparseableCallException) {
+            } catch (e: StringToMethodCallParser.UnparseableCallException) {
                 val argTypes = ctor.genericParameterTypes.map { it.typeName }
                 errors.add("$argTypes: ${e.message}")
             }
@@ -560,20 +556,40 @@ object InteractiveShell {
 
     @JvmStatic
     fun runAttachmentTrustInfoView(
-        out: RenderPrintWriter,
-        rpcOps: AttachmentTrustInfoRPCOps
+            out: RenderPrintWriter,
+            rpcOps: AttachmentTrustInfoRPCOps
     ): Any {
         return AttachmentTrustTable(out, rpcOps.attachmentTrustInfos)
     }
 
     @JvmStatic
-    fun runCreateBusinessNetwork(rpcOps: BusinessNetworkOperationsRPCOps) {
-        rpcOps.createBusinessNetwork()
+    fun runCreateBusinessNetwork(rpcOps: BusinessNetworkOperationsRPCOps): Membership {
+        return rpcOps.createBusinessNetwork()
     }
 
     @JvmStatic
-    fun runCreateGroup(rpcOps: BusinessNetworkOperationsRPCOps) {
-        rpcOps.createBusinessNetwork()
+    fun runOnboardMembership(rpcOps: BusinessNetworkOperationsRPCOps, networkId: String, party: String): Membership {
+        return rpcOps.onboardMembership(networkId, party, null)
+    }
+
+    @JvmStatic
+    fun runActivateMembership(rpcOps: BusinessNetworkOperationsRPCOps, id: Long): Membership {
+        return rpcOps.activateMembership(id)
+    }
+
+    @JvmStatic
+    fun runSuspendMembership(rpcOps: BusinessNetworkOperationsRPCOps, id: Long): Membership {
+        return rpcOps.suspendMembership(id)
+    }
+
+    @JvmStatic
+    fun runRevokeMembership(rpcOps: BusinessNetworkOperationsRPCOps, id: Long) {
+        rpcOps.revokeMembership(id)
+    }
+
+    @JvmStatic
+    fun runGetMembershipList(rpcOps: BusinessNetworkOperationsRPCOps, networkId: String): List<Membership> {
+        return rpcOps.getMembershipList(networkId)
     }
 
     @JvmStatic
@@ -606,7 +622,7 @@ object InteractiveShell {
             val parser = StringToMethodCallParser(CordaRPCOps::class.java, inputObjectMapper)
             val call = parser.parse(cordaRPCOps, cmd)
             result = call.call()
-            var subscription : Subscriber<*>? = null
+            var subscription: Subscriber<*>? = null
             if (result != null && result !== Unit && result !is Void) {
                 val (subs, future) = printAndFollowRPCResponse(result, out, outputFormat)
                 subscription = subs
@@ -790,5 +806,4 @@ object InteractiveShell {
         uncheckedCast(elements).subscribe(subscriber)
         return Pair(subscriber, subscriber.future)
     }
-
 }

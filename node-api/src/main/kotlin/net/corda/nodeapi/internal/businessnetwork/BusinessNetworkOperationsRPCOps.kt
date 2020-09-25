@@ -1,12 +1,20 @@
 package net.corda.nodeapi.internal.businessnetwork
 
+import net.corda.core.flows.bn.BNIdentity
+import net.corda.core.flows.bn.Membership
 import net.corda.core.messaging.RPCOps
-import net.corda.core.node.NodeInfo
 
 interface BusinessNetworkOperationsRPCOps : RPCOps {
-    fun createBusinessNetwork() : String
 
-    fun createGroup() : String
+    fun createBusinessNetwork(): Membership
 
-    fun getNodeInfo() : NodeInfo
+    fun onboardMembership(networkId: String, party: String, businessIdentity: BNIdentity? = null): Membership
+
+    fun activateMembership(id: Long): Membership
+
+    fun suspendMembership(id: Long): Membership
+
+    fun revokeMembership(id: Long)
+
+    fun getMembershipList(networkId: String): List<Membership>
 }

@@ -73,8 +73,6 @@ import net.corda.djvm.source.UserSource
 import net.corda.node.CordaClock
 import net.corda.node.VersionInfo
 import net.corda.node.internal.attachments.AttachmentTrustInfoRPCOpsImpl
-import net.corda.core.messaging.BusinessNetworkOperatorRPCOps
-import net.corda.node.internal.bnsample.BusinessNetworkOperatorRPCOpsImpl
 import net.corda.node.internal.checkpoints.FlowManagerRPCOpsImpl
 import net.corda.node.internal.classloading.requireAnnotation
 import net.corda.node.internal.cordapp.CordappConfigFileProvider
@@ -149,6 +147,8 @@ import net.corda.node.utilities.NamedThreadFactory
 import net.corda.node.utilities.NotaryLoader
 import net.corda.nodeapi.internal.NodeInfoAndSigned
 import net.corda.nodeapi.internal.SignedNodeInfo
+import net.corda.nodeapi.internal.businessnetwork.BusinessNetworkOperationsRPCOps
+import net.corda.nodeapi.internal.businessnetwork.BusinessNetworkOperationsRPCOpsImpl
 import net.corda.nodeapi.internal.config.CertificateStore
 import net.corda.nodeapi.internal.cordapp.CordappLoader
 import net.corda.nodeapi.internal.crypto.CertificateType
@@ -418,7 +418,7 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
 
         val attachmentTrustInfoRPCOps = Pair(AttachmentTrustInfoRPCOps::class.java, AttachmentTrustInfoRPCOpsImpl(services.attachmentTrustCalculator))
 
-        val businessNetworkOperatorRPCOps = Pair(BusinessNetworkOperatorRPCOps::class.java, BusinessNetworkOperatorRPCOpsImpl())
+        val businessNetworkOperatorRPCOps = Pair(BusinessNetworkOperationsRPCOps::class.java, BusinessNetworkOperationsRPCOpsImpl(cordaRPCOpsImpl.second))
 
         return listOf(cordaRPCOpsImpl, checkpointRPCOpsImpl, attachmentTrustInfoRPCOps, businessNetworkOperatorRPCOps).map { rpcOpsImplPair ->
             // Mind that order of proxies is important
