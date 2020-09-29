@@ -280,7 +280,7 @@ class WireTransaction(componentGroups: List<ComponentGroup>, val privacySalt: Pr
         val listOfLeaves = mutableListOf<SecureHash>()
         // Even if empty and not used, we should at least send oneHashes for each known
         // or received but unknown (thus, bigger than known ordinal) component groups.
-        for (i in 0..componentGroups.map { it.groupIndex }.max()!!) {
+        for (i in 0..componentGroups.map { it.groupIndex }.maxOrNull()!!) {
             val root = groupsMerkleRoots[i] ?: SecureHash.allOnesHash
             listOfLeaves.add(root)
         }
@@ -379,29 +379,29 @@ class WireTransaction(componentGroups: List<ComponentGroup>, val privacySalt: Pr
     @DeleteForDJVM
     override fun toString(): String {
         val buf = StringBuilder()
-        buf.appendln("Transaction:")
+        buf.appendLine("Transaction:")
         for (reference in references) {
             val emoji = Emoji.rightArrow
-            buf.appendln("${emoji}REFS:       $reference")
+            buf.appendLine("${emoji}REFS:       $reference")
         }
         for (input in inputs) {
             val emoji = Emoji.rightArrow
-            buf.appendln("${emoji}INPUT:      $input")
+            buf.appendLine("${emoji}INPUT:      $input")
         }
         for ((data) in outputs) {
             val emoji = Emoji.leftArrow
-            buf.appendln("${emoji}OUTPUT:     $data")
+            buf.appendLine("${emoji}OUTPUT:     $data")
         }
         for (command in commands) {
             val emoji = Emoji.diamond
-            buf.appendln("${emoji}COMMAND:    $command")
+            buf.appendLine("${emoji}COMMAND:    $command")
         }
         for (attachment in attachments) {
             val emoji = Emoji.paperclip
-            buf.appendln("${emoji}ATTACHMENT: $attachment")
+            buf.appendLine("${emoji}ATTACHMENT: $attachment")
         }
         if (networkParametersHash != null) {
-            buf.appendln("PARAMETERS HASH:  $networkParametersHash")
+            buf.appendLine("PARAMETERS HASH:  $networkParametersHash")
         }
         return buf.toString()
     }

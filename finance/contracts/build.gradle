@@ -1,17 +1,19 @@
+plugins {
+    id 'net.corda.plugins.publish-utils'
+    id 'net.corda.plugins.quasar-utils'
+    id 'net.corda.plugins.cordapp-cpk'
+}
 apply plugin: 'kotlin'
 // Java Persistence API support: create no-arg constructor
 // see: http://stackoverflow.com/questions/32038177/kotlin-with-jpa-default-constructor-hell
 apply plugin: 'kotlin-jpa'
-apply plugin: 'net.corda.plugins.publish-utils'
-apply plugin: 'net.corda.plugins.quasar-utils'
-apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'com.jfrog.artifactory'
-apply from: "${rootProject.projectDir}/java8.gradle"
+//apply from: "${rootProject.projectDir}/java8.gradle"
 
 description 'Corda finance module - contracts'
 
 dependencies {
-    cordaCompile project(':core')
+    cordaProvided project(':core')
 
     testCompile project(':test-utils')
     testCompile project(path: ':core', configuration: 'testArtifacts')

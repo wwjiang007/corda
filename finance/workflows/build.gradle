@@ -1,10 +1,12 @@
+plugins {
+    id 'net.corda.plugins.publish-utils'
+    id 'net.corda.plugins.quasar-utils'
+    id 'net.corda.plugins.cordapp-cpk'
+}
 apply plugin: 'kotlin'
 // Java Persistence API support: create no-arg constructor
 // see: http://stackoverflow.com/questions/32038177/kotlin-with-jpa-default-constructor-hell
 apply plugin: 'kotlin-jpa'
-apply plugin: 'net.corda.plugins.publish-utils'
-apply plugin: 'net.corda.plugins.quasar-utils'
-apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'com.jfrog.artifactory'
 
 description 'Corda finance module - flows'
@@ -32,8 +34,8 @@ dependencies {
     // Note: 3rd party CorDapps should remember to include the relevant Finance CorDapp dependencies using `cordapp`
     // cordapp project(':finance:workflows')
     // cordapp project(':finance:contracts')
-    cordaCompile project(':core')
-    cordaCompile project(':confidential-identities')
+    cordaProvided project(':core')
+    cordaProvided project(':confidential-identities')
     
     cordapp project(':finance:contracts')
 

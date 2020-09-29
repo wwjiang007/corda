@@ -121,7 +121,7 @@ fun deserialiseCommands(
         val componentHashes = group.components.mapIndexed { index, component -> componentHash(group.nonces[index], component) }
         val leafIndices = componentHashes.map { group.partialMerkleTree.leafIndex(it) }
         if (leafIndices.isNotEmpty())
-            check(leafIndices.max()!! < signersList.size) { "Invalid Transaction. A command with no corresponding signer detected" }
+            check(leafIndices.maxOrNull()!! < signersList.size) { "Invalid Transaction. A command with no corresponding signer detected" }
         commandDataList.lazyMapped { commandData, index -> Command(commandData, signersList[leafIndices[index]]) }
     } else {
         // It is a WireTransaction

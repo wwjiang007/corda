@@ -1,6 +1,8 @@
+plugins {
+    id 'net.corda.plugins.quasar-utils'
+}
 apply plugin: 'kotlin'
 apply plugin: 'kotlin-jpa'
-apply plugin: 'net.corda.plugins.quasar-utils'
 
 description 'Corda core tests'
 
@@ -12,7 +14,7 @@ configurations {
     smokeTestRuntimeOnly.extendsFrom runtimeOnly
 }
 
-evaluationDependsOn(':node:capsule')
+//evaluationDependsOn(':node:capsule')
 
 sourceSets {
     integrationTest {
@@ -41,9 +43,9 @@ sourceSets {
 
 processSmokeTestResources {
     // Bring in the fully built corda.jar for use by NodeFactory in the smoke tests
-    from(project(':node:capsule').tasks['buildCordaJAR']) {
-        rename 'corda-(.*)', 'corda.jar'
-    }
+    //from(project(':node:capsule').tasks['buildCordaJAR']) {
+    //    rename 'corda-(.*)', 'corda.jar'
+    //}
 }
 
 dependencies {

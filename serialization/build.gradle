@@ -1,7 +1,10 @@
 import static org.gradle.api.JavaVersion.VERSION_1_8
 
+plugins {
+    id 'net.corda.plugins.publish-utils'
+}
+
 apply plugin: 'kotlin'
-apply plugin: 'net.corda.plugins.publish-utils'
 apply plugin: 'com.jfrog.artifactory'
 
 description 'Corda serialization'

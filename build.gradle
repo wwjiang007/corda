@@ -203,12 +203,6 @@ buildscript {
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.kotlin:kotlin-allopen:$kotlin_version"
-        classpath "net.corda.plugins:publish-utils:$gradle_plugins_version"
-        classpath "net.corda.plugins:quasar-utils:$gradle_plugins_version"
-        classpath "net.corda.plugins:cordformation:$gradle_plugins_version"
-        classpath "net.corda.plugins:cordapp:$gradle_plugins_version"
-        classpath "net.corda.plugins:api-scanner:$gradle_plugins_version"
-        classpath "net.corda.plugins:jar-filter:$gradle_plugins_version"
         classpath "net.sf.proguard:proguard-gradle:$proguard_version"
         classpath 'com.github.ben-manes:gradle-versions-plugin:0.15.0'
         classpath "org.jetbrains.kotlin:kotlin-noarg:$kotlin_version"
@@ -231,15 +225,15 @@ buildscript {
 plugins {
     // Add the shadow plugin to the plugins classpath for the entire project.
     id 'com.github.johnrengelman.shadow' version '2.0.4' apply false
-    id "com.gradle.build-scan" version "2.2.1"
     id "org.ajoberstar.grgit" version "4.0.0"
     // Projects need to decide to apply this plugin.
     id "biz.aQute.bnd.builder" version "${bnd_version}" apply false
+    id 'net.corda.plugins.api-scanner' apply false
+    id 'net.corda.plugins.publish-utils'
 }
 
 apply plugin: 'project-report'
 apply plugin: 'com.github.ben-manes.versions'
-apply plugin: 'net.corda.plugins.publish-utils'
 apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'com.r3.testing.distributed-testing'
 
@@ -325,12 +319,12 @@ allprojects {
 
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
         kotlinOptions {
-            languageVersion = "1.2"
-            apiVersion = "1.2"
+            languageVersion = "1.4"
+            apiVersion = "1.4"
             jvmTarget = VERSION_1_8
             javaParameters = true   // Useful for reflection.
-            freeCompilerArgs = ['-Xjvm-default=compatibility']
-            allWarningsAsErrors = warnings_as_errors
+            freeCompilerArgs = ['-Xjvm-default=enable']
+            //allWarningsAsErrors = warnings_as_errors
         }
     }
 
@@ -367,7 +361,7 @@ allprojects {
         // Required to use Gradle build cache (until Gradle 5.0 is released with default value of "append" set to false)
         // See https://github.com/gradle/gradle/issues/5269 and https://github.com/gradle/gradle/pull/6419
         extensions.configure(TypeOf.typeOf(JacocoTaskExtension)) { ex ->
-            ex.append = false
+            //
         }
 
         maxParallelForks = (System.env.CORDA_TESTING_FORKS == null) ? 1 : "$System.env.CORDA_TESTING_FORKS".toInteger()
@@ -379,6 +373,10 @@ allprojects {
         if (name.contains("integrationTest")) {
             maxParallelForks = (System.env.CORDA_INT_TESTING_FORKS == null) ? 1 : "$System.env.CORDA_INT_TESTING_FORKS".toInteger()
         }
+    }
+
+    tasks.withType(GenerateModuleMetadata).configureEach {
+        enabled = false
     }
 
     if (jdkClassifier) {
@@ -507,12 +505,12 @@ configurations {
 
 // Required for building out the fat JAR.
 dependencies {
-    compile project(':node')
+    //compile project(':node')
     compile "com.google.guava:guava:$guava_version"
 
     // Set to corda compile to ensure it exists now deploy nodes no longer relies on build
-    compile project(path: ":node:capsule", configuration: 'runtimeArtifacts')
-    compile project(path: ":testing:testserver:testcapsule:", configuration: 'runtimeArtifacts')
+    //compile project(path: ":node:capsule", configuration: 'runtimeArtifacts')
+    //compile project(path: ":testing:testserver:testcapsule:", configuration: 'runtimeArtifacts')
 
     // For the buildCordappDependenciesJar task
     runtime project(':client:jfx')
@@ -522,9 +520,9 @@ dependencies {
     runtime project(':confidential-identities')
     runtime project(':finance:workflows')
     runtime project(':finance:contracts')
-    runtime project(':testing:testserver')
+    //runtime project(':testing:testserver')
     testCompile project(':test-utils')
-    detekt 'io.gitlab.arturbosch.detekt:detekt-cli:1.0.1'
+    //detekt 'io.gitlab.arturbosch.detekt:detekt-cli:1.0.1'
 }
 
 jar {
@@ -534,10 +532,10 @@ jar {
 
 task jacocoRootReport(type: org.gradle.testing.jacoco.tasks.JacocoReport) {
     dependsOn = subprojects.test
-    additionalSourceDirs = files(subprojects.sourceSets.main.allSource.srcDirs)
-    sourceDirectories = files(subprojects.sourceSets.main.allSource.srcDirs)
-    classDirectories = files(subprojects.sourceSets.main.output)
-    executionData = files(subprojects.jacocoTestReport.executionData)
+    additionalSourceDirs files(subprojects.sourceSets.main.allSource.srcDirs)
+    //sourceDirectories files(subprojects.sourceSets.main.allSource.srcDirs)
+    //classDirectories files(subprojects.sourceSets.main.output)
+    executionData files(subprojects.jacocoTestReport.executionData)
     reports {
         html.enabled = true
         xml.enabled = true
@@ -552,26 +550,26 @@ task jacocoRootReport(type: org.gradle.testing.jacoco.tasks.JacocoReport) {
         })
     }
     afterEvaluate {
-        classDirectories = files(classDirectories.files.collect {
-            fileTree(dir: it,
-                    // these exclusions are necessary because jacoco gets confused by same class names
-                    // which occur due to deterministic versions of non deterministic classes
-                    exclude: ['**/net/corda/core/crypto/SHA256DigestSupplier**',
-                    '**/net/corda/core/crypto/DelegatingSecureRandomService',
-                    '**/net/corda/core/internal/ThreadLocalToggleField**',
-                    '**/net/corda/core/internal/InheritableThreadLocalToggleField**',
-                    '**/net/corda/core/internal/ToggleField**',
-                    'net/corda/core/internal/rules/StateContractValidationEnforcementRule**',
-                    'net/corda/core/internal/SimpleToggleField**',
-                    'net/corda/core/serialization/SerializationFactory**',
-                    'net/corda/serialization/internal/amqp/AMQPStreams**',
-                    'net/corda/serialization/internal/amqp/AMQPSerializerFactories**',
-                    'net/corda/serialization/internal/amqp/AMQPSerializationThreadContext**',
-                    'net/corda/serialization/internal/ByteBufferStreams**',
-                    'net/corda/serialization/internal/model/DefaultCacheProvider**',
-                    'net/corda/serialization/internal/DefaultWhitelist**'
-                    ])
-        })
+        //classDirectories files(classDirectories.files.collect {
+        //    fileTree(dir: it,
+        //            // these exclusions are necessary because jacoco gets confused by same class names
+        //            // which occur due to deterministic versions of non deterministic classes
+        //            exclude: ['**/net/corda/core/crypto/SHA256DigestSupplier**',
+        //            '**/net/corda/core/crypto/DelegatingSecureRandomService',
+        //            '**/net/corda/core/internal/ThreadLocalToggleField**',
+        //            '**/net/corda/core/internal/InheritableThreadLocalToggleField**',
+        //            '**/net/corda/core/internal/ToggleField**',
+        //            'net/corda/core/internal/rules/StateContractValidationEnforcementRule**',
+        //            'net/corda/core/internal/SimpleToggleField**',
+        //            'net/corda/core/serialization/SerializationFactory**',
+        //            'net/corda/serialization/internal/amqp/AMQPStreams**',
+        //            'net/corda/serialization/internal/amqp/AMQPSerializerFactories**',
+        //            'net/corda/serialization/internal/amqp/AMQPSerializationThreadContext**',
+        //            'net/corda/serialization/internal/ByteBufferStreams**',
+        //            'net/corda/serialization/internal/model/DefaultCacheProvider**',
+        //            'net/corda/serialization/internal/DefaultWhitelist**'
+        //            ])
+        //})
     }
 }
 
@@ -735,7 +733,7 @@ if (file('corda-docs-only-build').exists() || (System.getenv('CORDA_DOCS_ONLY_BU
 }
 
 wrapper {
-    gradleVersion = '5.6.4'
+    gradleVersion = '6.6.1'
     distributionType = Wrapper.DistributionType.ALL
 }
 

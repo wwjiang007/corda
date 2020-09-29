@@ -139,7 +139,6 @@ class AttachmentsClassLoader(attachments: List<Attachment>,
                 if (entry.name.endsWith(".class", ignoreCase = true)) return true
             }
         }
-        return false
     }
 
     // This function attempts to strike a balance between security and usability when it comes to the no-overlap rule.

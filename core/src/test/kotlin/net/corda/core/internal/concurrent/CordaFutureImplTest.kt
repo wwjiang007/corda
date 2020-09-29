@@ -20,7 +20,7 @@ class CordaFutureTest {
         try {
             assertEquals(100, e.fork { 100 }.getOrThrow())
             val x = Exception()
-            val f = e.fork { throw x }
+            val f = e.fork<Any> { throw x }
             Assertions.assertThatThrownBy { f.getOrThrow() }.isSameAs(x)
         } finally {
             e.shutdown()
@@ -52,7 +52,7 @@ class CordaFutureTest {
         run {
             val f = CordaFutureImpl<Int>()
             val x = Exception()
-            val g = f.map { throw x }
+            val g = f.map<Int, Any> { throw x }
             f.set(100)
             Assertions.assertThatThrownBy { g.getOrThrow() }.isSameAs(x)
         }
