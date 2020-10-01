@@ -1,4 +1,4 @@
-package net.corda.core.flows
+package net.corda.flows
 
 import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.DigitalSignature

@@ -58,6 +58,7 @@ dependencies {
     testCompile "org.assertj:assertj-core:$assertj_version"
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     testCompile project(':core-test-utils')
+    testCompile project(':flows')
 
     compile ("org.apache.activemq:artemis-amqp-protocol:${artemis_version}") {
         // Gains our proton-j version from core module.

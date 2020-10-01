@@ -11,10 +11,16 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.getOrThrow
+import net.corda.flows.CollectSignaturesFlow
+import net.corda.flows.ReceiveTransactionFlow
+import net.corda.flows.SendTransactionFlow
+import net.corda.flows.SignTransactionFlow
 import net.corda.node.testing.MESSAGE_CHAIN_CONTRACT_PROGRAM_ID
 import net.corda.node.testing.MessageChainContract
 import net.corda.node.testing.MessageChainState
 import net.corda.node.testing.MessageData
+import net.corda.notary.flows.FinalityFlow
+import net.corda.notary.flows.ReceiveFinalityFlow
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
 import net.corda.testing.core.singleIdentity

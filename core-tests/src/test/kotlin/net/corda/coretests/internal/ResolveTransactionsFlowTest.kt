@@ -20,6 +20,9 @@ import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.sequence
 import net.corda.core.utilities.unwrap
 import net.corda.coretests.flows.TestNoSecurityDataVendingFlow
+import net.corda.flows.DataVendingFlow
+import net.corda.flows.internal.FetchDataFlow
+import net.corda.flows.internal.ResolveTransactionsFlow
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.contracts.DummyContractV2
 import net.corda.testing.core.DUMMY_BANK_A_NAME

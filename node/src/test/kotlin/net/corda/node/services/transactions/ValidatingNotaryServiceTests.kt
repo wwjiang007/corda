@@ -7,7 +7,6 @@ import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.*
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
-import net.corda.core.internal.notary.generateSignature
 import net.corda.core.messaging.MessageRecipients
 import net.corda.core.node.ServiceHub
 import net.corda.core.serialization.deserialize
@@ -17,9 +16,14 @@ import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.OpaqueBytes
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.seconds
+import net.corda.flows.NotarisationPayload
+import net.corda.flows.NotarisationRequest
+import net.corda.flows.NotarisationRequestSignature
 import net.corda.node.services.issueInvalidState
 import net.corda.node.services.messaging.Message
 import net.corda.node.services.statemachine.InitialSessionMessage
+import net.corda.notary.flows.NotaryFlow
+import net.corda.notary.internal.generateSignature
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.core.ALICE_NAME

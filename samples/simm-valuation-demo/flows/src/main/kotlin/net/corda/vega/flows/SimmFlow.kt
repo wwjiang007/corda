@@ -10,13 +10,11 @@ import com.opengamma.strata.pricer.rate.ImmutableRatesProvider
 import com.opengamma.strata.pricer.swap.DiscountingSwapProductPricer
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.StateRef
-import net.corda.core.flows.AbstractStateReplacementFlow.Proposal
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.flows.InitiatedBy
 import net.corda.core.flows.InitiatingFlow
 import net.corda.core.flows.StartableByRPC
-import net.corda.core.flows.StateReplacementException
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
@@ -26,6 +24,8 @@ import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.unwrap
 import net.corda.finance.flows.TwoPartyDealFlow
+import net.corda.notary.flows.AbstractStateReplacementFlow
+import net.corda.notary.flows.StateReplacementException
 import net.corda.vega.analytics.BimmAnalysisUtils
 import net.corda.vega.analytics.InitialMarginTriple
 import net.corda.vega.analytics.IsdaConfiguration
@@ -320,7 +320,7 @@ object SimmFlow {
             logger.info("Handshake finished, awaiting Simm update")
             replyToSession.send(Ack) // Hack to state that this party is ready.
             subFlow(object : StateRevisionFlow.Receiver<PortfolioState.Update>(replyToSession) {
-                override fun verifyProposal(stx: SignedTransaction, proposal: Proposal<PortfolioState.Update>) {
+                override fun verifyProposal(stx: SignedTransaction, proposal: AbstractStateReplacementFlow.Proposal<PortfolioState.Update>) {
                     super.verifyProposal(stx, proposal)
                     if (proposal.modification.portfolio != portfolio.refs) throw StateReplacementException()
                 }
@@ -333,7 +333,7 @@ object SimmFlow {
             val valuer = serviceHub.identityService.wellKnownPartyFromAnonymous(stateRef.state.data.valuer) ?: throw IllegalStateException("Unknown valuer party ${stateRef.state.data.valuer}")
             val valuation = agreeValuation(portfolio, offer.valuationDate, valuer)
             subFlow(object : StateRevisionFlow.Receiver<PortfolioState.Update>(replyToSession) {
-                override fun verifyProposal(stx: SignedTransaction, proposal: Proposal<PortfolioState.Update>) {
+                override fun verifyProposal(stx: SignedTransaction, proposal: AbstractStateReplacementFlow.Proposal<PortfolioState.Update>) {
                     super.verifyProposal(stx, proposal)
                     if (proposal.modification.valuation != valuation) throw StateReplacementException()
                 }

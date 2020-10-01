@@ -2,7 +2,6 @@ package net.corda.coretests.flows
 
 import com.natpryce.hamkrest.and
 import com.natpryce.hamkrest.assertion.assertThat
-import net.corda.core.flows.FinalityFlow
 import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
@@ -14,6 +13,7 @@ import net.corda.finance.issuedBy
 import net.corda.testing.core.*
 import net.corda.coretesting.internal.matchers.flow.willReturn
 import net.corda.coretesting.internal.matchers.flow.willThrow
+import net.corda.notary.flows.FinalityFlow
 import net.corda.testing.node.internal.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After

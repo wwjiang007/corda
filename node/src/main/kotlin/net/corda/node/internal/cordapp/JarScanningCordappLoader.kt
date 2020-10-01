@@ -14,8 +14,6 @@ import net.corda.core.internal.*
 import net.corda.core.internal.cordapp.CordappImpl
 import net.corda.core.internal.cordapp.CordappImpl.Companion.UNKNOWN_INFO
 import net.corda.core.internal.cordapp.get
-import net.corda.core.internal.notary.NotaryService
-import net.corda.core.internal.notary.SinglePartyNotaryService
 import net.corda.core.node.services.CordaService
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.serialization.CheckpointCustomSerializer
@@ -26,6 +24,7 @@ import net.corda.core.utilities.contextLogger
 import net.corda.node.VersionInfo
 import net.corda.nodeapi.internal.cordapp.CordappLoader
 import net.corda.nodeapi.internal.coreContractClasses
+import net.corda.notary.internal.SinglePartyNotaryService
 import net.corda.serialization.internal.DefaultWhitelist
 import java.lang.reflect.Modifier
 import java.math.BigInteger

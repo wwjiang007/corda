@@ -7,9 +7,9 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatingFlow
 import net.corda.core.identity.CordaX500Name
-import net.corda.core.internal.IdempotentFlow
-import net.corda.core.internal.TimedFlow
 import net.corda.core.utilities.seconds
+import net.corda.flows.internal.IdempotentFlow
+import net.corda.flows.internal.TimedFlow
 import net.corda.node.services.config.FlowTimeoutConfiguration
 import net.corda.testing.node.internal.*
 import org.junit.After

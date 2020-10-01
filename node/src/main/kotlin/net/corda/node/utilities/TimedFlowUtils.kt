@@ -1,7 +1,7 @@
 package net.corda.node.utilities
 
 import net.corda.core.flows.FlowLogic
-import net.corda.core.internal.TimedFlow
+import net.corda.flows.internal.TimedFlow
 
 /**
  * Check if a flow logic is a [TimedFlow] and if yes whether it actually can be restarted. Only flows that match both criteria should time

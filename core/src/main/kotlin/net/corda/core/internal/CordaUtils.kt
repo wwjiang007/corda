@@ -5,7 +5,6 @@ import net.corda.core.DeleteForDJVM
 import net.corda.core.contracts.Attachment
 import net.corda.core.contracts.ContractClassName
 import net.corda.core.cordapp.CordappProvider
-import net.corda.core.flows.DataVendingFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.node.NetworkParameters
 import net.corda.core.node.ServicesForResolution
@@ -74,15 +73,10 @@ fun TransactionBuilder.toLedgerTransaction(services: ServicesForResolution, seri
     return toLedgerTransactionWithContext(services, serializationContext)
 }
 
-/** Checks if this flow is an idempotent flow. */
-fun Class<out FlowLogic<*>>.isIdempotentFlow(): Boolean {
-    return IdempotentFlow::class.java.isAssignableFrom(this)
-}
-
 /**
  * Ensures each log entry from the current thread will contain id of the transaction in the MDC.
  */
-internal fun SignedTransaction.pushToLoggingContext() {
+fun SignedTransaction.pushToLoggingContext() {
     MDC.put("tx_id", id.toString())
 }
 

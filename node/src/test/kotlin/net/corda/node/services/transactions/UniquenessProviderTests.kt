@@ -10,14 +10,13 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.SignableData
 import net.corda.core.crypto.SignatureMetadata
 import net.corda.core.crypto.sha256
-import net.corda.core.flows.NotarisationRequestSignature
 import net.corda.core.flows.NotaryError
 import net.corda.core.flows.StateConsumptionDetails
 import net.corda.core.identity.CordaX500Name
-import net.corda.core.internal.notary.UniquenessProvider
 import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.minutes
 import net.corda.coretesting.internal.configureTestSSL
+import net.corda.flows.NotarisationRequestSignature
 import net.corda.node.services.schema.NodeSchemaService
 import net.corda.nodeapi.internal.crypto.X509Utilities
 import net.corda.nodeapi.internal.persistence.CordaPersistence
@@ -26,6 +25,7 @@ import net.corda.notary.common.BatchSignature
 import net.corda.notary.experimental.raft.RaftConfig
 import net.corda.notary.experimental.raft.RaftNotarySchemaV1
 import net.corda.notary.experimental.raft.RaftUniquenessProvider
+import net.corda.notary.internal.UniquenessProvider
 import net.corda.notary.jpa.JPANotaryConfiguration
 import net.corda.notary.jpa.JPANotarySchemaV1
 import net.corda.notary.jpa.JPAUniquenessProvider

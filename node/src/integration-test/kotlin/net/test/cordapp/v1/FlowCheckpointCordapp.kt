@@ -9,6 +9,9 @@ import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
+import net.corda.flows.ReceiveTransactionFlow
+import net.corda.flows.SendTransactionFlow
+import net.corda.notary.flows.FinalityFlow
 import net.corda.testMessage.MESSAGE_CONTRACT_PROGRAM_ID
 import net.corda.testMessage.Message
 import net.corda.testMessage.MessageContract

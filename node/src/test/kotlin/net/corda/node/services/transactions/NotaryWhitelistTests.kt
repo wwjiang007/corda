@@ -3,10 +3,8 @@ package net.corda.node.services.transactions
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.*
-import net.corda.core.flows.NotaryChangeFlow
 import net.corda.core.flows.NotaryError
 import net.corda.core.flows.NotaryException
-import net.corda.core.flows.NotaryFlow
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.internal.NotaryChangeTransactionBuilder
@@ -17,6 +15,8 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.seconds
+import net.corda.notary.flows.NotaryChangeFlow
+import net.corda.notary.flows.NotaryFlow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.core.ALICE_NAME

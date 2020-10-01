@@ -7,6 +7,7 @@ import net.corda.core.identity.AbstractParty
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.ProgressTracker
+import net.corda.notary.flows.FinalityFlow
 import java.util.*
 
 /**

@@ -13,7 +13,11 @@ import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.getOrThrow
+import net.corda.flows.ReceiveTransactionFlow
+import net.corda.flows.SendTransactionFlow
 import net.corda.node.VersionInfo
+import net.corda.notary.flows.FinalityFlow
+import net.corda.notary.flows.ReceiveFinalityFlow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.internal.*
 import org.junit.After

@@ -1,11 +1,13 @@
-package net.corda.core.internal
+package net.corda.notary.internal
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.CordaInternal
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
-import net.corda.core.flows.WaitTimeUpdate
 import net.corda.core.utilities.UntrustworthyData
+import net.corda.core.utilities.unwrap
+import net.corda.flows.WaitTimeUpdate
+import net.corda.flows.internal.TimedFlow
 
 /**
  * Implementation of TimedFlow that can handle WaitTimeUpdate messages. Any flow talking to the notary should implement this and use
@@ -21,7 +23,7 @@ abstract class BackpressureAwareTimedFlow<ResultType> : FlowLogic<ResultType>(),
     inline fun <reified ReceiveType> receiveResultOrTiming(session: FlowSession): UntrustworthyData<ReceiveType> {
         while (true) {
             val wrappedResult = session.receive<Any>()
-            val unwrapped = wrappedResult.fromUntrustedWorld
+            val unwrapped = wrappedResult.unwrap { it }
             when (unwrapped) {
                 is WaitTimeUpdate -> {
                     applyWaitTimeUpdate(session, unwrapped)

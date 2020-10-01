@@ -7,9 +7,7 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.SignedData
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
-import net.corda.core.internal.notary.NotaryInternalException
-import net.corda.core.internal.notary.NotaryService
-import net.corda.core.internal.notary.verifySignature
+import net.corda.core.internal.NotaryService
 import net.corda.core.schemas.PersistentStateRef
 import net.corda.core.serialization.deserialize
 import net.corda.core.serialization.serialize
@@ -19,10 +17,16 @@ import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.debug
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.unwrap
+import net.corda.flows.NotarisationPayload
+import net.corda.flows.NotarisationRequest
+import net.corda.flows.NotarisationRequestSignature
+import net.corda.flows.NotarisationResponse
 import net.corda.node.services.api.ServiceHubInternal
 import net.corda.node.services.transactions.PersistentUniquenessProvider
 import net.corda.node.utilities.AppendOnlyPersistentMap
 import net.corda.nodeapi.internal.persistence.NODE_DATABASE_PREFIX
+import net.corda.notary.internal.NotaryInternalException
+import net.corda.notary.internal.verifySignature
 import java.security.PublicKey
 import javax.persistence.Column
 import javax.persistence.Entity

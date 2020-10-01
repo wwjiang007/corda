@@ -3,13 +3,11 @@ package com.r3.dbfailure.workflows
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.dbfailure.contracts.DbFailureContract
 import net.corda.core.contracts.UniqueIdentifier
-import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.flows.InitiatedBy
 import net.corda.core.flows.InitiatingFlow
-import net.corda.core.flows.ReceiveFinalityFlow
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.identity.Party
 import net.corda.core.node.services.Vault
@@ -17,6 +15,8 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
+import net.corda.notary.flows.FinalityFlow
+import net.corda.notary.flows.ReceiveFinalityFlow
 
 object SendStateFlow {
 

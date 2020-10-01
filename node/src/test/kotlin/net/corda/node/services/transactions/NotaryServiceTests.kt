@@ -5,7 +5,6 @@ import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.*
 import net.corda.core.flows.NotaryError
 import net.corda.core.flows.NotaryException
-import net.corda.core.flows.NotaryFlow
 import net.corda.core.identity.Party
 import net.corda.core.internal.NotaryChangeTransactionBuilder
 import net.corda.core.node.ServiceHub
@@ -13,6 +12,7 @@ import net.corda.core.serialization.serialize
 import net.corda.core.transactions.NotaryChangeWireTransaction
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.getOrThrow
+import net.corda.notary.flows.NotaryFlow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.DUMMY_NOTARY_NAME

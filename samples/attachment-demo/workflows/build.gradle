@@ -10,6 +10,7 @@ dependencies {
 
     // Corda integration dependencies
     cordaCompile project(':core')
+    cordaCompile project(':notary-api')
     cordapp project(':samples:attachment-demo:contracts')
 }
 

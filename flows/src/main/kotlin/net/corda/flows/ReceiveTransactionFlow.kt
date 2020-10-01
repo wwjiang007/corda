@@ -1,14 +1,17 @@
-package net.corda.core.flows
+package net.corda.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.*
-import net.corda.core.internal.ResolveTransactionsFlow
+import net.corda.core.flows.FlowException
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.FlowSession
 import net.corda.core.internal.checkParameterHash
 import net.corda.core.internal.pushToLoggingContext
 import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.trace
 import net.corda.core.utilities.unwrap
+import net.corda.flows.internal.ResolveTransactionsFlow
 import java.security.SignatureException
 
 /**

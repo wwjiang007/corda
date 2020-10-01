@@ -2,7 +2,6 @@ package net.corda.node.services
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.ContractState
-import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
@@ -13,6 +12,7 @@ import net.corda.core.utilities.getOrThrow
 import net.corda.finance.DOLLARS
 import net.corda.finance.contracts.asset.Cash
 import net.corda.finance.issuedBy
+import net.corda.notary.flows.FinalityFlow
 import net.corda.testing.node.internal.FINANCE_CONTRACTS_CORDAPP
 import net.corda.testing.node.internal.InternalMockNetwork
 import net.corda.testing.node.internal.startFlow

@@ -32,14 +32,21 @@ include 'confidential-identities'
 include 'finance:contracts'
 include 'finance:workflows'
 include 'isolated'
+include 'contract-api'
+project(":contract-api").projectDir = new File("$settingsDir/contract/api")
 include 'core'
 include 'core-tests'
+include 'flows'
 include 'docs'
 include 'node-api'
 include 'node-api-tests'
 include 'node'
 include 'node:capsule'
 include 'node:djvm'
+include 'notary-api'
+['notary-api'].each {
+    project(":$it").projectDir = new File("$settingsDir/notary/api")
+}
 include 'client:jackson'
 include 'client:jfx'
 include 'client:mock'

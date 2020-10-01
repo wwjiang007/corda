@@ -1,10 +1,13 @@
-package net.corda.core.internal
+package net.corda.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.DeleteForDJVM
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
+import net.corda.core.internal.PlatformVersionSwitches
+import net.corda.core.internal.ServiceHubCoreInternal
+import net.corda.core.internal.dependencies
 import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.ContractUpgradeWireTransaction
 import net.corda.core.transactions.SignedTransaction
@@ -57,7 +60,7 @@ class ResolveTransactionsFlow private constructor(
             fetchMissingNetworkParameters(initialTx)
         }
 
-        val resolver = (serviceHub as ServiceHubCoreInternal).createTransactionsResolver(this)
+        val resolver = (serviceHub as TransactionResolverProvider).createTransactionsResolver(this)
         resolver.downloadDependencies(batchMode)
 
         logger.trace { "ResolveTransactionsFlow: Sending END." }

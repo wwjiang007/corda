@@ -1,8 +1,8 @@
 package net.corda.node.utilities
 
 import net.corda.core.identity.PartyAndCertificate
+import net.corda.core.internal.NotaryService
 import net.corda.core.internal.cordapp.CordappImpl
-import net.corda.core.internal.notary.NotaryService
 import net.corda.core.utilities.contextLogger
 import net.corda.node.SerialFilter
 import net.corda.node.VersionInfo

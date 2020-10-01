@@ -9,6 +9,8 @@ import net.corda.core.internal.concurrent.transpose
 import net.corda.core.messaging.startFlow
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.getOrThrow
+import net.corda.flows.ReceiveTransactionFlow
+import net.corda.flows.SendTransactionFlow
 import net.corda.node.services.config.MB
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.contracts.DummyContract

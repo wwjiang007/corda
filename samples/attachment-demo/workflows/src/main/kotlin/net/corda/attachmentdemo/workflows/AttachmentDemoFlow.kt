@@ -10,6 +10,8 @@ import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
+import net.corda.notary.flows.FinalityFlow
+import net.corda.notary.flows.ReceiveFinalityFlow
 
 @InitiatingFlow
 @StartableByRPC

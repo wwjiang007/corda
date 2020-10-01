@@ -11,8 +11,6 @@ import net.corda.core.flows.InitiatedBy
 import net.corda.core.flows.InitiatingFlow
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
-import net.corda.core.internal.FetchAttachmentsFlow
-import net.corda.core.internal.FetchDataFlow
 import net.corda.core.internal.cordapp.CordappImpl.Companion.DEFAULT_CORDAPP_VERSION
 import net.corda.core.internal.hash
 import net.corda.node.services.persistence.NodeAttachmentService
@@ -23,6 +21,8 @@ import net.corda.testing.core.singleIdentity
 import net.corda.testing.internal.fakeAttachment
 import net.corda.coretesting.internal.matchers.flow.willReturn
 import net.corda.coretesting.internal.matchers.flow.willThrow
+import net.corda.flows.internal.FetchAttachmentsFlow
+import net.corda.flows.internal.FetchDataFlow
 import net.corda.testing.node.internal.InternalMockNetwork
 import net.corda.testing.node.internal.InternalMockNodeParameters
 import net.corda.testing.node.internal.TestStartedNode

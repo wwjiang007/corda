@@ -1,0 +1,59 @@
+import static org.gradle.api.JavaVersion.VERSION_1_8
+
+apply plugin: 'kotlin'
+apply plugin: 'kotlin-jpa'
+apply plugin: 'java-library'
+apply plugin: 'net.corda.plugins.quasar-utils'
+//apply plugin: 'net.corda.plugins.publish-utils'
+apply plugin: 'net.corda.plugins.api-scanner'
+//apply plugin: 'com.jfrog.artifactory'
+
+description 'Corda Notary flows and API'
+
+// required by DJVM and Avian JVM (for running inside the SGX enclave) which only supports Java 8.
+targetCompatibility = VERSION_1_8
+
+dependencies {
+
+    implementation project(":core")
+    implementation project(":flows")
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${junit_jupiter_version}"
+    testImplementation "junit:junit:$junit_version"
+    testRuntimeOnly "org.junit.vintage:junit-vintage-engine:${junit_vintage_version}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junit_jupiter_version}"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:${junit_platform_version}"
+
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+
+    // Hamkrest, for fluent, composable matchers
+    testCompile "com.natpryce:hamkrest:$hamkrest_version"
+
+    // SLF4J: commons-logging bindings for a SLF4J back end
+    compile "org.slf4j:jcl-over-slf4j:$slf4j_version"
+    compile "org.slf4j:slf4j-api:$slf4j_version"
+
+    // AssertJ: for fluent assertions for testing
+    testCompile "org.assertj:assertj-core:${assertj_version}"
+
+    // Guava: Google utilities library.
+    testCompile "com.google.guava:guava:$guava_version"
+
+    // required to use @Type annotation
+    compile "org.hibernate:hibernate-core:$hibernate_version"
+}
+
+jar {
+    archiveBaseName = 'corda-notary'
+    archiveClassifier = ''
+}
+
+test{
+    maxParallelForks = (System.env.CORDA_CORE_TESTING_FORKS == null) ? 1 :  "$System.env.CORDA_CORE_TESTING_FORKS".toInteger()
+}
+
+//publish {
+//    name jar.baseName
+//}

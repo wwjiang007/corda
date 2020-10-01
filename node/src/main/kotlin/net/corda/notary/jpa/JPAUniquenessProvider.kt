@@ -6,7 +6,6 @@ import net.corda.core.contracts.StateRef
 import net.corda.core.contracts.TimeWindow
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.sha256
-import net.corda.core.flows.NotarisationRequestSignature
 import net.corda.core.flows.NotaryError
 import net.corda.core.flows.StateConsumptionDetails
 import net.corda.core.identity.CordaX500Name
@@ -14,10 +13,6 @@ import net.corda.core.identity.Party
 import net.corda.core.internal.concurrent.OpenFuture
 import net.corda.core.internal.concurrent.openFuture
 import net.corda.notary.common.BatchSigningFunction
-import net.corda.core.internal.notary.NotaryInternalException
-import net.corda.core.internal.notary.UniquenessProvider
-import net.corda.core.internal.notary.isConsumedByTheSameTx
-import net.corda.core.internal.notary.validateTimeWindow
 import net.corda.core.schemas.PersistentStateRef
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.serialization.SerializationDefaults
@@ -25,9 +20,14 @@ import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.core.serialization.serialize
 import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.debug
+import net.corda.flows.NotarisationRequestSignature
 import net.corda.nodeapi.internal.persistence.CordaPersistence
 import net.corda.nodeapi.internal.persistence.NODE_DATABASE_PREFIX
 import net.corda.notary.common.InternalResult
+import net.corda.notary.internal.NotaryInternalException
+import net.corda.notary.internal.UniquenessProvider
+import net.corda.notary.internal.isConsumedByTheSameTx
+import net.corda.notary.internal.validateTimeWindow
 import net.corda.serialization.internal.CordaSerializationEncoding
 import org.hibernate.Session
 import java.sql.SQLException

@@ -3,12 +3,12 @@ package net.corda.testing.node
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
-import net.corda.core.flows.NotaryFlow
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
-import net.corda.core.internal.notary.NotaryService
+import net.corda.core.internal.NotaryService
 import net.corda.core.utilities.getOrThrow
 import net.corda.node.services.api.ServiceHubInternal
+import net.corda.notary.flows.NotaryFlow
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.singleIdentity

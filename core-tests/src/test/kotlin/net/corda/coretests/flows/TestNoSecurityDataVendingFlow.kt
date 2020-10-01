@@ -1,11 +1,11 @@
 package net.corda.coretests.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import net.corda.core.flows.DataVendingFlow
 import net.corda.core.flows.FlowSession
-import net.corda.core.internal.FetchDataFlow
 import net.corda.core.internal.RetrieveAnyTransactionPayload
 import net.corda.core.utilities.UntrustworthyData
+import net.corda.flows.DataVendingFlow
+import net.corda.flows.internal.FetchDataFlow
 
 // Flow to start data vending without sending transaction. For testing only.
 class TestNoSecurityDataVendingFlow(otherSideSession: FlowSession) : DataVendingFlow(otherSideSession, RetrieveAnyTransactionPayload) {

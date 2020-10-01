@@ -14,6 +14,8 @@ import net.corda.core.node.services.vault.SortAttribute
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.getOrThrow
 import net.corda.node.services.statemachine.StateMachineManager
+import net.corda.notary.flows.FinalityFlow
+import net.corda.notary.flows.ReceiveFinalityFlow
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME

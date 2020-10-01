@@ -5,14 +5,11 @@ import net.corda.core.flows.FlowException
 import net.corda.core.flows.HospitalizeFlowException
 import net.corda.core.flows.NotaryError
 import net.corda.core.flows.NotaryException
-import net.corda.core.flows.ReceiveFinalityFlow
-import net.corda.core.flows.ReceiveTransactionFlow
 import net.corda.core.flows.StateMachineRunId
 import net.corda.core.flows.UnexpectedFlowEndException
 import net.corda.core.identity.Party
 import net.corda.core.internal.DeclaredField
 import net.corda.core.internal.ThreadBox
-import net.corda.core.internal.TimedFlow
 import net.corda.core.internal.VisibleForTesting
 import net.corda.core.internal.bufferUntilSubscribed
 import net.corda.core.messaging.DataFeed
@@ -20,7 +17,9 @@ import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.debug
 import net.corda.core.utilities.minutes
 import net.corda.core.utilities.seconds
+import net.corda.flows.ReceiveTransactionFlow
 import net.corda.node.services.FinalityHandler
+import net.corda.notary.flows.ReceiveFinalityFlow
 import org.hibernate.exception.ConstraintViolationException
 import rx.subjects.PublishSubject
 import java.io.Closeable

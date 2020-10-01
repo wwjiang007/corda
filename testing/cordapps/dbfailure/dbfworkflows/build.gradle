@@ -4,6 +4,7 @@ apply plugin: 'kotlin'
 
 dependencies {
     compile project(":core")
+    compile project(":notary-api")
     compile project(":testing:cordapps:dbfailure:dbfcontracts")
 }
 

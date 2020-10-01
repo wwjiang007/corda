@@ -3,15 +3,16 @@ package net.corda.node.services.transactions
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.TimeWindow
 import net.corda.core.flows.FlowSession
-import net.corda.core.flows.NotarisationPayload
 import net.corda.core.flows.NotaryError
-import net.corda.core.internal.ResolveTransactionsFlow
-import net.corda.core.internal.notary.NotaryInternalException
-import net.corda.core.internal.notary.NotaryServiceFlow
-import net.corda.core.internal.notary.SinglePartyNotaryService
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionWithSignatures
 import net.corda.core.transactions.WireTransaction
+import net.corda.flows.NotarisationPayload
+import net.corda.flows.internal.ResolveTransactionsFlow
+import net.corda.notary.internal.NotaryInternalException
+import net.corda.notary.internal.NotaryServiceFlow
+import net.corda.notary.internal.NotaryServiceFlow.Companion.defaultEstimatedWaitTime
+import net.corda.notary.internal.SinglePartyNotaryService
 import java.time.Duration
 
 /**

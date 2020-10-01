@@ -284,7 +284,7 @@ abstract class FlowLogic<out T> {
     }
 
     @Suspendable
-    internal fun <R : Any> FlowSession.sendAndReceiveWithRetry(receiveType: Class<R>, payload: Any): UntrustworthyData<R> {
+    fun <R : Any> FlowSession.sendAndReceiveWithRetry(receiveType: Class<R>, payload: Any): UntrustworthyData<R> {
         val request = FlowIORequest.SendAndReceive(
                 sessionToMessage = stateMachine.serialize(mapOf(this to payload)),
                 shouldRetrySend = true
@@ -293,7 +293,7 @@ abstract class FlowLogic<out T> {
     }
 
     @Suspendable
-    internal inline fun <reified R : Any> FlowSession.sendAndReceiveWithRetry(payload: Any): UntrustworthyData<R> {
+    inline fun <reified R : Any> FlowSession.sendAndReceiveWithRetry(payload: Any): UntrustworthyData<R> {
         return sendAndReceiveWithRetry(R::class.java, payload)
     }
 

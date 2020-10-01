@@ -13,11 +13,11 @@ import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.internal.FlowIORequest
 import net.corda.core.internal.NetworkParametersStorage
+import net.corda.core.internal.NotaryService
 import net.corda.core.internal.PLATFORM_VERSION
 import net.corda.core.internal.VisibleForTesting
 import net.corda.core.internal.createDirectories
 import net.corda.core.internal.div
-import net.corda.core.internal.notary.NotaryService
 import net.corda.core.internal.uncheckedCast
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.messaging.MessageRecipients

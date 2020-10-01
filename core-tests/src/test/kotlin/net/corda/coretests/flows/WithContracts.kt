@@ -1,15 +1,15 @@
 package net.corda.coretests.flows
 
+import net.corda.contract.flows.ContractUpgradeFlow
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.PartyAndReference
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UpgradedContract
-import net.corda.core.flows.CollectSignaturesFlow
-import net.corda.core.flows.ContractUpgradeFlow
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.messaging.startFlow
 import net.corda.core.node.ServiceHub
 import net.corda.core.transactions.SignedTransaction
+import net.corda.flows.CollectSignaturesFlow
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.node.internal.TestStartedNode
 import kotlin.reflect.KClass

@@ -18,8 +18,6 @@ import net.corda.core.crypto.sha256
 import net.corda.core.flows.NotaryError
 import net.corda.core.flows.StateConsumptionDetails
 import net.corda.core.internal.VisibleForTesting
-import net.corda.core.internal.notary.isConsumedByTheSameTx
-import net.corda.core.internal.notary.validateTimeWindow
 import net.corda.core.serialization.SerializationDefaults
 import net.corda.core.serialization.deserialize
 import net.corda.core.serialization.internal.CheckpointSerializationDefaults
@@ -32,6 +30,8 @@ import net.corda.node.services.transactions.PersistentUniquenessProvider
 import net.corda.node.utilities.AppendOnlyPersistentMap
 import net.corda.nodeapi.internal.persistence.CordaPersistence
 import net.corda.nodeapi.internal.persistence.currentDBSession
+import net.corda.notary.internal.isConsumedByTheSameTx
+import net.corda.notary.internal.validateTimeWindow
 import net.corda.serialization.internal.CordaSerializationEncoding
 import java.time.Clock
 

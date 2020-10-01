@@ -1,4 +1,4 @@
-package net.corda.core.flows
+package net.corda.notary.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.ContractState
@@ -6,6 +6,10 @@ import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.TransactionSignature
 import net.corda.core.crypto.isFulfilledBy
+import net.corda.core.flows.FlowException
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.FlowSession
+import net.corda.core.flows.NotaryException
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.excludeHostNode
 import net.corda.core.identity.groupAbstractPartyByWellKnownParty
@@ -14,6 +18,8 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.UntrustworthyData
 import net.corda.core.utilities.unwrap
+import net.corda.flows.ReceiveTransactionFlow
+import net.corda.flows.SendTransactionFlow
 
 /**
  * Abstract flow to be used for replacing one state with another, for example when changing the notary of a state.
@@ -50,7 +56,7 @@ abstract class AbstractStateReplacementFlow {
     abstract class Instigator<out S : ContractState, out T : ContractState, out M>(
             val originalState: StateAndRef<S>,
             val modification: M,
-            override val progressTracker: ProgressTracker = Instigator.tracker()) : FlowLogic<StateAndRef<T>>() {
+            override val progressTracker: ProgressTracker = tracker()) : FlowLogic<StateAndRef<T>>() {
         companion object {
             object SIGNING : ProgressTracker.Step("Requesting signatures from other parties")
             object NOTARY : ProgressTracker.Step("Requesting notary signature")
@@ -128,8 +134,8 @@ abstract class AbstractStateReplacementFlow {
     // Type parameter should ideally be Unit but that prevents Java code from subclassing it (https://youtrack.jetbrains.com/issue/KT-15964).
     // We use Void? instead of Unit? as that's what you'd use in Java.
     abstract class Acceptor<in T>(val initiatingSession: FlowSession,
-                                  override val progressTracker: ProgressTracker = Acceptor.tracker()) : FlowLogic<Void?>() {
-        constructor(initiatingSession: FlowSession) : this(initiatingSession, Acceptor.tracker())
+                                  override val progressTracker: ProgressTracker = tracker()) : FlowLogic<Void?>() {
+        constructor(initiatingSession: FlowSession) : this(initiatingSession, tracker())
 
         companion object {
             object VERIFYING : ProgressTracker.Step("Verifying state replacement proposal")

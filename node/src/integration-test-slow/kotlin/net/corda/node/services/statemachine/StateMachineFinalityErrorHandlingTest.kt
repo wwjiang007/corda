@@ -1,14 +1,14 @@
 package net.corda.node.services.statemachine
 
-import net.corda.core.flows.ReceiveFinalityFlow
-import net.corda.core.internal.ResolveTransactionsFlow
 import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.OpaqueBytes
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.seconds
 import net.corda.finance.DOLLARS
 import net.corda.finance.flows.CashIssueAndPaymentFlow
+import net.corda.flows.internal.ResolveTransactionsFlow
 import net.corda.node.services.api.ServiceHubInternal
+import net.corda.notary.flows.ReceiveFinalityFlow
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.CHARLIE_NAME
 import net.corda.testing.core.DUMMY_NOTARY_NAME

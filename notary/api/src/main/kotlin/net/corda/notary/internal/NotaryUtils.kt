@@ -1,18 +1,18 @@
-package net.corda.core.internal.notary
+package net.corda.notary.internal
 
 import net.corda.core.contracts.StateRef
 import net.corda.core.contracts.TimeWindow
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.isFulfilledBy
-import net.corda.core.flows.NotarisationRequest
-import net.corda.core.flows.NotarisationRequestSignature
-import net.corda.core.flows.NotarisationResponse
-import net.corda.core.flows.NotaryError
-import net.corda.core.flows.StateConsumptionDetails
 import net.corda.core.identity.Party
 import net.corda.core.node.ServiceHub
 import net.corda.core.serialization.serialize
 import net.corda.core.utilities.toBase58String
+import net.corda.flows.NotarisationRequest
+import net.corda.flows.NotarisationRequestSignature
+import net.corda.flows.NotarisationResponse
+import net.corda.core.flows.NotaryError
+import net.corda.core.flows.StateConsumptionDetails
 import java.time.Instant
 
 /** Verifies the signature against this notarisation request. Checks that the signature is issued by the right party. */

@@ -1,4 +1,4 @@
-package net.corda.core.flows
+package net.corda.notary.flows
 
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
@@ -6,6 +6,7 @@ import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.SignableData
 import net.corda.core.crypto.SignatureMetadata
+import net.corda.core.flows.InitiatingFlow
 import net.corda.core.identity.Party
 import net.corda.core.internal.NotaryChangeTransactionBuilder
 import net.corda.core.transactions.SignedTransaction

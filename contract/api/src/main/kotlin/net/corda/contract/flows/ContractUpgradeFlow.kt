@@ -1,12 +1,17 @@
-package net.corda.core.flows
+package net.corda.contract.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.*
 import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.SignableData
 import net.corda.core.crypto.SignatureMetadata
+import net.corda.core.flows.FlowException
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.InitiatingFlow
+import net.corda.core.flows.StartableByRPC
 import net.corda.core.internal.ContractUpgradeUtils
 import net.corda.core.transactions.SignedTransaction
+import net.corda.notary.flows.AbstractStateReplacementFlow
 
 /**
  * A flow to be used for authorising and upgrading state objects of an old contract to a new contract.

@@ -3,18 +3,18 @@ package net.corda.node.services.transactions
 import net.corda.core.contracts.ComponentGroupEnum
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowSession
-import net.corda.core.flows.NotarisationPayload
 import net.corda.core.flows.NotaryError
 import net.corda.core.identity.Party
 import net.corda.core.internal.PlatformVersionSwitches
-import net.corda.core.internal.notary.NotaryInternalException
-import net.corda.core.internal.notary.NotaryServiceFlow
-import net.corda.core.internal.notary.SinglePartyNotaryService
 import net.corda.core.node.NetworkParameters
 import net.corda.core.transactions.ContractUpgradeFilteredTransaction
 import net.corda.core.transactions.CoreTransaction
 import net.corda.core.transactions.FilteredTransaction
 import net.corda.core.transactions.NotaryChangeWireTransaction
+import net.corda.flows.NotarisationPayload
+import net.corda.notary.internal.NotaryInternalException
+import net.corda.notary.internal.NotaryServiceFlow
+import net.corda.notary.internal.SinglePartyNotaryService
 import java.time.Duration
 
 /**

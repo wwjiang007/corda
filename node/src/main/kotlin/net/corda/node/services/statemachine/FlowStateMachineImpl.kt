@@ -28,10 +28,8 @@ import net.corda.core.identity.Party
 import net.corda.core.internal.DeclaredField
 import net.corda.core.internal.FlowIORequest
 import net.corda.core.internal.FlowStateMachine
-import net.corda.core.internal.IdempotentFlow
 import net.corda.core.internal.VisibleForTesting
 import net.corda.core.internal.concurrent.OpenFuture
-import net.corda.core.internal.isIdempotentFlow
 import net.corda.core.internal.isRegularFile
 import net.corda.core.internal.location
 import net.corda.core.internal.toPath
@@ -45,6 +43,8 @@ import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.Try
 import net.corda.core.utilities.debug
 import net.corda.core.utilities.trace
+import net.corda.flows.internal.IdempotentFlow
+import net.corda.flows.internal.utils.isIdempotentFlow
 import net.corda.node.internal.cordapp.CordappProviderImpl
 import net.corda.node.services.api.FlowAppAuditEvent
 import net.corda.node.services.api.FlowPermissionAuditEvent

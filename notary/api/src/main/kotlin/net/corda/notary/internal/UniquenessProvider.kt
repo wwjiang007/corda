@@ -1,13 +1,13 @@
-package net.corda.core.internal.notary
+package net.corda.notary.internal
 
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.StateRef
 import net.corda.core.contracts.TimeWindow
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.TransactionSignature
-import net.corda.core.flows.NotarisationRequestSignature
-import net.corda.core.flows.NotaryError
 import net.corda.core.identity.Party
+import net.corda.flows.NotarisationRequestSignature
+import net.corda.core.flows.NotaryError
 import java.time.Duration
 
 typealias SigningFunction = (SecureHash) -> TransactionSignature

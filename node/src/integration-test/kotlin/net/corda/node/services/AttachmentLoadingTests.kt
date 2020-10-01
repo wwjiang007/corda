@@ -13,6 +13,8 @@ import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.unwrap
+import net.corda.notary.flows.FinalityFlow
+import net.corda.notary.flows.ReceiveFinalityFlow
 import net.corda.testing.common.internal.checkNotOnClasspath
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME

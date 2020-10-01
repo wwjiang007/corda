@@ -6,6 +6,8 @@ import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.NonEmptySet
+import net.corda.notary.flows.FinalityFlow
+import net.corda.notary.flows.ReceiveFinalityFlow
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.core.dummyCommand
 import java.time.Instant

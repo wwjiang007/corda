@@ -10,7 +10,6 @@ import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.whenever
 import net.corda.core.contracts.PrivacySalt
 import net.corda.core.crypto.*
-import net.corda.core.internal.FetchDataFlow
 import net.corda.core.serialization.*
 import net.corda.core.serialization.internal.CheckpointSerializationContext
 import net.corda.core.serialization.internal.checkpointDeserialize
@@ -23,6 +22,7 @@ import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.TestIdentity
 import net.corda.testing.core.internal.CheckpointSerializationEnvironmentRule
 import net.corda.coretesting.internal.rigorousMock
+import net.corda.flows.internal.FetchDataFlow
 import org.apache.commons.lang3.SystemUtils
 import org.assertj.core.api.Assertions.*
 import org.junit.Assert.assertArrayEquals

@@ -2,14 +2,14 @@ package net.corda.notary.jpa
 
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowSession
-import net.corda.core.internal.notary.NotaryServiceFlow
-import net.corda.core.internal.notary.SinglePartyNotaryService
 import net.corda.core.utilities.seconds
 import net.corda.node.services.api.ServiceHubInternal
 import net.corda.node.services.transactions.NonValidatingNotaryFlow
 import net.corda.node.services.transactions.ValidatingNotaryFlow
 import net.corda.nodeapi.internal.config.parseAs
 import net.corda.notary.common.signBatch
+import net.corda.notary.internal.NotaryServiceFlow
+import net.corda.notary.internal.SinglePartyNotaryService
 import java.security.PublicKey
 
 /** Notary service backed by a relational database. */

@@ -1,4 +1,4 @@
-package net.corda.core.flows
+package net.corda.notary.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.CordaInternal
@@ -7,17 +7,25 @@ import net.corda.core.contracts.StateRef
 import net.corda.core.contracts.TimeWindow
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.TransactionSignature
+import net.corda.core.flows.FlowSession
+import net.corda.core.flows.InitiatingFlow
+import net.corda.core.flows.NotaryException
 import net.corda.core.identity.Party
-import net.corda.core.internal.BackpressureAwareTimedFlow
-import net.corda.core.internal.FetchDataFlow
 import net.corda.core.internal.NetworkParametersStorage
-import net.corda.core.internal.notary.generateSignature
-import net.corda.core.internal.notary.validateSignatures
 import net.corda.core.internal.pushToLoggingContext
 import net.corda.core.transactions.*
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.UntrustworthyData
 import net.corda.core.utilities.unwrap
+import net.corda.flows.DataVendingFlow
+import net.corda.flows.NotarisationPayload
+import net.corda.flows.NotarisationRequest
+import net.corda.flows.NotarisationRequestSignature
+import net.corda.flows.NotarisationResponse
+import net.corda.flows.internal.FetchDataFlow
+import net.corda.notary.internal.BackpressureAwareTimedFlow
+import net.corda.notary.internal.generateSignature
+import net.corda.notary.internal.validateSignatures
 import java.util.function.Predicate
 
 class NotaryFlow {

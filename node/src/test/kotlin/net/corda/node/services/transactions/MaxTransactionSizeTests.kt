@@ -8,6 +8,8 @@ import net.corda.core.internal.InputStreamAndHash
 import net.corda.core.node.services.AttachmentId
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.getOrThrow
+import net.corda.flows.ReceiveTransactionFlow
+import net.corda.flows.SendTransactionFlow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.contracts.DummyState

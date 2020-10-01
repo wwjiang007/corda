@@ -16,6 +16,8 @@ import net.corda.core.node.services.NetworkMapCacheBase
 import net.corda.core.node.services.TransactionStorage
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.contextLogger
+import net.corda.flows.internal.ResolveTransactionsFlow
+import net.corda.flows.internal.TransactionResolverProvider
 import net.corda.node.internal.InitiatedFlowFactory
 import net.corda.node.internal.cordapp.CordappProviderInternal
 import net.corda.node.services.DbTransactionsResolver
@@ -50,7 +52,7 @@ interface NetworkMapCacheInternal : NetworkMapCache, NetworkMapCacheBase {
     fun removeNode(node: NodeInfo)
 }
 
-interface ServiceHubInternal : ServiceHubCoreInternal {
+interface ServiceHubInternal : ServiceHubCoreInternal, TransactionResolverProvider {
     companion object {
         private val log = contextLogger()
 

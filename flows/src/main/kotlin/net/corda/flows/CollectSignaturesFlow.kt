@@ -1,9 +1,12 @@
-package net.corda.core.flows
+package net.corda.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.crypto.TransactionSignature
 import net.corda.core.crypto.isFulfilledBy
 import net.corda.core.crypto.toStringShort
+import net.corda.core.flows.FlowException
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.FlowSession
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
@@ -67,12 +70,12 @@ import java.security.PublicKey
 class CollectSignaturesFlow @JvmOverloads constructor(val partiallySignedTx: SignedTransaction,
                                                       val sessionsToCollectFrom: Collection<FlowSession>,
                                                       val myOptionalKeys: Iterable<PublicKey>?,
-                                                      override val progressTracker: ProgressTracker = CollectSignaturesFlow.tracker()) : FlowLogic<SignedTransaction>() {
+                                                      override val progressTracker: ProgressTracker = tracker()) : FlowLogic<SignedTransaction>() {
     @JvmOverloads
     constructor(
             partiallySignedTx: SignedTransaction,
             sessionsToCollectFrom: Collection<FlowSession>,
-            progressTracker: ProgressTracker = CollectSignaturesFlow.tracker()
+            progressTracker: ProgressTracker = tracker()
     ) : this(partiallySignedTx, sessionsToCollectFrom, null, progressTracker)
 
     companion object {
@@ -259,7 +262,7 @@ class CollectSignatureFlow(val partiallySignedTx: SignedTransaction, val session
  * @param otherSideSession The session which is providing you a transaction to sign.
  */
 abstract class SignTransactionFlow @JvmOverloads constructor(val otherSideSession: FlowSession,
-                                                             override val progressTracker: ProgressTracker = SignTransactionFlow.tracker()) : FlowLogic<SignedTransaction>() {
+                                                             override val progressTracker: ProgressTracker = tracker()) : FlowLogic<SignedTransaction>() {
 
     companion object {
         object RECEIVING : ProgressTracker.Step("Receiving transaction proposal for signing.")

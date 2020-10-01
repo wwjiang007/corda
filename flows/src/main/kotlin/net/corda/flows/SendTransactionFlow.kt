@@ -1,9 +1,11 @@
-package net.corda.core.flows
+package net.corda.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.NamedByHash
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.SecureHash
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.FlowSession
 import net.corda.core.internal.*
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.serialization.SerializedBytes
@@ -12,6 +14,7 @@ import net.corda.core.serialization.serialize
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.unwrap
 import net.corda.core.utilities.trace
+import net.corda.flows.internal.FetchDataFlow
 
 /**
  * In the words of Matt working code is more important then pretty code. This class that contains code that may
@@ -107,13 +110,14 @@ open class DataVendingFlow(val otherSideSession: FlowSession, val payload: Any) 
             is NotarisationPayload -> TransactionAuthorisationFilter().addAuthorised(getInputTransactions(payload.signedTransaction))
             is SignedTransaction -> TransactionAuthorisationFilter().addAuthorised(getInputTransactions(payload))
             is RetrieveAnyTransactionPayload -> TransactionAuthorisationFilter(acceptAll = true)
-            is List<*> -> TransactionAuthorisationFilter().addAuthorised(payload.flatMap { stateAndRef ->
-                if (stateAndRef is StateAndRef<*>) {
-                    getInputTransactions(serviceHub.validatedTransactions.getTransaction(stateAndRef.ref.txhash)!!) + stateAndRef.ref.txhash
-                } else {
-                    throw Exception("Unknown payload type: ${stateAndRef!!::class.java} ?")
-                }
-            }.toSet())
+            is List<*> -> TransactionAuthorisationFilter()
+                    .addAuthorised(payload.flatMap { stateAndRef ->
+                        if (stateAndRef is StateAndRef<*>) {
+                            getInputTransactions(serviceHub.validatedTransactions.getTransaction(stateAndRef.ref.txhash)!!) + stateAndRef.ref.txhash
+                        } else {
+                            throw Exception("Unknown payload type: ${stateAndRef!!::class.java} ?")
+                        }
+                    }.toSet())
             else -> throw Exception("Unknown payload type: ${payload::class.java} ?")
         }
 

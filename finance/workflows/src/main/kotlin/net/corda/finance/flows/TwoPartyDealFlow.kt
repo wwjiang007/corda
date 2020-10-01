@@ -17,6 +17,11 @@ import net.corda.core.utilities.seconds
 import net.corda.core.utilities.trace
 import net.corda.core.utilities.unwrap
 import net.corda.finance.contracts.DealState
+import net.corda.flows.CollectSignatureFlow
+import net.corda.flows.CollectSignaturesFlow
+import net.corda.flows.SignTransactionFlow
+import net.corda.notary.flows.FinalityFlow
+import net.corda.notary.flows.ReceiveFinalityFlow
 import java.security.PublicKey
 
 /**

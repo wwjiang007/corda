@@ -1,4 +1,4 @@
-package net.corda.core.internal
+package net.corda.flows.internal
 
 /**
  * A marker for a flow that will return the same result if replayed from the beginning. Any side effects the flow causes

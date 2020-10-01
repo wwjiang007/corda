@@ -5,7 +5,6 @@ import net.corda.client.rpc.CordaRPCClient
 import net.corda.core.contracts.Command
 import net.corda.core.contracts.StateAndContract
 import net.corda.core.contracts.StateAndRef
-import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.identity.Party
@@ -16,6 +15,7 @@ import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.getOrThrow
 import net.corda.node.services.Permissions
+import net.corda.notary.flows.FinalityFlow
 import net.corda.testMessage.MESSAGE_CONTRACT_PROGRAM_ID
 import net.corda.testMessage.Message
 import net.corda.testMessage.MessageContract

@@ -1,4 +1,4 @@
-package net.corda.core.internal.notary
+package net.corda.notary.internal
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.StateRef
@@ -10,11 +10,11 @@ import net.corda.core.crypto.SignatureMetadata
 import net.corda.core.crypto.TransactionSignature
 import net.corda.core.flows.FlowExternalAsyncOperation
 import net.corda.core.flows.FlowLogic
-import net.corda.core.flows.NotarisationRequestSignature
 import net.corda.core.identity.Party
-import net.corda.core.internal.notary.UniquenessProvider.Result
+import net.corda.core.internal.NotaryService
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.utilities.contextLogger
+import net.corda.flows.NotarisationRequestSignature
 import org.slf4j.Logger
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
@@ -39,7 +39,7 @@ abstract class SinglePartyNotaryService : NotaryService() {
             requestSignature: NotarisationRequestSignature,
             timeWindow: TimeWindow?,
             references: List<StateRef>
-    ): Result {
+    ): UniquenessProvider.Result {
         // TODO: Log the request here. Benchmarking shows that logging is expensive and we might get better performance
         // when we concurrently log requests here as part of the flows, instead of logging sequentially in the
         // `UniquenessProvider`.
@@ -59,7 +59,7 @@ abstract class SinglePartyNotaryService : NotaryService() {
                 )
         )
 
-        if (result is Result.Failure) {
+        if (result is UniquenessProvider.Result.Failure) {
             throw NotaryInternalException(result.error)
         }
 
@@ -86,9 +86,9 @@ abstract class SinglePartyNotaryService : NotaryService() {
             val requestSignature: NotarisationRequestSignature,
             val timeWindow: TimeWindow?,
             val references: List<StateRef>
-    ) : FlowExternalAsyncOperation<Result> {
+    ) : FlowExternalAsyncOperation<UniquenessProvider.Result> {
 
-        override fun execute(deduplicationId: String): CompletableFuture<Result> {
+        override fun execute(deduplicationId: String): CompletableFuture<UniquenessProvider.Result> {
             return service.uniquenessProvider.commit(inputs, txId, caller, requestSignature, timeWindow, references).toCompletableFuture()
         }
     }

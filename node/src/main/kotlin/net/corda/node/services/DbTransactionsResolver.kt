@@ -3,8 +3,6 @@ package net.corda.node.services
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowLogic
-import net.corda.core.internal.FetchTransactionsFlow
-import net.corda.core.internal.ResolveTransactionsFlow
 import net.corda.core.internal.TransactionsResolver
 import net.corda.core.internal.dependencies
 import net.corda.core.node.StatesToRecord
@@ -12,6 +10,8 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.debug
 import net.corda.core.utilities.trace
 import net.corda.core.utilities.seconds
+import net.corda.flows.internal.FetchTransactionsFlow
+import net.corda.flows.internal.ResolveTransactionsFlow
 import net.corda.node.services.api.WritableTransactionStorage
 import java.util.*
 

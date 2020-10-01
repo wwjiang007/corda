@@ -1,9 +1,14 @@
-package net.corda.core.flows
+package net.corda.notary.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.CordaInternal
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.isFulfilledBy
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.FlowSession
+import net.corda.core.flows.InitiatingFlow
+import net.corda.core.flows.NotaryException
+import net.corda.core.flows.UnexpectedFlowEndException
 import net.corda.core.identity.Party
 import net.corda.core.identity.groupAbstractPartyByWellKnownParty
 import net.corda.core.internal.pushToLoggingContext
@@ -12,8 +17,10 @@ import net.corda.core.node.StatesToRecord
 import net.corda.core.node.StatesToRecord.ONLY_RELEVANT
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
-import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.debug
+import net.corda.core.utilities.ProgressTracker
+import net.corda.flows.ReceiveTransactionFlow
+import net.corda.flows.SendTransactionFlow
 
 /**
  * Verifies the given transaction, then sends it to the named notary. If the notary agrees that the transaction

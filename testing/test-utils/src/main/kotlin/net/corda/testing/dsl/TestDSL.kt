@@ -9,7 +9,6 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowException
 import net.corda.core.identity.Party
 import net.corda.core.internal.*
-import net.corda.core.internal.notary.NotaryService
 import net.corda.core.node.ServiceHub
 import net.corda.core.node.ServicesForResolution
 import net.corda.core.node.services.AttachmentId
@@ -19,6 +18,8 @@ import net.corda.core.serialization.internal.AttachmentsClassLoaderCacheImpl
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.transactions.WireTransaction
+import net.corda.flows.internal.ResolveTransactionsFlow
+import net.corda.flows.internal.TransactionResolverProvider
 import net.corda.node.services.DbTransactionsResolver
 import net.corda.node.services.attachments.NodeAttachmentTrustCalculator
 import net.corda.node.services.persistence.AttachmentStorageInternal
@@ -89,15 +90,15 @@ data class TestTransactionDSLInterpreter private constructor(
     ) : this(ledgerInterpreter, transactionBuilder, HashMap())
 
     // Implementing [ServiceHubCoreInternal] allows better use in internal Corda tests
-    val services: ServicesForResolution = object : ServiceHubCoreInternal, ServiceHub by ledgerInterpreter.services {
+    val services: ServicesForResolution = object : ServiceHubCoreInternal, TransactionResolverProvider, ServiceHub by ledgerInterpreter.services {
 
         // [validatedTransactions.getTransaction] needs overriding as there are no calls to
         // [ServiceHub.recordTransactions] in the test dsl
         override val validatedTransactions: TransactionStorage =
-            object : TransactionStorage by ledgerInterpreter.services.validatedTransactions {
-                override fun getTransaction(id: SecureHash): SignedTransaction? =
-                    ledgerInterpreter.getTransaction(id)
-            }
+                object : TransactionStorage by ledgerInterpreter.services.validatedTransactions {
+                    override fun getTransaction(id: SecureHash): SignedTransaction? =
+                            ledgerInterpreter.getTransaction(id)
+                }
 
         override val externalOperationExecutor: ExecutorService = Executors.newFixedThreadPool(
             2,
@@ -130,8 +131,6 @@ data class TestTransactionDSLInterpreter private constructor(
 
         override val cordappProvider: CordappProvider =
             ledgerInterpreter.services.cordappProvider
-
-        override val notaryService: NotaryService? = null
 
         override val attachmentsClassLoaderCache: AttachmentsClassLoaderCache = AttachmentsClassLoaderCacheImpl(TestingNamedCacheFactory())
     }

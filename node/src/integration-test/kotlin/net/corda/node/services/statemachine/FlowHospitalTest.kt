@@ -4,7 +4,6 @@ import co.paralleluniverse.fibers.Suspendable
 import net.corda.client.rpc.CordaRPCClient
 import net.corda.core.contracts.PartyAndReference
 import net.corda.core.contracts.StateAndRef
-import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
@@ -12,7 +11,6 @@ import net.corda.core.flows.HospitalizeFlowException
 import net.corda.core.flows.InitiatedBy
 import net.corda.core.flows.InitiatingFlow
 import net.corda.core.flows.NotaryException
-import net.corda.core.flows.ReceiveFinalityFlow
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.identity.Party
 import net.corda.core.internal.concurrent.transpose
@@ -22,6 +20,8 @@ import net.corda.core.utilities.OpaqueBytes
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.seconds
 import net.corda.node.services.Permissions
+import net.corda.notary.flows.FinalityFlow
+import net.corda.notary.flows.ReceiveFinalityFlow
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.contracts.DummyContract.SingleOwnerState
 import net.corda.testing.core.ALICE_NAME

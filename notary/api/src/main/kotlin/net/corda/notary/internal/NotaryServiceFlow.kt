@@ -1,4 +1,4 @@
-package net.corda.core.internal.notary
+package net.corda.notary.internal
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.StateRef
@@ -7,11 +7,18 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.TransactionSignature
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
-import net.corda.core.internal.IdempotentFlow
 import net.corda.core.internal.PlatformVersionSwitches
 import net.corda.core.internal.checkParameterHash
 import net.corda.core.utilities.seconds
 import net.corda.core.utilities.unwrap
+import net.corda.flows.NotarisationPayload
+import net.corda.flows.NotarisationRequest
+import net.corda.flows.NotarisationRequestSignature
+import net.corda.flows.NotarisationResponse
+import net.corda.core.flows.NotaryError
+import net.corda.core.flows.NotaryException
+import net.corda.flows.WaitTimeUpdate
+import net.corda.flows.internal.IdempotentFlow
 import java.lang.IllegalStateException
 import java.time.Duration
 

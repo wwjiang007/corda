@@ -11,6 +11,9 @@ import net.corda.core.internal.warnOnce
 import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.ContractUpgradeWireTransaction
 import net.corda.core.transactions.SignedTransaction
+import net.corda.flows.ReceiveTransactionFlow
+import net.corda.notary.flows.AbstractStateReplacementFlow
+import net.corda.notary.flows.StateReplacementException
 
 class FinalityHandler(private val sender: FlowSession) : FlowLogic<Unit>() {
     @Suspendable

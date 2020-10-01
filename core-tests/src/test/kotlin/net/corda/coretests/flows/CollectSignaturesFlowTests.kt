@@ -5,15 +5,13 @@ import com.natpryce.hamkrest.assertion.assertThat
 import net.corda.core.contracts.Command
 import net.corda.core.contracts.StateAndContract
 import net.corda.core.contracts.requireThat
-import net.corda.core.flows.CollectSignaturesFlow
+import net.corda.flows.CollectSignaturesFlow
 import net.corda.core.flows.Destination
-import net.corda.core.flows.FinalityFlow
+import net.corda.notary.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.flows.InitiatedBy
 import net.corda.core.flows.InitiatingFlow
-import net.corda.core.flows.ReceiveFinalityFlow
-import net.corda.core.flows.SignTransactionFlow
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
@@ -33,6 +31,8 @@ import net.corda.testing.core.singleIdentity
 import net.corda.coretesting.internal.matchers.flow.willReturn
 import net.corda.coretesting.internal.matchers.flow.willThrow
 import net.corda.coretesting.internal.rigorousMock
+import net.corda.flows.SignTransactionFlow
+import net.corda.notary.flows.ReceiveFinalityFlow
 import net.corda.testing.node.MockServices
 import net.corda.testing.node.internal.DUMMY_CONTRACTS_CORDAPP
 import net.corda.testing.node.internal.InternalMockNetwork

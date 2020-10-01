@@ -21,7 +21,6 @@ import net.corda.core.internal.div
 import net.corda.core.internal.errors.AddressBindingException
 import net.corda.core.internal.getJavaUpdateVersion
 import net.corda.core.internal.isRegularFile
-import net.corda.core.internal.notary.NotaryService
 import net.corda.core.messaging.RPCOps
 import net.corda.core.node.NetworkParameters
 import net.corda.core.node.NodeInfo
@@ -73,6 +72,7 @@ import net.corda.node.utilities.DemoClock
 import net.corda.node.utilities.errorAndTerminate
 import net.corda.nodeapi.internal.ArtemisMessagingClient
 import net.corda.common.logging.errorReporting.NodeDatabaseErrors
+import net.corda.core.internal.NotaryService
 import net.corda.nodeapi.internal.ShutdownHook
 import net.corda.nodeapi.internal.addShutdownHook
 import net.corda.nodeapi.internal.bridging.BridgeControlListener

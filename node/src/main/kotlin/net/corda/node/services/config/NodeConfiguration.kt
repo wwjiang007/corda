@@ -6,8 +6,6 @@ import net.corda.common.configuration.parsing.internal.ConfigurationWithOptionsC
 import net.corda.common.validation.internal.Validated
 import net.corda.core.context.AuthServiceId
 import net.corda.core.identity.CordaX500Name
-import net.corda.core.internal.TimedFlow
-import net.corda.core.internal.notary.NotaryServiceFlow
 import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.node.services.config.rpc.NodeRpcOptions
 import net.corda.node.services.config.schema.v1.V1NodeConfigurationSpec
@@ -17,6 +15,7 @@ import net.corda.nodeapi.internal.config.User
 import net.corda.nodeapi.internal.persistence.DatabaseConfig
 import net.corda.notary.experimental.bftsmart.BFTSmartConfig
 import net.corda.notary.experimental.raft.RaftConfig
+import net.corda.notary.internal.NotaryServiceFlow
 import net.corda.tools.shell.SSHDConfiguration
 import java.net.URL
 import java.nio.file.Path

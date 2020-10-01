@@ -4,13 +4,13 @@ import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.StateRef
 import net.corda.core.flows.NotaryError
 import net.corda.core.flows.NotaryException
-import net.corda.core.flows.NotaryFlow
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.internal.concurrent.map
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.seconds
+import net.corda.notary.flows.NotaryFlow
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.core.DUMMY_BANK_A_NAME
 import net.corda.testing.core.dummyCommand

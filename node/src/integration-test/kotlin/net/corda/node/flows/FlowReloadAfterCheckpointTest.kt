@@ -10,8 +10,6 @@ import net.corda.core.flows.StartableByRPC
 import net.corda.core.flows.StateMachineRunId
 import net.corda.core.identity.Party
 import net.corda.core.internal.FlowIORequest
-import net.corda.core.internal.IdempotentFlow
-import net.corda.core.internal.TimedFlow
 import net.corda.core.internal.concurrent.transpose
 import net.corda.core.messaging.StateMachineTransactionMapping
 import net.corda.core.messaging.startFlow
@@ -21,6 +19,8 @@ import net.corda.core.utilities.seconds
 import net.corda.core.utilities.unwrap
 import net.corda.finance.DOLLARS
 import net.corda.finance.flows.CashIssueAndPaymentFlow
+import net.corda.flows.internal.IdempotentFlow
+import net.corda.flows.internal.TimedFlow
 import net.corda.node.services.config.NodeConfiguration
 import net.corda.node.services.statemachine.FlowStateMachineImpl
 import net.corda.node.services.statemachine.FlowTimeoutException

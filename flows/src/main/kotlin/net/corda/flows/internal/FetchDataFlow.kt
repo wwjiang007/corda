@@ -1,4 +1,4 @@
-package net.corda.core.internal
+package net.corda.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.Attachment
@@ -8,9 +8,13 @@ import net.corda.core.crypto.sha256
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
-import net.corda.core.flows.MaybeSerializedSignedTransaction
-import net.corda.core.internal.FetchDataFlow.DownloadedVsRequestedDataMismatch
-import net.corda.core.internal.FetchDataFlow.HashNotFound
+import net.corda.core.internal.AbstractAttachment
+import net.corda.core.internal.NetworkParametersStorage
+import net.corda.core.internal.P2P_UPLOADER
+import net.corda.core.internal.SignedDataWithCert
+import net.corda.core.internal.uncheckedCast
+import net.corda.flows.internal.FetchDataFlow.DownloadedVsRequestedDataMismatch
+import net.corda.flows.internal.FetchDataFlow.HashNotFound
 import net.corda.core.node.NetworkParameters
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.serialization.CordaSerializationTransformEnumDefault
@@ -24,6 +28,7 @@ import net.corda.core.utilities.UntrustworthyData
 import net.corda.core.utilities.debug
 import net.corda.core.utilities.unwrap
 import net.corda.core.utilities.trace
+import net.corda.flows.MaybeSerializedSignedTransaction
 import java.nio.file.FileAlreadyExistsException
 import java.util.*
 
@@ -171,7 +176,7 @@ sealed class FetchDataFlow<T : NamedByHash, in W : Any>(
             logger.trace { "validateFetchResponse(): Response size = ${response.size}, Request size = ${requests.size}" }
             if (response.size != requests.size) {
                 logger.trace { "maybeItems.unwrap: RespType Response.size (${requests.size}) != requests.size (${response.size})" }
-                throw FetchDataFlow.DownloadedVsRequestedSizeMismatch(requests.size, response.size)
+                throw DownloadedVsRequestedSizeMismatch(requests.size, response.size)
             }
 
             if (logger.isTraceEnabled()) {
