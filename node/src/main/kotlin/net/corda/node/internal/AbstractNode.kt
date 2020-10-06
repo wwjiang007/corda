@@ -21,6 +21,8 @@ import net.corda.core.flows.FlowLogicRefFactory
 import net.corda.core.flows.InitiatedBy
 import net.corda.core.flows.NotaryChangeFlow
 import net.corda.core.flows.NotaryFlow
+import net.corda.core.flows.SendGossipDataFlow
+import net.corda.core.flows.SendGossipDataResponderFlow
 import net.corda.core.flows.StateMachineRunId
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.CordaX500Name
@@ -962,6 +964,7 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
         flowManager.registerInitiatedCoreFlowFactory(NotaryChangeFlow::class, NotaryChangeHandler::class, ::NotaryChangeHandler)
         flowManager.registerInitiatedCoreFlowFactory(ContractUpgradeFlow.Initiate::class, NotaryChangeHandler::class, ::ContractUpgradeHandler)
         flowManager.registerInitiatedCoreFlowFactory(SwapIdentitiesFlow::class, SwapIdentitiesHandler::class, ::SwapIdentitiesHandler)
+        flowManager.registerInitiatedFlow(SendGossipDataFlow::class.java, SendGossipDataResponderFlow::class.java)
     }
 
     // Ideally we should be disabling the FinalityHandler if it's not needed, to prevent any party from submitting transactions to us without

@@ -3,6 +3,8 @@ package net.corda.node.internal.cordapp
 import net.corda.core.cordapp.Cordapp
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.ContractUpgradeFlow
+import net.corda.core.flows.SendGossipDataFlow
+import net.corda.core.flows.SendGossipDataResponderFlow
 import net.corda.core.internal.cordapp.CordappImpl
 import net.corda.core.internal.location
 import net.corda.node.VersionInfo
@@ -18,7 +20,8 @@ internal object VirtualCordapp {
     private val coreRpcFlows = listOf(
             ContractUpgradeFlow.Initiate::class.java,
             ContractUpgradeFlow.Authorise::class.java,
-            ContractUpgradeFlow.Deauthorise::class.java
+            ContractUpgradeFlow.Deauthorise::class.java,
+            SendGossipDataFlow::class.java
     )
 
     /** A Cordapp representing the core package which is not scanned automatically. */
