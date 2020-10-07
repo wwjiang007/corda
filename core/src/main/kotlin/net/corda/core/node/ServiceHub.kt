@@ -120,6 +120,8 @@ interface ServiceHub : ServicesForResolution {
     // NOTE: Any services exposed to flows (public view) need to implement [SerializeAsToken] or similar to avoid
     // their internal state from being serialized in checkpoints.
 
+    //val dataService: DataServiceInterface
+
     /**
      * The vault service lets you observe, soft lock and add notes to states that involve you or are relevant to your
      * node in some way. Additionally you may query and track states that correspond to various criteria.

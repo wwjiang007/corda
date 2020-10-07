@@ -2,6 +2,7 @@ package net.corda.core.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.identity.Party
+import net.corda.core.node.services.DataServiceInterface
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.utilities.unwrap
@@ -14,6 +15,7 @@ import javax.transaction.Transactional
 
 @InitiatingFlow
 @StartableByRPC
+@StartableByService
 class SendGossipDataFlow(
         private val participants: List<Party>,
         private val isInitiatorNode: Boolean? = true
@@ -79,16 +81,15 @@ class SendGossipDataResponderFlow(
             if(versionIds.isEmpty() || versionIds.first() < message.versionId){
                 this.persist(message)
                 logger.info(message.message)
-            } else {
-                //else we should somehow check if the other node somehow has newer version of the data and then start to distribute that,
-                // similarly to what happens in Cassandra
             }
+
             flush()
         }
 
         //we won't trigger the subflow if we don't have any participants left
         if(receivedMessage.participants.isNotEmpty()) {
-            subFlow(SendGossipDataFlow(receivedMessage.participants, false))
+            DataServiceInterface.gossip(receivedMessage.participants, false)
+            //subFlow(SendGossipDataFlow(receivedMessage.participants, false))
         }
     }
 }

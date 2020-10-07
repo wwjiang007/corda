@@ -41,6 +41,7 @@ import net.corda.nodeapi.internal.persistence.contextTransaction
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.TestIdentity
 import net.corda.coretesting.internal.DEV_ROOT_CA
+import net.corda.node.services.DataService
 import net.corda.testing.internal.MockCordappProvider
 import net.corda.testing.internal.TestingNamedCacheFactory
 import net.corda.testing.internal.configureDatabase
@@ -250,6 +251,8 @@ open class MockServices private constructor(
                 override fun withEntityManager(block: Consumer<EntityManager>) {
                     return block.accept(contextTransaction.entityManager)
                 }
+
+                override val dataService: DataServiceInterface = MockDataService()
             }
         }
 
@@ -424,6 +427,7 @@ open class MockServices private constructor(
         get() = networkParametersService.run { lookup(currentHash)!! }
 
     final override val attachments = MockAttachmentStorage()
+    override val dataService: DataServiceInterface get() = MockDataService()
     override val vaultService: VaultService get() = throw UnsupportedOperationException()
     override val contractUpgradeService: ContractUpgradeService get() = throw UnsupportedOperationException()
     override val networkMapCache: NetworkMapCache get() = throw UnsupportedOperationException()

@@ -91,6 +91,198 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar', nodeTask, 
                 h2Settings: [address: "localhost:10018"]
         ]
     }
+    node {
+        name "O=BankOfCorda2,L=London,C=GB"
+        p2pPort 10031
+        rpcSettings {
+            address "localhost:10032"
+            adminAddress "localhost:10033"
+        }
+        webPort 10034
+        rpcUsers = [[user: "bankUser", password: "test", permissions: ["ALL"]]]
+        extraConfig = [
+                h2Settings: [address: "localhost:10035"]
+        ]
+        cordapp(project(':finance:workflows')) {
+            config "issuableCurrencies = [ USD ]"
+        }
+    }
+    node {
+        name "O=BankOfCorda3,L=London,C=GB"
+        p2pPort 10036
+        rpcSettings {
+            address "localhost:10037"
+            adminAddress "localhost:10038"
+        }
+        webPort 10039
+        rpcUsers = [[user: "bankUser", password: "test", permissions: ["ALL"]]]
+        extraConfig = [
+                h2Settings: [address: "localhost:10040"]
+        ]
+        cordapp(project(':finance:workflows')) {
+            config "issuableCurrencies = [ USD ]"
+        }
+    }
+    node {
+        name "O=BankOfCorda4,L=London,C=GB"
+        p2pPort 10041
+        rpcSettings {
+            address "localhost:10042"
+            adminAddress "localhost:10043"
+        }
+        webPort 10044
+        rpcUsers = [[user: "bankUser", password: "test", permissions: ["ALL"]]]
+        extraConfig = [
+                h2Settings: [address: "localhost:10045"]
+        ]
+        cordapp(project(':finance:workflows')) {
+            config "issuableCurrencies = [ USD ]"
+        }
+    }
+    node {
+        name "O=BankOfCorda5,L=London,C=GB"
+        p2pPort 10046
+        rpcSettings {
+            address "localhost:10047"
+            adminAddress "localhost:10048"
+        }
+        webPort 10049
+        rpcUsers = [[user: "bankUser", password: "test", permissions: ["ALL"]]]
+        extraConfig = [
+                h2Settings: [address: "localhost:10050"]
+        ]
+        cordapp(project(':finance:workflows')) {
+            config "issuableCurrencies = [ USD ]"
+        }
+    }
+    node {
+        name "O=BankOfCorda6,L=London,C=GB"
+        p2pPort 10051
+        rpcSettings {
+            address "localhost:10052"
+            adminAddress "localhost:10053"
+        }
+        webPort 10054
+        rpcUsers = [[user: "bankUser", password: "test", permissions: ["ALL"]]]
+        extraConfig = [
+                h2Settings: [address: "localhost:10055"]
+        ]
+        cordapp(project(':finance:workflows')) {
+            config "issuableCurrencies = [ USD ]"
+        }
+    }
+    node {
+        name "O=BankOfCorda7,L=London,C=GB"
+        p2pPort 10056
+        rpcSettings {
+            address "localhost:10057"
+            adminAddress "localhost:10058"
+        }
+        webPort 10059
+        rpcUsers = [[user: "bankUser", password: "test", permissions: ["ALL"]]]
+        extraConfig = [
+                h2Settings: [address: "localhost:10060"]
+        ]
+        cordapp(project(':finance:workflows')) {
+            config "issuableCurrencies = [ USD ]"
+        }
+    }
+    node {
+        name "O=BankOfCorda8,L=London,C=GB"
+        p2pPort 10061
+        rpcSettings {
+            address "localhost:10062"
+            adminAddress "localhost:10063"
+        }
+        webPort 10064
+        rpcUsers = [[user: "bankUser", password: "test", permissions: ["ALL"]]]
+        extraConfig = [
+                h2Settings: [address: "localhost:10065"]
+        ]
+        cordapp(project(':finance:workflows')) {
+            config "issuableCurrencies = [ USD ]"
+        }
+    }
+    node {
+        name "O=BankOfCorda9,L=London,C=GB"
+        p2pPort 10066
+        rpcSettings {
+            address "localhost:10067"
+            adminAddress "localhost:10068"
+        }
+        webPort 10069
+        rpcUsers = [[user: "bankUser", password: "test", permissions: ["ALL"]]]
+        extraConfig = [
+                h2Settings: [address: "localhost:10070"]
+        ]
+        cordapp(project(':finance:workflows')) {
+            config "issuableCurrencies = [ USD ]"
+        }
+    }
+    node {
+        name "O=BankOfCorda10,L=London,C=GB"
+        p2pPort 10071
+        rpcSettings {
+            address "localhost:10072"
+            adminAddress "localhost:10073"
+        }
+        webPort 10074
+        rpcUsers = [[user: "bankUser", password: "test", permissions: ["ALL"]]]
+        extraConfig = [
+                h2Settings: [address: "localhost:10075"]
+        ]
+        cordapp(project(':finance:workflows')) {
+            config "issuableCurrencies = [ USD ]"
+        }
+    }
+    node {
+        name "O=BankOfCorda11,L=London,C=GB"
+        p2pPort 10076
+        rpcSettings {
+            address "localhost:10077"
+            adminAddress "localhost:10078"
+        }
+        webPort 10079
+        rpcUsers = [[user: "bankUser", password: "test", permissions: ["ALL"]]]
+        extraConfig = [
+                h2Settings: [address: "localhost:10080"]
+        ]
+        cordapp(project(':finance:workflows')) {
+            config "issuableCurrencies = [ USD ]"
+        }
+    }
+    node {
+        name "O=BankOfCorda12,L=London,C=GB"
+        p2pPort 10081
+        rpcSettings {
+            address "localhost:10082"
+            adminAddress "localhost:10083"
+        }
+        webPort 10084
+        rpcUsers = [[user: "bankUser", password: "test", permissions: ["ALL"]]]
+        extraConfig = [
+                h2Settings: [address: "localhost:10085"]
+        ]
+        cordapp(project(':finance:workflows')) {
+            config "issuableCurrencies = [ USD ]"
+        }
+    }
+    node {
+        name "O=BankOfCorda13,L=London,C=GB"
+        p2pPort 10086
+        rpcSettings {
+            address "localhost:10087"
+            adminAddress "localhost:10088"
+        }
+        webPort 10089
+        rpcUsers = [[user: "bankUser", password: "test", permissions: ["ALL"]]]
+        extraConfig = [
+                h2Settings: [address: "localhost:10090"]
+        ]
+        cordapp(project(':finance:workflows')) {
+            config "issuableCurrencies = [ USD ]"
+        }
+    }
 }
 
 idea {

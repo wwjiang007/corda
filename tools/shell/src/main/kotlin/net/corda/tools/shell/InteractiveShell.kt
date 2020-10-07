@@ -173,6 +173,11 @@ object InteractiveShell {
                 "Commands to extract information about checkpoints stored within the node",
                 CheckpointShellCommand::class.java
         )
+        ExternalResolver.INSTANCE.addCommand(
+                "send",
+                "Commands to send data across nodes via gossip",
+                GossipShellCommand::class.java
+        )
 
         val shellSafety = ShellSafety().apply {
             setSafeShell(runShellInSafeMode)
