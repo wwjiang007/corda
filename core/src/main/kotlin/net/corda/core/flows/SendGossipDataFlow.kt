@@ -2,6 +2,7 @@ package net.corda.core.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.identity.Party
+import net.corda.core.node.services.DataService
 import net.corda.core.node.services.DataServiceInterface
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.serialization.CordaSerializable
@@ -18,7 +19,7 @@ import javax.transaction.Transactional
 @StartableByService
 class SendGossipDataFlow(
         private val participants: List<Party>,
-        private val isInitiatorNode: Boolean? = true
+        private val isInitiatorNode: Boolean = false
 ) : FlowLogic<Unit>(){
 
     @Suspendable
@@ -30,7 +31,7 @@ class SendGossipDataFlow(
 
         //if it is the initiator node we need to persist the message into its db
         //later on it is going to be false to avoid duplicated entries in the db
-        if(isInitiatorNode == true) {
+        if(isInitiatorNode) {
             serviceHub.withEntityManager {
                 this.persist(message)
                 flush()
@@ -88,8 +89,8 @@ class SendGossipDataResponderFlow(
 
         //we won't trigger the subflow if we don't have any participants left
         if(receivedMessage.participants.isNotEmpty()) {
-            DataServiceInterface.gossip(receivedMessage.participants, false)
-            //subFlow(SendGossipDataFlow(receivedMessage.participants, false))
+            val dataService = serviceHub.cordaService(DataService::class.java)
+            dataService.gossip(receivedMessage.participants, false)
         }
     }
 }

@@ -174,7 +174,7 @@ object InteractiveShell {
                 CheckpointShellCommand::class.java
         )
         ExternalResolver.INSTANCE.addCommand(
-                "send",
+                "gossip",
                 "Commands to send data across nodes via gossip",
                 GossipShellCommand::class.java
         )

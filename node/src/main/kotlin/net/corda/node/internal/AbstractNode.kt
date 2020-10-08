@@ -53,6 +53,7 @@ import net.corda.core.node.ServiceHub
 import net.corda.core.node.ServicesForResolution
 import net.corda.core.node.services.ContractUpgradeService
 import net.corda.core.node.services.CordaService
+import net.corda.core.node.services.DataService
 import net.corda.core.node.services.IdentityService
 import net.corda.core.node.services.KeyManagementService
 import net.corda.core.node.services.TransactionVerifierService
@@ -418,7 +419,7 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
 
         val attachmentTrustInfoRPCOps = Pair(AttachmentTrustInfoRPCOps::class.java, AttachmentTrustInfoRPCOpsImpl(services.attachmentTrustCalculator))
 
-        val gossipRPCOps = Pair(GossipRPCOps::class.java, GossipRPCOpsImpl())
+        val gossipRPCOps = Pair(GossipRPCOps::class.java, GossipRPCOpsImpl(services, cordaRPCOpsImpl.second))
 
         return listOf(cordaRPCOpsImpl, checkpointRPCOpsImpl, attachmentTrustInfoRPCOps, gossipRPCOps).map { rpcOpsImplPair ->
             // Mind that order of proxies is important
@@ -541,7 +542,8 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
         }
         nodeLifecycleEventsDistributor.distributeEvent(NodeLifecycleEvent.BeforeNodeStart(nodeServicesContext))
         log.info("Node starting up ...")
-
+        installCordaService(DataService::class.java)
+        log.info("Registered DataService :P")
         val trustRoot = initKeyStores()
         initialiseJolokia()
 
