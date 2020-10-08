@@ -30,12 +30,14 @@ class DataService(private val appServiceHub: AppServiceHub) : SingletonSerialize
     }
 }
 
-class DataObserver() : ServiceLifecycleObserver {
+class DataObserver : ServiceLifecycleObserver {
+    companion object {
+        val log = contextLogger()
+    }
+
     override fun onServiceLifecycleEvent(event: ServiceLifecycleEvent) {
         when (event) {
-            ServiceLifecycleEvent.STATE_MACHINE_STARTED -> {
-
-            }
+            ServiceLifecycleEvent.STATE_MACHINE_STARTED -> log.info("STATE_MACHINE_STARTED received")
         }
     }
 }
