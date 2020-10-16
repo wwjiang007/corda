@@ -1,7 +1,7 @@
 plugins {
     id 'net.corda.plugins.quasar-utils'
+    id 'org.jetbrains.kotlin.jvm'
 }
-apply plugin: 'kotlin'
 
 description 'NodeAPI tests that require node etc'
 

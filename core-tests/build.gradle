@@ -1,8 +1,8 @@
 plugins {
     id 'net.corda.plugins.quasar-utils'
+    id 'org.jetbrains.kotlin.jvm'
+    id 'org.jetbrains.kotlin.plugin.jpa'
 }
-apply plugin: 'kotlin'
-apply plugin: 'kotlin-jpa'
 
 description 'Corda core tests'
 
