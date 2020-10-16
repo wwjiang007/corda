@@ -70,7 +70,8 @@ dependencies {
     testImplementation "org.assertj:assertj-core:${assertj_version}"
 
     // Guava: Google utilities library.
-    testImplementation "com.google.guava:guava:$guava_version"
+    //test for osgi conflicts
+    implementation "com.google.guava:guava:$guava_version"
 
     // For caches rather than guava
     implementation "com.github.ben-manes.caffeine:caffeine:$caffeine_version"
@@ -105,11 +106,15 @@ dependencies {
     //bundle for javax.xml.stream
     implementation group: 'org.apache.servicemix.specs', name: 'org.apache.servicemix.specs.stax-api-1.0', version: '1.9.0'
 
+    implementation group: 'org.osgi', name: 'org.osgi.service.log', version: '1.4.0'
+
 
     // Compile corda-core as an OSGi bundle
     compileOnly "org.osgi:osgi.annotation:$osgi_version"
+    implementation group: 'org.osgi', name: 'org.osgi.service.component.annotations', version: '1.4.0'
     compileOnly "org.osgi:osgi.core:$osgi_version"
     testImplementation "org.ow2.asm:asm:$asm_version"
+    implementation group: 'org.osgi', name: 'org.osgi.service.log', version: '1.4.0'
 
     // JDK11: required by Quasar at run-time
     testRuntimeOnly "com.esotericsoftware:kryo:$kryo_version"
