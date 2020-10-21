@@ -117,12 +117,82 @@ class ConcatenatingJarInputStream(private val inputsStreams: Iterator<NamedInput
     }
 }
 
+class NestedJarInputStream(inputStream: InputStream, name: String) : PipedInputStream(64 * 1024) {
+    private val outputStream = PipedOutputStream()
+    private val entries = HashSet<String>()
+
+    init {
+        connect(outputStream)
+        thread(name = "$this-Thread", isDaemon = true) {
+            var jarOutputStream: JarOutputStream? = null
+            try {
+                jarOutputStream = copyInputStream(jarOutputStream, NamedInputStream(inputStream, name))
+                jarOutputStream?.close()
+            } catch (t: Throwable) {
+                t.printStackTrace()
+            } finally {
+                inputStream.close()
+                outputStream.close()
+            }
+        }
+    }
+
+    private fun copyInputStream(jarOutputStream: JarOutputStream?, inputStream: NamedInputStream): JarOutputStream? {
+        var jarOutputStream1 = jarOutputStream
+        println("Processing input stream ${inputStream.name}")
+        val jarInputStream = JarInputStream(inputStream)
+        if (jarOutputStream1 == null) {
+            val manifest = jarInputStream.manifest
+            if (manifest == null) {
+                println("No manifest")
+                jarOutputStream1 = JarOutputStream(outputStream)
+            } else {
+                println("Manifest $manifest")
+                jarOutputStream1 = JarOutputStream(outputStream, manifest)
+            }
+        }
+        copyJar(jarOutputStream1, jarInputStream, inputStream.name)
+        return jarOutputStream1
+    }
+
+    private fun copyJar(jarOutputStream: JarOutputStream, jarInputStream: JarInputStream, jarName: String) {
+        var jarEntry = jarInputStream.nextJarEntry
+        while (jarEntry != null) {
+            if (jarEntry.name.endsWith(".jar")) {
+                copyInputStream(jarOutputStream, NamedInputStream(jarInputStream, "$jarName -> ${jarEntry.name}"))
+            } else if (entries.add(jarEntry.name)) {
+                if (!skipOrSubstitute(jarOutputStream, jarEntry, jarName)) {
+                    val size = jarEntry.size
+                    copyEntry(jarOutputStream, jarEntry, jarInputStream, jarName, size)
+                }
+            } else if (!jarEntry.isDirectory) {
+                println("Skipping duplicate entry ${jarEntry.name} in $jarName")
+            }
+            jarInputStream.closeEntry()
+            jarEntry = jarInputStream.nextJarEntry
+        }
+        jarOutputStream.flush()
+    }
+
+    protected fun skipOrSubstitute(jarOutputStream: JarOutputStream, jarEntry: JarEntry, jarName: String): Boolean {
+        return false
+    }
+
+    private fun copyEntry(jarOutputStream: JarOutputStream, jarEntry: JarEntry, jarInputStream: JarInputStream, jarName: String, size: Long) {
+        println("Copy entry ${jarEntry.name} from $jarName of size $size")
+        jarOutputStream.putNextEntry(jarEntry)
+        jarInputStream.copyTo(jarOutputStream)
+        jarOutputStream.closeEntry()
+    }
+}
+
 fun main(args: Array<String>) {
     //val inputsList = args.toMutableList().drop(1)
     val outputFilename = args[0]
     println("Output $outputFilename")
     //val inputStreams = inputsList.map { NamedInputStream(FileInputStream(it), it) }.iterator()
-    val inputStreams = JarOfJarsIterator(FileInputStream(args[1]))
-    val inputStream = ConcatenatingJarInputStream(inputStreams)
+    //val inputStreams = JarOfJarsIterator(FileInputStream(args[1]))
+    //val inputStream = ConcatenatingJarInputStream(inputStreams)
+    val inputStream = NestedJarInputStream(FileInputStream(args[1]), args[1])
     inputStream.copyTo(Paths.get(outputFilename), StandardCopyOption.REPLACE_EXISTING)
 }
