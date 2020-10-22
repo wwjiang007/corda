@@ -25,9 +25,9 @@ class Bongo @Activate constructor(
         val items: Map<*, *> = ImmutableMap.of("coin", 3, "glass", 4, "pencil", 1)
         val fruits: List<String> = Lists.newArrayList("orange", "banana", "kiwi",
                 "mandarin", "date", "quince")
+        logger.info("Triggered some Guava code: {}", this::class.java)
 
         System.err.println("-------------- Activated Bongo!")
-        throw InternalError("BOOM!")
     }
 }
 
