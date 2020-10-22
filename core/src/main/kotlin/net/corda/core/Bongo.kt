@@ -7,7 +7,6 @@ import org.osgi.service.component.annotations.Component
 import org.osgi.service.component.annotations.Reference
 import org.osgi.service.log.Logger
 import org.osgi.service.log.LoggerFactory
-import java.util.function.Consumer
 
 @Component(immediate = true)
 class Bongo @Activate constructor(
@@ -16,7 +15,7 @@ class Bongo @Activate constructor(
 ) {
     init {
         System.err.println("-------------- Initialising Bongo!")
-        logger.info("Started {}", this::class.java)
+        logger.error("Initialising Bongo {}", this::class.java)
     }
 
     @Activate
@@ -27,7 +26,7 @@ class Bongo @Activate constructor(
                 "mandarin", "date", "quince")
 
         System.err.println("-------------- Activated Bongo!")
-        throw InternalError("BOOM!")
+        logger.error("Activated Bongo {}", this::class.java)
     }
 }
 
