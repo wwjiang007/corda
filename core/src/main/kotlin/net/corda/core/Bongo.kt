@@ -26,7 +26,7 @@ class Bongo @Activate constructor(
         val fruits: List<String> = Lists.newArrayList("orange", "banana", "kiwi",
                 "mandarin", "date", "quince")
 
-        logger.error("Activated Bongo {}", this::class.java)
+        logger.error("============ Activated Bongo {}", this::class.java)
     }
 }
 
