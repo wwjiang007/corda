@@ -1,5 +1,7 @@
 package net.corda.core.internal
 
+import net.corda.core.utilities.debug
+import net.corda.core.utilities.loggerFor
 import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
@@ -189,6 +191,7 @@ class NestedJarInputStream(inputStream: InputStream, name: String) : PipedInputS
 */
 
 open class SingleThreadPipedInputStream(bufferSize: Int) : InputStream() {
+    protected open val logger = loggerFor<SingleThreadPipedInputStream>()
     private var buffer = ByteArray(bufferSize)
     private var pos = 0
     private var limit = 0
@@ -215,12 +218,12 @@ open class SingleThreadPipedInputStream(bufferSize: Int) : InputStream() {
                 if (pos == 0) {
                     if (limit == 0) throw IOException("Input stream closed")
                     val newBuffer = ByteArray(limit * 2)
-                    println("Resize to ${newBuffer.size}")
+                    logger.debug { "Resize to ${newBuffer.size}" }
                     System.arraycopy(buffer, 0, newBuffer, 0, limit)
                     buffer = newBuffer
                 } else {
                     val remaining = limit - pos
-                    println("Shuffle $remaining")
+                    logger.debug { "Shuffle $remaining" }
                     System.arraycopy(buffer, pos, buffer, 0, remaining)
                     limit = remaining
                     pos = 0
@@ -232,6 +235,7 @@ open class SingleThreadPipedInputStream(bufferSize: Int) : InputStream() {
 }
 
 class NestedJarInputStream(inputStream: InputStream, name: String) : SingleThreadPipedInputStream(64 * 1024) {
+    override val logger = loggerFor<NestedJarInputStream>()
     private var jarOutputStream: JarOutputStream? = null
     private val inputStreams = Stack<Pair<String, JarInputStream>>()
     private val entries = HashSet<String>()
@@ -254,16 +258,16 @@ class NestedJarInputStream(inputStream: InputStream, name: String) : SingleThrea
 
     private fun pushInputStream(inputStream: InputStream, name: String) {
         var jarOutputStream1 = jarOutputStream
-        println("Processing input stream $name")
+        logger.debug { "Processing input stream $name" }
         val jarInputStream = JarInputStream(inputStream)
         inputStreams.push(name to jarInputStream)
         if (jarOutputStream1 == null) {
             val manifest = jarInputStream.manifest
             if (manifest == null) {
-                println("No manifest")
+                logger.debug { "No manifest" }
                 jarOutputStream1 = JarOutputStream(outputStream)
             } else {
-                println("Manifest $manifest")
+                logger.debug { "Manifest $manifest" }
                 jarOutputStream1 = JarOutputStream(outputStream, manifest)
             }
             jarOutputStream = jarOutputStream1
@@ -283,19 +287,19 @@ class NestedJarInputStream(inputStream: InputStream, name: String) : SingleThrea
                         jarOutputStream.flush()
                     }
                 } else if (!jarEntry.isDirectory) {
-                    println("Skipping duplicate entry ${jarEntry.name} in $jarName")
+                    logger.debug { "Skipping duplicate entry ${jarEntry.name} in $jarName" }
                 }
                 jarInputStream.closeEntry()
             }
         } else {
             if (!inputStreams.empty()) {
                 inputStreams.pop()
-                println("Finished $jarName")
+                logger.debug { "Finished $jarName" }
                 if (!inputStreams.empty()) {
                     val (_, peekedJarInputStream) = inputStreams.peek()
                     peekedJarInputStream.closeEntry()
                 } else {
-                    println("Closed")
+                    logger.debug { "Closed" }
                     jarInputStream.close()
                     jarOutputStream.close()
                 }
@@ -308,7 +312,7 @@ class NestedJarInputStream(inputStream: InputStream, name: String) : SingleThrea
     }
 
     private fun copyEntry(jarOutputStream: JarOutputStream, jarEntry: JarEntry, jarInputStream: JarInputStream, jarName: String, size: Long) {
-        println("Copy entry ${jarEntry.name} from $jarName of size $size")
+        logger.debug { "Copy entry ${jarEntry.name} from $jarName of size $size" }
         jarOutputStream.putNextEntry(jarEntry)
         jarInputStream.copyTo(jarOutputStream)
         jarOutputStream.closeEntry()
