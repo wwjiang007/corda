@@ -144,6 +144,7 @@ tasks.named('jar', Jar) {
     bnd """
 Bundle-Name: Corda Core OSGi
 Bundle-SymbolicName: net.corda.core
+Bundle-Activator: net.corda.core.Activator
 Import-Package: \
     !net.i2p.crypto.eddsa.math,\
     *

@@ -15,18 +15,18 @@ class Bongo @Activate constructor(
 ) {
     init {
         System.err.println("-------------- Initialising Bongo!")
-        logger.error("Initialising Bongo {}", this::class.java)
     }
 
     @Activate
     fun doIt() {
+
+
         //some guava code to trigger osgi imports
         val items: Map<*, *> = ImmutableMap.of("coin", 3, "glass", 4, "pencil", 1)
         val fruits: List<String> = Lists.newArrayList("orange", "banana", "kiwi",
                 "mandarin", "date", "quince")
 
-        System.err.println("-------------- Activated Bongo!")
-        logger.error("Activated Bongo {}", this::class.java)
+        logger.error("============ Activated Bongo {}", this::class.java)
     }
 }
 
