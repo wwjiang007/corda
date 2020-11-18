@@ -12,7 +12,7 @@ import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.internal.concurrent.OpenFuture
 import net.corda.core.internal.concurrent.openFuture
-import net.corda.notary.common.BatchSigningFunction
+import net.corda.v5.notary.BatchSigningFunction
 import net.corda.core.internal.notary.NotaryInternalException
 import net.corda.core.internal.notary.UniquenessProvider
 import net.corda.core.internal.notary.isConsumedByTheSameTx
@@ -26,7 +26,7 @@ import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.debug
 import net.corda.nodeapi.internal.persistence.CordaPersistence
 import net.corda.nodeapi.internal.persistence.NODE_DATABASE_PREFIX
-import net.corda.notary.common.InternalResult
+import net.corda.v5.notary.InternalResult
 import net.corda.serialization.internal.CordaSerializationEncoding
 import org.hibernate.Session
 import java.sql.SQLException

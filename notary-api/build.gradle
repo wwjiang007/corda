@@ -1,0 +1,17 @@
+apply plugin: 'kotlin'
+apply plugin: 'net.corda.plugins.publish-utils'
+apply plugin: 'com.jfrog.artifactory'
+
+dependencies {
+    compile project(":core")
+
+    compile "io.dropwizard.metrics:metrics-jmx:$metrics_version"
+}
+
+jar {
+    baseName 'corda-notary-api'
+}
+
+publish {
+    name = jar.getArchiveBaseName()
+}

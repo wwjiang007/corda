@@ -40,6 +40,7 @@ include 'node-api-tests'
 include 'node'
 include 'node:capsule'
 include 'node:djvm'
+include 'notary-api'
 include 'client:jackson'
 include 'client:jfx'
 include 'client:mock'
@@ -126,4 +127,3 @@ include 'serialization-deterministic'
 
 include 'detekt-plugins'
 include 'tools:error-tool'
-

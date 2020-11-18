@@ -93,6 +93,7 @@ processTestResources {
 
 dependencies {
     compile project(':node-api')
+    compile project(':notary-api')
     compile project(':client:rpc')
     compile project(':tools:shell')
     compile project(':tools:cliutils')

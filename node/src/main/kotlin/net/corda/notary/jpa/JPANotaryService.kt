@@ -9,7 +9,7 @@ import net.corda.node.services.api.ServiceHubInternal
 import net.corda.node.services.transactions.NonValidatingNotaryFlow
 import net.corda.node.services.transactions.ValidatingNotaryFlow
 import net.corda.nodeapi.internal.config.parseAs
-import net.corda.notary.common.signBatch
+import net.corda.v5.notary.signBatch
 import java.security.PublicKey
 
 /** Notary service backed by a relational database. */

@@ -1,4 +1,4 @@
-package net.corda.notary.common
+package net.corda.v5.notary
 
 import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.MerkleTree
