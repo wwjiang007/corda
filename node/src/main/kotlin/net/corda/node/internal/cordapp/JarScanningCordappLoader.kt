@@ -27,6 +27,7 @@ import net.corda.node.VersionInfo
 import net.corda.nodeapi.internal.cordapp.CordappLoader
 import net.corda.nodeapi.internal.coreContractClasses
 import net.corda.serialization.internal.DefaultWhitelist
+import net.corda.v5.notary.ExternalSinglePartyNotaryService
 import java.lang.reflect.Modifier
 import java.math.BigInteger
 import java.net.URL
@@ -268,7 +269,8 @@ class JarScanningCordappLoader private constructor(private val cordappJarPaths: 
         // the scanner won't find subclasses deeper down the hierarchy if any intermediate class is not
         // present in the CorDapp.
         val result = scanResult.getClassesWithSuperclass(NotaryService::class) +
-                scanResult.getClassesWithSuperclass(SinglePartyNotaryService::class)
+                scanResult.getClassesWithSuperclass(SinglePartyNotaryService::class) +
+                scanResult.getClassesWithSuperclass(ExternalSinglePartyNotaryService::class)
         if (result.isNotEmpty()) {
             logger.info("Found notary service CorDapp implementations: " + result.joinToString(", "))
         }

@@ -1,5 +1,7 @@
 package net.corda.node.utilities
 
+import net.corda.core.cordapp.CordappContext
+import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.internal.cordapp.CordappImpl
 import net.corda.core.internal.notary.NotaryService
@@ -13,6 +15,8 @@ import net.corda.nodeapi.internal.cordapp.CordappLoader
 import net.corda.notary.experimental.bftsmart.BFTSmartNotaryService
 import net.corda.notary.experimental.raft.RaftNotaryService
 import net.corda.notary.jpa.JPANotaryService
+import net.corda.v5.notary.NotaryServiceProperties
+import net.corda.v5.notary.signBatch
 import java.lang.reflect.InvocationTargetException
 import java.security.PublicKey
 
@@ -70,10 +74,30 @@ class NotaryLoader(
         maybeInstallSerializationFilter(serviceClass)
 
         val constructor = serviceClass
-                .getDeclaredConstructor(ServiceHubInternal::class.java, PublicKey::class.java)
+                .getDeclaredConstructor(
+                        ServiceHubInternal::class.java,
+                        PublicKey::class.java,
+                        NotaryServiceProperties::class.java)
                 .apply { isAccessible = true }
         try {
-            return constructor.newInstance(services, notaryKey)
+            return constructor.newInstance(
+                    services,
+                    notaryKey,
+                    object : NotaryServiceProperties {
+                        override val cordappContext: () -> CordappContext =
+                                { services.cordappProvider.getAppContext() }
+                        override val isValidating = services.configuration.notary!!.validating
+                        override val notaryServiceIdentity = myNotaryIdentity!!
+                        override val notaryWorkerIdentity =
+                                services.myInfo.identityAndCertFromX500Name(
+                                        services.configuration.myLegalName)
+                        override val batchSigningFunction =
+                                { txIds: Iterable<SecureHash> ->
+                                    signBatch(txIds, myNotaryIdentity.owningKey, services)
+                                }
+                        override val nodeClock = services.clock
+                        override val metricRegistry = services.monitoringService.metrics
+                    })
         } catch (e: InvocationTargetException) {
             log.error("Exception occurred when starting notary service")
             throw e.cause ?: e
