@@ -502,7 +502,7 @@ fun <T : SerializeAsToken> createMockCordaService(serviceHub: MockServices, serv
 
         init {
             serviceHub.cordappServices.putInstance(serviceInstance.javaClass, serviceInstance)
-        }
+        }not
 
         override fun <T> startFlow(flow: FlowLogic<T>): FlowHandle<T> {
             throw UnsupportedOperationException()

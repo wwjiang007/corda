@@ -1,6 +1,8 @@
 package net.corda.v5.notary
 
 import net.corda.core.internal.notary.SinglePartyNotaryService
+import net.corda.core.node.ServiceHub
+import java.security.PublicKey
 
 // FIXME: This should replace SinglePartyNotaryService, replacing constructor arguments with
 // NotaryServiceProperties. We derive for the time being until we can adapt the built in

@@ -73,34 +73,44 @@ class NotaryLoader(
         /** Some notary implementations only work with Java serialization. */
         maybeInstallSerializationFilter(serviceClass)
 
-        val constructor = serviceClass
-                .getDeclaredConstructor(
-                        ServiceHubInternal::class.java,
-                        PublicKey::class.java,
-                        NotaryServiceProperties::class.java)
-                .apply { isAccessible = true }
-        try {
-            return constructor.newInstance(
-                    services,
-                    notaryKey,
-                    object : NotaryServiceProperties {
-                        override val cordappContext: () -> CordappContext =
-                                { services.cordappProvider.getAppContext() }
-                        override val isValidating = services.configuration.notary!!.validating
-                        override val notaryServiceIdentity = myNotaryIdentity!!
-                        override val notaryWorkerIdentity =
-                                services.myInfo.identityAndCertFromX500Name(
-                                        services.configuration.myLegalName)
-                        override val batchSigningFunction =
-                                { txIds: Iterable<SecureHash> ->
-                                    signBatch(txIds, myNotaryIdentity.owningKey, services)
-                                }
-                        override val nodeClock = services.clock
-                        override val metricRegistry = services.monitoringService.metrics
-                    })
-        } catch (e: InvocationTargetException) {
-            log.error("Exception occurred when starting notary service")
-            throw e.cause ?: e
+        // TODO: Remove when all notaries use new interface
+        if (builtInNotary != null) {
+            val constructor = serviceClass
+                    .getDeclaredConstructor(ServiceHubInternal::class.java, PublicKey::class.java)
+                    .apply { isAccessible = true }
+            try {
+                return constructor.newInstance(services, notaryKey)
+            } catch (e: InvocationTargetException) {
+                log.error("Exception occurred when starting notary service")
+                throw e.cause ?: e
+            }
+        } else {
+            val constructor = serviceClass
+                    .getDeclaredConstructor(NotaryServiceProperties::class.java)
+                    .apply { isAccessible = true }
+            try {
+                return constructor.newInstance(
+                        services,
+                        notaryKey,
+                        object : NotaryServiceProperties {
+                            override val cordappContext: () -> CordappContext =
+                                    { services.cordappProvider.getAppContext() }
+                            override val isValidating = services.configuration.notary!!.validating
+                            override val notaryServiceIdentity = myNotaryIdentity!!
+                            override val notaryWorkerIdentity =
+                                    services.myInfo.identityAndCertFromX500Name(
+                                            services.configuration.myLegalName)
+                            override val batchSigningFunction =
+                                    { txIds: Iterable<SecureHash> ->
+                                        signBatch(txIds, myNotaryIdentity.owningKey, services)
+                                    }
+                            override val nodeClock = services.clock
+                            override val metricRegistry = services.monitoringService.metrics
+                        })
+            } catch (e: InvocationTargetException) {
+                log.error("Exception occurred when starting notary service")
+                throw e.cause ?: e
+            }
         }
     }
 
