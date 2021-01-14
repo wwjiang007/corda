@@ -6,6 +6,7 @@ import net.corda.core.serialization.CheckpointCustomSerializer
 import net.corda.core.serialization.SerializationCustomSerializer
 import net.corda.core.serialization.SerializationWhitelist
 import net.corda.core.serialization.internal.SerializationEnvironment
+import net.corda.nodeapi.internal.serialization.KryoSerializationScheme
 import net.corda.nodeapi.internal.serialization.amqp.AMQPServerSerializationScheme
 import net.corda.nodeapi.internal.serialization.kryo.KRYO_CHECKPOINT_CONTEXT
 import net.corda.nodeapi.internal.serialization.kryo.KryoCheckpointSerializer
@@ -41,6 +42,8 @@ fun createTestSerializationEnv(classLoader: ClassLoader?): SerializationEnvironm
     val factory = SerializationFactoryImpl().apply {
         registerScheme(clientSerializationScheme)
         registerScheme(serverSerializationScheme)
+        //TODO: Add this also to Node.kt (when we want to test a real node).
+        registerScheme(KryoSerializationScheme())
     }
     return SerializationEnvironment.with(
             factory,

@@ -1,5 +1,6 @@
 package net.corda.coretests.transactions
 
+import co.paralleluniverse.io.serialization.Serialization
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
@@ -18,6 +19,9 @@ import net.corda.core.node.ZoneVersionTooLowException
 import net.corda.core.node.services.AttachmentStorage
 import net.corda.core.node.services.IdentityService
 import net.corda.core.node.services.NetworkParametersService
+import net.corda.core.serialization.SerializationDefaults
+import net.corda.core.serialization.SerializationFactory
+import net.corda.core.serialization.internal.effectiveSerializationEnv
 import net.corda.core.serialization.serialize
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.testing.common.internal.testNetworkParameters
@@ -25,6 +29,8 @@ import net.corda.testing.contracts.DummyContract
 import net.corda.testing.contracts.DummyState
 import net.corda.testing.core.*
 import net.corda.coretesting.internal.rigorousMock
+import net.corda.nodeapi.internal.serialization.KryoSerializationScheme
+import net.corda.nodeapi.internal.serialization.kryo.KRYO_CHECKPOINT_CONTEXT
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Assert.assertFalse
@@ -82,6 +88,26 @@ class TransactionBuilderTest {
                 .addOutputState(outputState)
                 .addCommand(DummyCommandData, notary.owningKey)
         val wtx = builder.toWireTransaction(services)
+        assertThat(wtx.outputs).containsOnly(outputState)
+        assertThat(wtx.commands).containsOnly(Command(DummyCommandData, notary.owningKey))
+        assertThat(wtx.networkParametersHash).isEqualTo(networkParametersService.currentHash)
+    }
+
+    @Test(timeout=300_000)
+    fun `test custom serialization bare minimum issuance tx`() {
+        val outputState = TransactionState(
+                data = DummyState(),
+                contract = DummyContract.PROGRAM_ID,
+                notary = notary,
+                constraint = HashAttachmentConstraint(contractAttachmentId)
+        )
+        val builder = TransactionBuilder()
+                .addOutputState(outputState)
+                .addCommand(DummyCommandData, notary.owningKey)
+
+        val p2pKyroContext = SerializationDefaults.P2P_CONTEXT.withPreferredSerializationVersion(KryoSerializationScheme.kryoMagic)
+
+        val wtx = builder.toWireTransactionWithContext(services, p2pKyroContext)
         assertThat(wtx.outputs).containsOnly(outputState)
         assertThat(wtx.commands).containsOnly(Command(DummyCommandData, notary.owningKey))
         assertThat(wtx.networkParametersHash).isEqualTo(networkParametersService.currentHash)

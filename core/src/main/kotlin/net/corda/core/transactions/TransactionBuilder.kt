@@ -140,8 +140,10 @@ open class TransactionBuilder(
     fun toWireTransaction(services: ServicesForResolution): WireTransaction = toWireTransactionWithContext(services, null)
             .apply { checkSupportedHashType() }
 
+
+    //TODO: This was internal and now it is public. Need to add KDOC. Also this should probably take
     @CordaInternal
-    internal fun toWireTransactionWithContext(
+    fun toWireTransactionWithContext(
         services: ServicesForResolution,
         serializationContext: SerializationContext?
     ) : WireTransaction = toWireTransactionWithContext(services, serializationContext, 0)
