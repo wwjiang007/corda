@@ -66,7 +66,7 @@ class ResolveTransactionsFlow private constructor(
         // If transaction resolution is performed for a transaction where some states are relevant, then those should be
         // recorded if this has not already occurred.
         val usedStatesToRecord = if (statesToRecord == StatesToRecord.NONE) StatesToRecord.ONLY_RELEVANT else statesToRecord
-        resolver.recordDependencies(usedStatesToRecord)
+        resolver.recordDependencies(usedStatesToRecord, batchMode)
     }
 
     /**
