@@ -154,8 +154,7 @@ fun createComponentGroups(inputs: List<StateRef>,
                           timeWindow: TimeWindow?,
                           references: List<StateRef>,
                           networkParametersHash: SecureHash?): List<ComponentGroup> {
-    val serializationContext = SerializationFactory.defaultFactory.defaultContext
-    val serialize = { value: Any, _: Int -> value.serialize(context = serializationContext) }
+    val serialize = { value: Any, _: Int -> value.serialize() }
     val componentGroupMap: MutableList<ComponentGroup> = mutableListOf()
     if (inputs.isNotEmpty()) componentGroupMap.add(ComponentGroup(ComponentGroupEnum.INPUTS_GROUP.ordinal, inputs.lazyMapped(serialize)))
     if (references.isNotEmpty()) componentGroupMap.add(ComponentGroup(ComponentGroupEnum.REFERENCES_GROUP.ordinal, references.lazyMapped(serialize)))
