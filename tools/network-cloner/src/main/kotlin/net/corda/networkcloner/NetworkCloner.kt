@@ -6,6 +6,9 @@ import net.corda.core.serialization.deserialize
 import net.corda.core.serialization.internal.SerializationEnvironment
 import net.corda.core.serialization.internal._contextSerializationEnv
 import net.corda.core.serialization.serialize
+import net.corda.core.transactions.SignedTransaction
+import net.corda.networkcloner.impl.IdentityMapperImpl
+import net.corda.networkcloner.impl.SignerImpl
 import net.corda.networkcloner.impl.TransactionsStoreImpl
 import net.corda.serialization.internal.AMQP_P2P_CONTEXT
 import net.corda.serialization.internal.AMQP_STORAGE_CONTEXT
@@ -14,6 +17,7 @@ import net.corda.serialization.internal.CordaSerializationMagic
 import net.corda.serialization.internal.SerializationFactoryImpl
 import net.corda.serialization.internal.amqp.AbstractAMQPSerializationScheme
 import net.corda.serialization.internal.amqp.amqpMagic
+import java.util.*
 
 fun main(args: Array<String>) {
 
@@ -21,22 +25,31 @@ fun main(args: Array<String>) {
 
     val transactionStore = TransactionsStoreImpl()
     val transactions = transactionStore.getAllTransactions()
+    val identityMapper = IdentityMapperImpl()
+    val signer = SignerImpl(identityMapper)
+
 
     initialiseSerialization()
 
     transactions.forEach {
         val deserialized = it.deserialize<Any>(context = SerializationDefaults.STORAGE_CONTEXT)
 
+        val wTx = (deserialized as SignedTransaction).coreTransaction
 
 
 
-        val serializedOne = deserialized.serialize(context = SerializationDefaults.STORAGE_CONTEXT.withEncoding(CordaSerializationEncoding.SNAPPY))
-        val serializedTwo = deserialized.serialize(context = SerializationDefaults.STORAGE_CONTEXT.withEncoding(CordaSerializationEncoding.SNAPPY))
+        val outputState = wTx.outputStates[0]
+        val field = outputState::class.java.getDeclaredField("x")
+        field.isAccessible = true
+        field.set(outputState, "two")
+
+        val newSignatures = signer.sign(wTx, deserialized.sigs.map { it.by })
 
 
+        val sTx = SignedTransaction(wTx, newSignatures)
 
-        println("are identical? ${it.contentEquals(serializedOne.bytes)}")
-        println("are identical? ${serializedTwo.bytes.contentEquals(serializedOne.bytes)}")
+        val serializedFromSignedTx = sTx.serialize(context = SerializationDefaults.STORAGE_CONTEXT.withEncoding(CordaSerializationEncoding.SNAPPY))
+
     }
 
     println("Done")
