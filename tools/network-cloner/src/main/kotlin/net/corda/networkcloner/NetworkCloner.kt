@@ -1,5 +1,6 @@
 package net.corda.networkcloner
 
+import net.corda.core.internal.createComponentGroups
 import net.corda.core.serialization.SerializationContext
 import net.corda.core.serialization.SerializationDefaults
 import net.corda.core.serialization.deserialize
@@ -7,6 +8,7 @@ import net.corda.core.serialization.internal.SerializationEnvironment
 import net.corda.core.serialization.internal._contextSerializationEnv
 import net.corda.core.serialization.serialize
 import net.corda.core.transactions.SignedTransaction
+import net.corda.core.transactions.WireTransaction
 import net.corda.networkcloner.impl.IdentityMapperImpl
 import net.corda.networkcloner.impl.SignerImpl
 import net.corda.networkcloner.impl.TransactionsStoreImpl
@@ -34,19 +36,28 @@ fun main(args: Array<String>) {
     transactions.forEach {
         val deserialized = it.deserialize<Any>(context = SerializationDefaults.STORAGE_CONTEXT)
 
-        val wTx = (deserialized as SignedTransaction).coreTransaction
+        val wTx = (deserialized as SignedTransaction).coreTransaction as WireTransaction
+
+        //edit the component groups start
+
+        val componentGroups = createComponentGroups(wTx.inputs, wTx.outputs, wTx.commands, wTx.attachments, wTx.notary, wTx.timeWindow, wTx.references, wTx.networkParametersHash)
+
+        wTx.componentGroups.forEachIndexed {
+            i, v ->
+            val componentGroupCreated = componentGroups[i]
+            println("Are they the same for ${v.groupIndex}: ${componentGroupCreated.components == v.components}")
+        }
+
+        //edit the component groups end
+
+        val destinationWireTransaction = WireTransaction(wTx.componentGroups, wTx.privacySalt, wTx.digestService)
 
 
 
-        val outputState = wTx.outputStates[0]
-        val field = outputState::class.java.getDeclaredField("x")
-        field.isAccessible = true
-        field.set(outputState, "two")
-
-        val newSignatures = signer.sign(wTx, deserialized.sigs.map { it.by })
+        val newSignatures = signer.sign(destinationWireTransaction, deserialized.sigs.map { it.by })
 
 
-        val sTx = SignedTransaction(wTx, newSignatures)
+        val sTx = SignedTransaction(destinationWireTransaction, newSignatures)
 
         val serializedFromSignedTx = sTx.serialize(context = SerializationDefaults.STORAGE_CONTEXT.withEncoding(CordaSerializationEncoding.SNAPPY))
 
