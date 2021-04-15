@@ -48,9 +48,9 @@ fun main(args: Array<String>) {
 
         //edit the component groups start
 
-        val componentGroups = SerializationFactory.defaultFactory.withCurrentContext(context = SerializationDefaults.STORAGE_CONTEXT) {
+        val componentGroups =
             createComponentGroups(wTx.inputs, wTx.outputs, wTx.commands, wTx.attachments, wTx.notary, wTx.timeWindow, wTx.references, wTx.networkParametersHash)
-        }
+
 
         wTx.componentGroups.forEachIndexed {
             i, v ->
