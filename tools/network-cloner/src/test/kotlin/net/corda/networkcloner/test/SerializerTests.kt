@@ -9,7 +9,7 @@ import org.junit.Test
 import java.nio.file.Paths
 import kotlin.test.assertTrue
 
-class SerializerTests {
+class SerializerTests : TestSupport() {
 
     @Test
     fun `Transaction blob is identical when gone through deserialization and serialization`() {
@@ -17,8 +17,7 @@ class SerializerTests {
         val transactionsStore = TransactionsStoreImpl("jdbc:h2:$pathToTestDb","sa","")
         val sourceTxByteArray = transactionsStore.getAllTransactions().first()
 
-        val pathToCordapps = SerializerTests::class.java.getResource("/snapshots/s1/source/cordapps").path
-        val serializer = SerializerImpl(Paths.get(pathToCordapps))
+        val serializer = getSerializer("s1")
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)
         val sourceWireTransaction = sourceSignedTransaction.coreTransaction as WireTransaction
 

@@ -14,11 +14,11 @@ class IdentityMapperTests : TestSupport() {
     fun `JKS files can be read and parsed into identities`() {
         val identityMapper = getIdentityMapper("s1")
 
-        assertNotNull(identityMapper.getSourceIdentity(CordaX500Name.parse("O=Operator,L=New York,C=US")))
-        assertNotNull(identityMapper.getSourceIdentity(CordaX500Name.parse("O=Client,L=London,C=GB")))
+        assertNotNull(identityMapper.getSourceIdentity(operatorX500Name))
+        assertNotNull(identityMapper.getSourceIdentity(clientX500Name))
 
-        assertNotNull(identityMapper.getDestinationIdentity(CordaX500Name.parse("O=Operator,L=New York,C=US")))
-        assertNotNull(identityMapper.getDestinationIdentity(CordaX500Name.parse("O=Client,L=London,C=GB")))
+        assertNotNull(identityMapper.getDestinationIdentity(operatorX500Name))
+        assertNotNull(identityMapper.getDestinationIdentity(clientX500Name))
     }
 
 }
