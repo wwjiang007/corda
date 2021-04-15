@@ -5,6 +5,7 @@ import net.corda.core.serialization.SerializationDefaults
 import net.corda.core.serialization.deserialize
 import net.corda.core.serialization.internal.SerializationEnvironment
 import net.corda.core.serialization.internal.nodeSerializationEnv
+import net.corda.core.serialization.serialize
 import net.corda.core.transactions.SignedTransaction
 import net.corda.networkcloner.api.Serializer
 import net.corda.node.VersionInfo
@@ -13,6 +14,7 @@ import net.corda.nodeapi.internal.rpc.client.AMQPClientSerializationScheme
 import net.corda.nodeapi.internal.serialization.amqp.AMQPServerSerializationScheme
 import net.corda.serialization.internal.AMQP_P2P_CONTEXT
 import net.corda.serialization.internal.AMQP_STORAGE_CONTEXT
+import net.corda.serialization.internal.CordaSerializationEncoding
 import net.corda.serialization.internal.SerializationFactoryImpl
 import net.corda.serialization.internal.amqp.SerializationFactoryCacheKey
 import net.corda.serialization.internal.amqp.SerializerFactory
@@ -36,6 +38,10 @@ class SerializerImpl(destinationCordappsDirectory : Path) : Serializer {
                 p2pContext = AMQP_P2P_CONTEXT.withClassLoader(classloader),
                 storageContext = AMQP_STORAGE_CONTEXT.withClassLoader(classloader)
         )
+    }
+
+    override fun serializeSignedTransaction(signedTransaction: SignedTransaction): ByteArray {
+        return signedTransaction.serialize(context = SerializationDefaults.STORAGE_CONTEXT.withEncoding(CordaSerializationEncoding.SNAPPY)).bytes
     }
 
     override fun deserializeDbBlobIntoTransaction(byteArray: ByteArray): SignedTransaction {
