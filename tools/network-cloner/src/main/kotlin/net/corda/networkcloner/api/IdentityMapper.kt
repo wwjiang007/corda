@@ -8,6 +8,5 @@ interface IdentityMapper {
 
     fun getSourceIdentity(x500 : CordaX500Name)
     fun getDestinationIdentity(x500: CordaX500Name)
-    fun mapPublicKeyToDestinationIdentity(sourcePublicKey : PublicKey) : Identity
 
 }
