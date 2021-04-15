@@ -2,6 +2,7 @@ package net.corda.networkcloner.test
 
 import net.corda.core.internal.createComponentGroups
 import net.corda.core.transactions.WireTransaction
+import net.corda.networkcloner.api.IdentityMapper
 import net.corda.networkcloner.impl.SerializerImpl
 import net.corda.networkcloner.impl.TransactionsStoreImpl
 import net.corda.networkcloner.impl.TxEditorImpl
@@ -9,7 +10,7 @@ import org.junit.Ignore
 import org.junit.Test
 import java.nio.file.Paths
 
-class TxEditorTests {
+class TxEditorTests : TestSupport() {
 
     @Test
     @Ignore
@@ -23,6 +24,7 @@ class TxEditorTests {
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)
         val sourceWireTransaction = sourceSignedTransaction.coreTransaction as WireTransaction
 
+        val identityMapper = getIdentityMapper("s1")
         val txEditor = TxEditorImpl()
         //txEditor.replacePublicKey(sourceWireTransaction.componentGroups)
 
