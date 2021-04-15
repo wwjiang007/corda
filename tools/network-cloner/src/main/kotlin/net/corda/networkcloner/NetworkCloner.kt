@@ -37,7 +37,7 @@ fun main(args: Array<String>) {
     val serializer = SerializerImpl(Paths.get("/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildDestination/nodes/Operator/cordapps"))
     val transactionStore = TransactionsStoreImpl("jdbc:h2:/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildSource/nodes/Operator/persistence", "sa", "")
     val transactions = transactionStore.getAllTransactions()
-    val identityMapper = IdentityMapperImpl()
+    val identityMapper = IdentityMapperImpl(emptyList(), emptyList())
     val signer = SignerImpl(identityMapper)
 
 
