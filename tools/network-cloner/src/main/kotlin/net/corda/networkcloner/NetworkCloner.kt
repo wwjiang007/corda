@@ -67,9 +67,11 @@ fun main(args: Array<String>) {
         val newSignatures = signer.sign(destinationWireTransaction, deserialized.sigs.map { it.by })
 
 
-        val sTx = SignedTransaction(destinationWireTransaction, newSignatures)
+        val sTx = SignedTransaction(destinationWireTransaction, deserialized.sigs)
 
         val serializedFromSignedTx = sTx.serialize(context = SerializationDefaults.STORAGE_CONTEXT.withEncoding(CordaSerializationEncoding.SNAPPY))
+
+        println("Db tx and destination tx are same: ${it.contentEquals(serializedFromSignedTx.bytes)}")
 
     }
 
