@@ -12,6 +12,7 @@ import net.corda.core.serialization.serialize
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
 import net.corda.networkcloner.impl.IdentityMapperImpl
+import net.corda.networkcloner.impl.SerializerImpl
 import net.corda.networkcloner.impl.SignerImpl
 import net.corda.networkcloner.impl.TransactionsStoreImpl
 import net.corda.node.VersionInfo
@@ -33,16 +34,15 @@ fun main(args: Array<String>) {
 
     println("Hello there")
 
+    val serializer = SerializerImpl(Paths.get("/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildDestination/nodes/Operator/cordapps"))
     val transactionStore = TransactionsStoreImpl()
     val transactions = transactionStore.getAllTransactions()
     val identityMapper = IdentityMapperImpl()
     val signer = SignerImpl(identityMapper)
 
 
-    initialiseSerialization()
-
     transactions.forEach {
-        val deserialized = it.deserialize<Any>(context = SerializationDefaults.STORAGE_CONTEXT)
+        val deserialized = serializer.deserializeDbBlobIntoTransaction(it)
 
         val wTx = (deserialized as SignedTransaction).coreTransaction as WireTransaction
 
@@ -60,7 +60,7 @@ fun main(args: Array<String>) {
 
         //edit the component groups end
 
-        val destinationWireTransaction = WireTransaction(wTx.componentGroups, wTx.privacySalt, wTx.digestService)
+        val destinationWireTransaction = WireTransaction(componentGroups, wTx.privacySalt, wTx.digestService)
 
 
 
@@ -78,31 +78,4 @@ fun main(args: Array<String>) {
     println("Done")
 
 
-}
-
-private fun initialiseSerialization() {
-    val cordappLoader = JarScanningCordappLoader.fromDirectories(
-            listOf(Paths.get("/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildDestination/nodes/Operator/cordapps")),
-            VersionInfo.UNKNOWN,
-            extraCordapps = emptyList(),
-            signerKeyFingerprintBlacklist = emptyList()
-    )
-    val classloader = cordappLoader.appClassLoader
-    nodeSerializationEnv = SerializationEnvironment.with(
-            SerializationFactoryImpl().apply {
-                registerScheme(AMQPServerSerializationScheme(cordappLoader.cordapps, Caffeine.newBuilder().maximumSize(128).build<SerializationFactoryCacheKey, SerializerFactory>().asMap()))
-                registerScheme(AMQPClientSerializationScheme(cordappLoader.cordapps, Caffeine.newBuilder().maximumSize(128).build<SerializationFactoryCacheKey, SerializerFactory>().asMap()))
-            },
-            p2pContext = AMQP_P2P_CONTEXT.withClassLoader(classloader),
-            storageContext = AMQP_STORAGE_CONTEXT.withClassLoader(classloader)
-    )
-}
-
-private object AMQPInspectorSerializationScheme : AbstractAMQPSerializationScheme(emptyList()) {
-    override fun canDeserializeVersion(magic: CordaSerializationMagic, target: SerializationContext.UseCase): Boolean {
-        return magic == amqpMagic
-    }
-
-    override fun rpcClientSerializerFactory(context: SerializationContext) = throw UnsupportedOperationException()
-    override fun rpcServerSerializerFactory(context: SerializationContext) = throw UnsupportedOperationException()
 }
