@@ -2,18 +2,15 @@ package net.corda.networkcloner.test
 
 import net.corda.core.internal.createComponentGroups
 import net.corda.core.transactions.WireTransaction
-import net.corda.networkcloner.api.IdentityMapper
-import net.corda.networkcloner.impl.SerializerImpl
+import net.corda.networkcloner.entity.TransactionComponents
 import net.corda.networkcloner.impl.TransactionsStoreImpl
-import net.corda.networkcloner.impl.TxEditorImpl
-import org.junit.Ignore
+import net.corda.networkcloner.test.txeditors.TestAppTxEditor
 import org.junit.Test
-import java.nio.file.Paths
 
 class TxEditorTests : TestSupport() {
 
     @Test
-    fun `Public key in a transaction can be replaced`() {
+    fun `An editor can be invoked on a transaction`() {
         val pathToTestDb = TxEditorTests::class.java.getResource("/snapshots/s1/source/persistence.mv.db").path.removeSuffix(".mv.db")
         val transactionsStore = TransactionsStoreImpl("jdbc:h2:$pathToTestDb","sa","")
         val sourceTxByteArray = transactionsStore.getAllTransactions().first()
@@ -23,16 +20,14 @@ class TxEditorTests : TestSupport() {
         val sourceWireTransaction = sourceSignedTransaction.coreTransaction as WireTransaction
 
         val identityMapper = getIdentityMapper("s1")
-        val clientSourcePublicKey = identityMapper.getSourceIdentity(clientX500Name)?.identityKey?.public ?: throw AssertionError("Expected to find $clientX500Name source identity public key")
-        val clientDestinationPublicKey = identityMapper.getDestinationIdentity(clientX500Name)?.identityKey?.public ?: throw AssertionError("Expected to find $clientX500Name destination identity public key")
+        val clientSourceIdentity = identityMapper.getSourceIdentity(clientX500Name) ?: throw AssertionError("Expected to find identity $clientX500Name")
+        val clientDestinationIdentity = identityMapper.getDestinationIdentity(clientX500Name) ?: throw AssertionError("Expected to find identity $clientX500Name")
 
-        val txEditor = getTxEditor()
-        //txEditor.replacePublicKey(sourceWireTransaction.componentGroups)
-
-        val destComponentGroups = with(sourceWireTransaction) {
-            createComponentGroups(inputs, outputs, commands, attachments, notary, timeWindow, references, networkParametersHash)
+        val txEditor = TestAppTxEditor()
+        val transactionComponents = with(sourceWireTransaction) {
+            TransactionComponents(inputs, outputs, commands, attachments, notary, timeWindow, references, networkParametersHash)
         }
-
+        val editedTransactionComponents = txEditor.edit(transactionComponents, mapOf(clientSourceIdentity to clientDestinationIdentity))
 
     }
 

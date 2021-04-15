@@ -1,10 +1,11 @@
 package net.corda.networkcloner.api
 
 import net.corda.core.transactions.ComponentGroup
-import java.security.PublicKey
+import net.corda.networkcloner.entity.Identity
+import net.corda.networkcloner.entity.TransactionComponents
 
 interface TxEditor {
 
-    fun replacePublicKey(componentGroups : List<ComponentGroup>, from : PublicKey, to : PublicKey) : List<ComponentGroup>
+    fun edit(transactionComponents : TransactionComponents, identityMappings: Map<Identity, Identity>) : TransactionComponents
 
 }

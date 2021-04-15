@@ -1,2 +1,3 @@
 1) Be able to change the hashes of the attachments?? so that what?
-2) Plug my own code in to do some obfusccation on the ledger data
+2) Plug my own code in to do some editing on the transactions
+3) Plug my own code in to do some obfusccation on the ledger data

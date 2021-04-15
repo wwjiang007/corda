@@ -7,7 +7,6 @@ import net.corda.networkcloner.api.Serializer
 import net.corda.networkcloner.api.TxEditor
 import net.corda.networkcloner.impl.IdentityMapperImpl
 import net.corda.networkcloner.impl.SerializerImpl
-import net.corda.networkcloner.impl.TxEditorImpl
 import java.io.File
 import java.nio.file.Paths
 import kotlin.test.assertTrue
@@ -27,10 +26,6 @@ open class TestSupport {
         } else {
             serializer!!
         }
-    }
-
-    fun getTxEditor() : TxEditor {
-        return TxEditorImpl()
     }
 
     fun getIdentityMapper(snapshot : String) : IdentityMapper {
