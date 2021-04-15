@@ -7,7 +7,6 @@ import net.corda.networkcloner.impl.SerializerImpl
 import net.corda.networkcloner.impl.TransactionsStoreImpl
 import org.junit.Test
 import java.nio.file.Paths
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SerializerTests {
@@ -18,7 +17,8 @@ class SerializerTests {
         val transactionsStore = TransactionsStoreImpl("jdbc:h2:$pathToTestDb","sa","")
         val sourceTxByteArray = transactionsStore.getAllTransactions().first()
 
-        val serializer = SerializerImpl(Paths.get("/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildDestination/nodes/Operator/cordapps"))
+        val pathToCordapps = SerializerTests::class.java.getResource("/snapshots/cordapps").path
+        val serializer = SerializerImpl(Paths.get(pathToCordapps))
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)
         val sourceWireTransaction = sourceSignedTransaction.coreTransaction as WireTransaction
 
