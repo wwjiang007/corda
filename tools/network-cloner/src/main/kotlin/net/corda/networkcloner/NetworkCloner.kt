@@ -1,25 +1,33 @@
 package net.corda.networkcloner
 
+import com.github.benmanes.caffeine.cache.Caffeine
 import net.corda.core.internal.createComponentGroups
 import net.corda.core.serialization.SerializationContext
 import net.corda.core.serialization.SerializationDefaults
+import net.corda.core.serialization.SerializationFactory
 import net.corda.core.serialization.deserialize
 import net.corda.core.serialization.internal.SerializationEnvironment
-import net.corda.core.serialization.internal._contextSerializationEnv
+import net.corda.core.serialization.internal.nodeSerializationEnv
 import net.corda.core.serialization.serialize
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
 import net.corda.networkcloner.impl.IdentityMapperImpl
 import net.corda.networkcloner.impl.SignerImpl
 import net.corda.networkcloner.impl.TransactionsStoreImpl
+import net.corda.node.VersionInfo
+import net.corda.node.internal.cordapp.JarScanningCordappLoader
+import net.corda.nodeapi.internal.rpc.client.AMQPClientSerializationScheme
+import net.corda.nodeapi.internal.serialization.amqp.AMQPServerSerializationScheme
 import net.corda.serialization.internal.AMQP_P2P_CONTEXT
 import net.corda.serialization.internal.AMQP_STORAGE_CONTEXT
 import net.corda.serialization.internal.CordaSerializationEncoding
 import net.corda.serialization.internal.CordaSerializationMagic
 import net.corda.serialization.internal.SerializationFactoryImpl
 import net.corda.serialization.internal.amqp.AbstractAMQPSerializationScheme
+import net.corda.serialization.internal.amqp.SerializationFactoryCacheKey
+import net.corda.serialization.internal.amqp.SerializerFactory
 import net.corda.serialization.internal.amqp.amqpMagic
-import java.util.*
+import java.nio.file.Paths
 
 fun main(args: Array<String>) {
 
@@ -40,7 +48,9 @@ fun main(args: Array<String>) {
 
         //edit the component groups start
 
-        val componentGroups = createComponentGroups(wTx.inputs, wTx.outputs, wTx.commands, wTx.attachments, wTx.notary, wTx.timeWindow, wTx.references, wTx.networkParametersHash)
+        val componentGroups = SerializationFactory.defaultFactory.withCurrentContext(context = SerializationDefaults.STORAGE_CONTEXT) {
+            createComponentGroups(wTx.inputs, wTx.outputs, wTx.commands, wTx.attachments, wTx.notary, wTx.timeWindow, wTx.references, wTx.networkParametersHash)
+        }
 
         wTx.componentGroups.forEachIndexed {
             i, v ->
@@ -69,14 +79,21 @@ fun main(args: Array<String>) {
 }
 
 private fun initialiseSerialization() {
-    // Deserialise with the lenient carpenter as we only care for the AMQP field getters
-    _contextSerializationEnv.set(SerializationEnvironment.with(
+    val cordappLoader = JarScanningCordappLoader.fromDirectories(
+            listOf(Paths.get("/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildDestination/nodes/Operator/cordapps")),
+            VersionInfo.UNKNOWN,
+            extraCordapps = emptyList(),
+            signerKeyFingerprintBlacklist = emptyList()
+    )
+    val classloader = cordappLoader.appClassLoader
+    nodeSerializationEnv = SerializationEnvironment.with(
             SerializationFactoryImpl().apply {
-                registerScheme(AMQPInspectorSerializationScheme)
+                registerScheme(AMQPServerSerializationScheme(cordappLoader.cordapps, Caffeine.newBuilder().maximumSize(128).build<SerializationFactoryCacheKey, SerializerFactory>().asMap()))
+                registerScheme(AMQPClientSerializationScheme(cordappLoader.cordapps, Caffeine.newBuilder().maximumSize(128).build<SerializationFactoryCacheKey, SerializerFactory>().asMap()))
             },
-            p2pContext = AMQP_P2P_CONTEXT.withLenientCarpenter(),
-            storageContext = AMQP_STORAGE_CONTEXT.withLenientCarpenter()
-    ))
+            p2pContext = AMQP_P2P_CONTEXT.withClassLoader(classloader),
+            storageContext = AMQP_STORAGE_CONTEXT.withClassLoader(classloader)
+    )
 }
 
 private object AMQPInspectorSerializationScheme : AbstractAMQPSerializationScheme(emptyList()) {
