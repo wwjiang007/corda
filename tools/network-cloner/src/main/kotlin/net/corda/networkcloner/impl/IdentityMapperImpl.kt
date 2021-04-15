@@ -11,15 +11,15 @@ import java.security.PublicKey
 
 class IdentityMapperImpl(sourceCertificatesDirs : List<File>, destinationCertificatesDirs : List<File>) : IdentityMapper {
 
-    val sourceIdentities = sourceCertificatesDirs.map { loadIdentities(it) }
-    val destinationIdentities = destinationCertificatesDirs.map { loadIdentities(it) }
+    val sourceIdentities = sourceCertificatesDirs.flatMap { loadIdentities(it) }
+    val destinationIdentities = destinationCertificatesDirs.flatMap { loadIdentities(it) }
 
-    override fun getSourceIdentity(x500: CordaX500Name) {
-        TODO("Not yet implemented")
+    override fun getSourceIdentity(x500Name: CordaX500Name) : Identity? {
+        return sourceIdentities.find { it.x500Name == x500Name }
     }
 
-    override fun getDestinationIdentity(x500: CordaX500Name) {
-        TODO("Not yet implemented")
+    override fun getDestinationIdentity(x500Name: CordaX500Name) : Identity? {
+        return destinationIdentities.find { it.x500Name == x500Name }
     }
 
     private fun loadIdentities(certificatesDirectory : File) : List<Identity> {

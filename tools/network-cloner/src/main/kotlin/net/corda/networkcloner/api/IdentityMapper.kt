@@ -6,7 +6,7 @@ import java.security.PublicKey
 
 interface IdentityMapper {
 
-    fun getSourceIdentity(x500 : CordaX500Name)
-    fun getDestinationIdentity(x500: CordaX500Name)
+    fun getSourceIdentity(x500Name : CordaX500Name) : Identity?
+    fun getDestinationIdentity(x500Name: CordaX500Name) : Identity?
 
 }

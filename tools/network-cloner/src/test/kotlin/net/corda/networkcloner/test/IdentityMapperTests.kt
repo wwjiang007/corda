@@ -1,9 +1,11 @@
 package net.corda.networkcloner.test
 
+import net.corda.core.identity.CordaX500Name
 import net.corda.core.internal.toPath
 import net.corda.networkcloner.impl.IdentityMapperImpl
 import org.junit.Test
 import java.io.File
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class IdentityMapperTests {
@@ -23,6 +25,12 @@ class IdentityMapperTests {
         val identityMapper = IdentityMapperImpl(sourceCertificatesDirs, destinationCertificatesDirs)
         assertTrue(identityMapper.sourceIdentities.isNotEmpty())
         assertTrue(identityMapper.destinationIdentities.isNotEmpty())
+
+        assertNotNull(identityMapper.getSourceIdentity(CordaX500Name.parse("O=Operator,L=New York,C=US")))
+        assertNotNull(identityMapper.getSourceIdentity(CordaX500Name.parse("O=Client,L=London,C=GB")))
+
+        assertNotNull(identityMapper.getDestinationIdentity(CordaX500Name.parse("O=Operator,L=New York,C=US")))
+        assertNotNull(identityMapper.getDestinationIdentity(CordaX500Name.parse("O=Client,L=London,C=GB")))
     }
 
 }
