@@ -2,10 +2,9 @@ package net.corda.networkcloner.test
 
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.internal.toPath
-import net.corda.networkcloner.api.IdentityMapper
+import net.corda.networkcloner.api.IdentityRepository
 import net.corda.networkcloner.api.Serializer
-import net.corda.networkcloner.api.TxEditor
-import net.corda.networkcloner.impl.IdentityMapperImpl
+import net.corda.networkcloner.impl.IdentityRepositoryImpl
 import net.corda.networkcloner.impl.SerializerImpl
 import java.io.File
 import java.nio.file.Paths
@@ -28,7 +27,7 @@ open class TestSupport {
         }
     }
 
-    fun getIdentityMapper(snapshot : String) : IdentityMapper {
+    fun getIdentityMapper(snapshot : String) : IdentityRepository {
         val testRootDir = TestSupport::class.java.getResource("/snapshots/$snapshot").toPath().toFile()
 
         val sourceCertificatesDirs = listOf("client","operator").map { File(testRootDir, "source/$it/certificates") }
@@ -39,7 +38,7 @@ open class TestSupport {
             assertTrue(it.isDirectory(), "Path '$it' must be a directory.")
         }
 
-        return IdentityMapperImpl(sourceCertificatesDirs, destinationCertificatesDirs)
+        return IdentityRepositoryImpl(sourceCertificatesDirs, destinationCertificatesDirs)
     }
 
     companion object {

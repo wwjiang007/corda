@@ -1,6 +1,5 @@
 package net.corda.networkcloner.entity
 
-import net.corda.core.identity.CordaX500Name
-import java.security.KeyPair
+import net.corda.core.identity.Party
 
-data class Identity(val x500Name: CordaX500Name, val identityKey : KeyPair)
+data class Identity(val sourceParty : Party, val destinationPartyAndPrivateKey: PartyAndPrivateKey)
