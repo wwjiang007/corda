@@ -6,6 +6,6 @@ import net.corda.networkcloner.entity.TransactionComponents
 
 interface TxEditor {
 
-    fun edit(transactionComponents : TransactionComponents, identityMappings: Map<Identity, Identity>) : TransactionComponents
+    fun edit(transactionComponents : TransactionComponents, identities : List<Identity>) : TransactionComponents
 
 }

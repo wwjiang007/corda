@@ -10,7 +10,7 @@ import kotlin.reflect.jvm.javaField
 
 class TestAppTxEditor : TxEditor {
 
-    override fun edit(transactionComponents : TransactionComponents, identityMappings: Map<Identity, Identity>): TransactionComponents {
+    override fun edit(transactionComponents : TransactionComponents, identities : List<Identity>): TransactionComponents {
         transactionComponents.outputs.map { transactionState ->
             val data = transactionState.data
             data::class.memberProperties.filter {

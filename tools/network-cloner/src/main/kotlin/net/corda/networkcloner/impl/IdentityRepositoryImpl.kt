@@ -11,6 +11,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.lang.RuntimeException
 import java.security.KeyStore
+import java.security.PublicKey
 
 class IdentityRepositoryImpl(sourceCertificatesDirs : List<File>, destinationCertificatesDirs : List<File>) : IdentityRepository {
 
@@ -40,6 +41,14 @@ class IdentityRepositoryImpl(sourceCertificatesDirs : List<File>, destinationCer
         ks.load(FileInputStream(File(certificatesDirectory,"nodekeystore.jks")),"cordacadevpass".toCharArray())
         val identityKey = ks.getCertificateAndKeyPair("identity-private-key", "cordacadevpass")
         return PartyAndPrivateKey(Party(identityKey.certificate), identityKey.keyPair.private)
+    }
+
+    override fun getAllIdentities(): List<Identity> {
+        return identities
+    }
+
+    override fun getIdentityBySourcePublicKey(publicKey: PublicKey): Identity? {
+        return identities.find { it.sourceParty.owningKey == publicKey }
     }
 
     override fun getIdentityBySourceX500Name(x500Name: CordaX500Name): Identity? {
