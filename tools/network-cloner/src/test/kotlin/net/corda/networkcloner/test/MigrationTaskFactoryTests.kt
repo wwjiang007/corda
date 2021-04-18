@@ -1,12 +1,9 @@
 package net.corda.networkcloner.test
 
-import net.corda.networkcloner.impl.NodesDirPartyRepository
 import net.corda.networkcloner.impl.NodesToNodesMigrationTaskFactory
-import net.corda.networkcloner.util.IdentityFactory
 import org.junit.Test
 import java.io.File
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 
 class MigrationTaskFactoryTests : TestSupport() {
 
