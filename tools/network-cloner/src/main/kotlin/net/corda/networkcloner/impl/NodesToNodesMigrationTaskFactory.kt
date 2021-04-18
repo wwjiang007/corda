@@ -3,6 +3,7 @@ package net.corda.networkcloner.impl
 import net.corda.core.identity.CordaX500Name
 import net.corda.networkcloner.api.MigrationTaskFactory
 import net.corda.networkcloner.api.TransactionsStore
+import net.corda.networkcloner.entity.MigrationContext
 import net.corda.networkcloner.entity.MigrationTask
 import net.corda.networkcloner.util.IdentityFactory
 import java.io.File
@@ -18,7 +19,11 @@ class NodesToNodesMigrationTaskFactory(val source : File, val destination : File
         val sourceTransactionStores = getTransactionStores(source)
         val destinationTransactionStores = getTransactionStores(destination)
 
-        return emptyList()
+        return identities.map { identity ->
+            val sourceTransactionsStore = sourceTransactionStores[identity.sourceParty.name] ?: throw RuntimeException("Expected to find source transactions store for identity $identity")
+            val destinationTransactionsStore = destinationTransactionStores[identity.destinationPartyAndPrivateKey.party.name] ?: throw RuntimeException("Expected to find destination transactions store for identity $identity")
+            MigrationTask(identity, sourceTransactionsStore, destinationTransactionsStore, MigrationContext(identities))
+        }
     }
 
     private fun getTransactionStores(nodesDir : File) : Map<CordaX500Name, TransactionsStore> {

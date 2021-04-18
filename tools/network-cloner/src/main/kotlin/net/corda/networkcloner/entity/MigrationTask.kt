@@ -1,8 +1,8 @@
 package net.corda.networkcloner.entity
 
-import org.h2.mvstore.tx.TransactionStore
+import net.corda.networkcloner.api.TransactionsStore
 
 data class MigrationTask(val identity: Identity,
-                         val sourceTransactionStore: TransactionStore,
-                         val destinationTransactionStore: TransactionStore,
+                         val sourceTransactionStore: TransactionsStore,
+                         val destinationTransactionStore: TransactionsStore,
                          val migrationContext: MigrationContext)
