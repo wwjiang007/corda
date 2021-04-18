@@ -13,7 +13,7 @@ class SerializerTests : TestSupport() {
 
     @Test
     fun `Transaction blob is identical when gone through deserialization and serialization`() {
-        val pathToTestDb = SerializerTests::class.java.getResource("/snapshots/s1/source/persistence.mv.db").path.removeSuffix(".mv.db")
+        val pathToTestDb = SerializerTests::class.java.getResource("/snapshots/s1/source/client/persistence.mv.db").path.removeSuffix(".mv.db")
         val transactionsStore = TransactionsStoreImpl("jdbc:h2:$pathToTestDb","sa","")
         val sourceTxByteArray = transactionsStore.getAllTransactions().first()
 

@@ -16,7 +16,7 @@ open class TestSupport {
     //@todo this storing to a static property doesn't really work if different tests ask for different snapshot
     fun getSerializer(snapshot: String) : Serializer {
         return if (serializer == null) {
-            val pathToCordapps = SerializerTests::class.java.getResource("/snapshots/$snapshot/source/cordapps").path
+            val pathToCordapps = SerializerTests::class.java.getResource("/snapshots/$snapshot/source/client/cordapps").path
             SerializerImpl(Paths.get(pathToCordapps)).also {
                 serializer = it
             }
