@@ -5,7 +5,6 @@ import net.corda.core.serialization.SerializationDefaults
 import net.corda.core.serialization.serialize
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
-import net.corda.networkcloner.impl.IdentityRepositoryImpl
 import net.corda.networkcloner.impl.SerializerImpl
 import net.corda.networkcloner.impl.SignerImpl
 import net.corda.networkcloner.impl.TransactionsStoreImpl
@@ -19,8 +18,7 @@ fun main(args: Array<String>) {
     val serializer = SerializerImpl(Paths.get("/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildDestination/nodes/Operator/cordapps"))
     val transactionStore = TransactionsStoreImpl("jdbc:h2:/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildSource/nodes/Operator/persistence", "sa", "")
     val transactions = transactionStore.getAllTransactions()
-    val identityMapper = IdentityRepositoryImpl(emptyList(), emptyList())
-    val signer = SignerImpl(identityMapper)
+    val signer = SignerImpl()
 
 
     transactions.forEach {
