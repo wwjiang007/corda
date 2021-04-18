@@ -1,7 +1,9 @@
 package net.corda.networkcloner.api
 
+import net.corda.networkcloner.entity.MigrationTask
+
 interface MigrationTaskFactory {
 
-    fun getMigrationTasks()
+    fun getMigrationTasks() : List<MigrationTask>
 
 }
