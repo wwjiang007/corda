@@ -7,8 +7,8 @@ import java.io.File
 class NodesToNodesMigrationTaskFactory(val source : File, val destination : File) : MigrationTaskFactory {
 
     override fun getMigrationTasks() : List<MigrationTask> {
-        val sourceParties = NodesDirectoryPartyRepository(source)
-        val destinationParties = NodesDirectoryPartyRepository(destination)
+        val sourceParties = NodesDirPartyRepository(source)
+        val destinationParties = NodesDirPartyRepository(destination)
         return emptyList()
     }
 }

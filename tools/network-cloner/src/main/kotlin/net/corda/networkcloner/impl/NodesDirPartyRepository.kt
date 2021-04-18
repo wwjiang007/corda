@@ -9,7 +9,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.security.KeyStore
 
-class NodesDirectoryPartyRepository(nodesDirectory: File) : PartyRepository {
+class NodesDirPartyRepository(nodesDirectory: File) : PartyRepository {
 
     val certificatesDirectories = getCertificatesDirectories(nodesDirectory)
 

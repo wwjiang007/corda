@@ -1,6 +1,6 @@
 package net.corda.networkcloner.test
 
-import net.corda.networkcloner.impl.NodesDirectoryPartyRepository
+import net.corda.networkcloner.impl.NodesDirPartyRepository
 import net.corda.networkcloner.util.IdentityFactory
 import org.junit.Test
 import java.io.File
@@ -12,10 +12,10 @@ class IdentityFactoryTests : TestSupport() {
     @Test
     fun `Identities are correctly created`() {
         val sourceNodesDirectory = File(getSnapshotDirectory("s1"), "source")
-        val sourcePartyRepository = NodesDirectoryPartyRepository(sourceNodesDirectory)
+        val sourcePartyRepository = NodesDirPartyRepository(sourceNodesDirectory)
 
         val destinationNodesDirectory = File(getSnapshotDirectory("s1"), "destination")
-        val destinationPartyRepository = NodesDirectoryPartyRepository(destinationNodesDirectory)
+        val destinationPartyRepository = NodesDirPartyRepository(destinationNodesDirectory)
 
         val identities = IdentityFactory.getIdentities(sourcePartyRepository, destinationPartyRepository)
         assertEquals(2, identities.size)
