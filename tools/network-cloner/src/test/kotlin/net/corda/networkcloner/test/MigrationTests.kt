@@ -19,7 +19,7 @@ class MigrationTests : TestSupport() {
 
         assertEquals(1, task.sourceNodeDatabase.readMigrationData().transactions.size)
         assertEquals(0, task.destinationNodeDatabase.readMigrationData().transactions.size)
-        Migration(task).run()
+        Migration(task, getSerializer("s2"), emptyList()).run()
         assertEquals(1, task.sourceNodeDatabase.readMigrationData().transactions.size)
         assertEquals(1, task.destinationNodeDatabase.readMigrationData().transactions.size, "The transaction should have been copied from source to destination")
     }

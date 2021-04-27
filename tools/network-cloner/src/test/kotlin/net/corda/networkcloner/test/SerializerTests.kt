@@ -4,6 +4,7 @@ import net.corda.core.internal.createComponentGroups
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
 import net.corda.networkcloner.impl.NodeDatabaseImpl
+import net.corda.networkcloner.util.toTransactionComponents
 import org.junit.Test
 import kotlin.test.assertTrue
 
@@ -19,9 +20,7 @@ class SerializerTests : TestSupport() {
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)
         val sourceWireTransaction = sourceSignedTransaction.coreTransaction as WireTransaction
 
-        val destComponentGroups = with(sourceWireTransaction) {
-            createComponentGroups(inputs, outputs, commands, attachments, notary, timeWindow, references, networkParametersHash)
-        }
+        val destComponentGroups = sourceSignedTransaction.toTransactionComponents().toComponentGroups()
 
         val destWireTransaction = WireTransaction(destComponentGroups, sourceWireTransaction.privacySalt, sourceWireTransaction.digestService)
         val destSignedTransaction = SignedTransaction(destWireTransaction, sourceSignedTransaction.sigs) //here obviously the sigs don't change
