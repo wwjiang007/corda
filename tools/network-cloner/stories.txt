@@ -9,3 +9,8 @@ Use cases:
 1) I run the entire network
 2) I run my own node only
 3) I'm a support providing organisation
+
+Questions/Answers
+
+1) Why not use the LedgerRecovery thing to distribute edited transactions across the network?
+   - Because other parties than participants may have the transaction in production (e.g. Observer)
