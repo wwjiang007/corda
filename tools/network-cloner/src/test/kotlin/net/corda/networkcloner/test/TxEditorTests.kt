@@ -14,7 +14,7 @@ class TxEditorTests : TestSupport() {
     fun `An editor can be invoked on a transaction`() {
         val pathToTestDb = TxEditorTests::class.java.getResource("/snapshots/s1/source/persistence.mv.db").path.removeSuffix(".mv.db")
         val transactionsStore = NodeDatabaseImpl("jdbc:h2:$pathToTestDb","sa","")
-        val sourceTxByteArray = transactionsStore.getMigrationData().transactions.first().transaction
+        val sourceTxByteArray = transactionsStore.readMigrationData().transactions.first().transaction
 
         val serializer = getSerializer("s1")
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)

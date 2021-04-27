@@ -17,7 +17,7 @@ fun main(args: Array<String>) {
 
     val serializer = SerializerImpl(Paths.get("/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildDestination/nodes/Operator/cordapps"))
     val transactionStore = NodeDatabaseImpl("jdbc:h2:/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildSource/nodes/Operator/persistence", "sa", "")
-    val migrationData = transactionStore.getMigrationData()
+    val migrationData = transactionStore.readMigrationData()
     val signer = SignerImpl()
 
 

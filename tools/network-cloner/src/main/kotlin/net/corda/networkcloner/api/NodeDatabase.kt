@@ -4,6 +4,7 @@ import net.corda.networkcloner.entity.MigrationData
 
 interface NodeDatabase {
 
-    fun getMigrationData() : MigrationData
+    fun readMigrationData() : MigrationData
+    fun writeMigrationData(migrationData: MigrationData)
 
 }

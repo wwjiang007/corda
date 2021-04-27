@@ -10,9 +10,17 @@ class NodeDatabaseImpl(url : String, username: String, password: String) : NodeD
 
     private val entityManager : EntityManager = JpaEntityManagerFactory(url, username, password).entityManager
 
-    override fun getMigrationData(): MigrationData {
+    override fun readMigrationData(): MigrationData {
         val transactions = getTransactions()
         return MigrationData(transactions, emptyList(), emptyList(), emptyList())
+    }
+
+    override fun writeMigrationData(migrationData: MigrationData) {
+        entityManager.transaction.begin()
+        migrationData.transactions.forEach {
+            entityManager.persist(it)
+        }
+        entityManager.transaction.commit()
     }
 
     private fun getTransactions(): List<DBTransactionStorage.DBTransaction> {
