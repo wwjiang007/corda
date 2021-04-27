@@ -2,7 +2,11 @@ package net.corda.networkcloner.test
 
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.internal.toPath
+import net.corda.networkcloner.api.NodeDatabase
+import net.corda.networkcloner.api.PartyRepository
 import net.corda.networkcloner.api.Serializer
+import net.corda.networkcloner.impl.NodeDatabaseImpl
+import net.corda.networkcloner.impl.NodesDirPartyRepository
 import net.corda.networkcloner.impl.SerializerImpl
 import java.io.File
 import java.nio.file.Paths
@@ -28,6 +32,16 @@ open class TestSupport {
 
     private fun getSnapshotsDirectory() : File {
         return TestSupport::class.java.getResource("/snapshots").toPath().toFile()
+    }
+
+    fun getPartyRepository(snapshot : String, sourceOrDestination: String) : PartyRepository {
+        val nodesDir = File(getSnapshotDirectory(snapshot), sourceOrDestination)
+        return NodesDirPartyRepository(nodesDir)
+    }
+
+    fun getNodeDatabase(snapshot: String, sourceOrDestination: String, node: String) : NodeDatabase {
+        val pathToDbFileWithoutSuffix = TxEditorTests::class.java.getResource("/snapshots/$snapshot/$sourceOrDestination/$node/persistence.mv.db").path.removeSuffix(".mv.db")
+        return NodeDatabaseImpl("jdbc:h2:$pathToDbFileWithoutSuffix","sa","")
     }
 
     fun getSnapshotDirectory(snapshot: String) : File {
