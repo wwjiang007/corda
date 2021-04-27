@@ -1,6 +1,9 @@
 1) Be able to change the hashes of the attachments?? so that what?
 2) Plug my own code in to do some editing on the transactions
 3) Plug my own code in to do some obfusccation on the ledger data
+4) DB sequences must be correct
+5) Do I want flow results to be copied across?
+6) Transfer custom tables
 
 Use cases:
 1) I run the entire network

@@ -7,7 +7,7 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
 import net.corda.networkcloner.impl.SerializerImpl
 import net.corda.networkcloner.impl.SignerImpl
-import net.corda.networkcloner.impl.TransactionsStoreImpl
+import net.corda.networkcloner.impl.NodeDatabaseImpl
 import net.corda.serialization.internal.CordaSerializationEncoding
 import java.nio.file.Paths
 
@@ -16,13 +16,13 @@ fun main(args: Array<String>) {
     println("Hello there")
 
     val serializer = SerializerImpl(Paths.get("/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildDestination/nodes/Operator/cordapps"))
-    val transactionStore = TransactionsStoreImpl("jdbc:h2:/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildSource/nodes/Operator/persistence", "sa", "")
-    val transactions = transactionStore.getAllTransactions()
+    val transactionStore = NodeDatabaseImpl("jdbc:h2:/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildSource/nodes/Operator/persistence", "sa", "")
+    val migrationData = transactionStore.getMigrationData()
     val signer = SignerImpl()
 
 
-    transactions.forEach {
-        val deserialized = serializer.deserializeDbBlobIntoTransaction(it)
+    migrationData.transactions.forEach {
+        val deserialized = serializer.deserializeDbBlobIntoTransaction(it.transaction)
 
         val wTx = (deserialized as SignedTransaction).coreTransaction as WireTransaction
 
@@ -51,7 +51,7 @@ fun main(args: Array<String>) {
 
         val serializedFromSignedTx = sTx.serialize(context = SerializationDefaults.STORAGE_CONTEXT.withEncoding(CordaSerializationEncoding.SNAPPY))
 
-        println("Db tx and destination tx are same: ${it.contentEquals(serializedFromSignedTx.bytes)}")
+        println("Db tx and destination tx are same: ${it.transaction.contentEquals(serializedFromSignedTx.bytes)}")
 
     }
 

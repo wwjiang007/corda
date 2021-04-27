@@ -2,7 +2,7 @@ package net.corda.networkcloner.impl
 
 import net.corda.core.identity.CordaX500Name
 import net.corda.networkcloner.api.MigrationTaskFactory
-import net.corda.networkcloner.api.TransactionsStore
+import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.entity.MigrationContext
 import net.corda.networkcloner.entity.MigrationTask
 import net.corda.networkcloner.util.IdentityFactory
@@ -26,7 +26,7 @@ class NodesToNodesMigrationTaskFactory(val source : File, val destination : File
         }
     }
 
-    private fun getTransactionStores(nodesDir : File) : Map<CordaX500Name, TransactionsStore> {
+    private fun getTransactionStores(nodesDir : File) : Map<CordaX500Name, NodeDatabase> {
         return nodesDir.listFiles().filter { it.isDirectory }.map {
             val nodeConf = File(it, "node.conf").also {
                 if (!it.exists()) {
@@ -41,7 +41,7 @@ class NodesToNodesMigrationTaskFactory(val source : File, val destination : File
                     throw RuntimeException("Expected $it to exist")
                 }
             }.path.removeSuffix(".mv.db")
-            val transactionStore = TransactionsStoreImpl("jdbc:h2:$pathToDb", "sa","")
+            val transactionStore = NodeDatabaseImpl("jdbc:h2:$pathToDb", "sa","")
             x500Name to transactionStore
         }.toMap()
     }

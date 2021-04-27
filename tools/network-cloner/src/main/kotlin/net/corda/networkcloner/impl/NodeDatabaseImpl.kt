@@ -1,0 +1,25 @@
+package net.corda.networkcloner.impl
+
+import net.corda.networkcloner.api.NodeDatabase
+import net.corda.networkcloner.entity.MigrationData
+import net.corda.networkcloner.util.JpaEntityManagerFactory
+import net.corda.node.services.persistence.DBTransactionStorage
+import javax.persistence.EntityManager
+
+class NodeDatabaseImpl(url : String, username: String, password: String) : NodeDatabase {
+
+    private val entityManager : EntityManager = JpaEntityManagerFactory(url, username, password).entityManager
+
+    override fun getMigrationData(): MigrationData {
+        val transactions = getTransactions()
+        return MigrationData(transactions, emptyList(), emptyList(), emptyList())
+    }
+
+    private fun getTransactions(): List<DBTransactionStorage.DBTransaction> {
+        val query = entityManager.createQuery("SELECT e FROM DBTransactionStorage\$DBTransaction e")
+        @Suppress("UNCHECKED_CAST")
+        return query.resultList as List<DBTransactionStorage.DBTransaction>
+    }
+
+
+}
