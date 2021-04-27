@@ -1,21 +1,16 @@
 package net.corda.networkcloner.test
 
-import net.corda.core.transactions.WireTransaction
-import net.corda.networkcloner.entity.TransactionComponents
-import net.corda.networkcloner.impl.NodeDatabaseImpl
-import net.corda.networkcloner.impl.NodesDirPartyRepository
 import net.corda.networkcloner.impl.txeditor.PartyReplacingTxEditor
-import net.corda.networkcloner.test.txeditors.TestAppTxEditor
 import net.corda.networkcloner.util.IdentityFactory
 import net.corda.networkcloner.util.toTransactionComponents
 import org.junit.Ignore
 import org.junit.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class TxEditorTests : TestSupport() {
 
     @Test
+    @Ignore
     fun `Party replacing editor works`() {
         val nodeDatabase = getNodeDatabase("s2","source","client")
         val sourceTxByteArray = nodeDatabase.readMigrationData().transactions.first().transaction
