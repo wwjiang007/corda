@@ -6,6 +6,7 @@ import net.corda.networkcloner.api.Serializer
 import net.corda.networkcloner.impl.SerializerImpl
 import java.io.File
 import java.nio.file.Paths
+import java.util.*
 import kotlin.test.assertTrue
 
 open class TestSupport {
@@ -25,8 +26,20 @@ open class TestSupport {
         }
     }
 
+    private fun getSnapshotsDirectory() : File {
+        return TestSupport::class.java.getResource("/snapshots").toPath().toFile()
+    }
+
     fun getSnapshotDirectory(snapshot: String) : File {
-        return TestSupport::class.java.getResource("/snapshots/$snapshot").toPath().toFile()
+        return File(getSnapshotsDirectory(), snapshot)
+    }
+
+    fun copyAndGetSnapshotDirectory(snapshot: String) : File {
+        val snapshotsDirectory = getSnapshotsDirectory()
+        val snapshotDirectory = getSnapshotDirectory(snapshot)
+        val copyDirectory = File(snapshotsDirectory, UUID.randomUUID().toString())
+        snapshotDirectory.copyRecursively(copyDirectory)
+        return copyDirectory
     }
 
     companion object {
