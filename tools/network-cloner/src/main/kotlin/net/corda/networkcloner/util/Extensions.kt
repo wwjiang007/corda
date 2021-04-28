@@ -1,8 +1,8 @@
 package net.corda.networkcloner.util
 
+import net.corda.core.cloning.TransactionComponents
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
-import net.corda.networkcloner.entity.TransactionComponents
 
 fun SignedTransaction.toTransactionComponents() : TransactionComponents {
     val wTx = this.coreTransaction as WireTransaction

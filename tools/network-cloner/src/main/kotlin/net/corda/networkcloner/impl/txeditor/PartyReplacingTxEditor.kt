@@ -1,11 +1,11 @@
 package net.corda.networkcloner.impl.txeditor
 
+import net.corda.core.cloning.Identity
+import net.corda.core.cloning.TransactionComponents
+import net.corda.core.cloning.TxEditor
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.TransactionState
 import net.corda.core.identity.AbstractParty
-import net.corda.networkcloner.api.TxEditor
-import net.corda.networkcloner.entity.Identity
-import net.corda.networkcloner.entity.TransactionComponents
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible

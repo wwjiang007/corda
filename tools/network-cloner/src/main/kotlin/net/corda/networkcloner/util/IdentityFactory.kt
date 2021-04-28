@@ -1,7 +1,7 @@
 package net.corda.networkcloner.util
 
+import net.corda.core.cloning.Identity
 import net.corda.networkcloner.api.PartyRepository
-import net.corda.networkcloner.entity.Identity
 import java.lang.RuntimeException
 
 object IdentityFactory {

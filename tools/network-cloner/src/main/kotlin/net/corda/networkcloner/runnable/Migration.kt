@@ -1,9 +1,9 @@
 package net.corda.networkcloner.runnable
 
+import net.corda.core.cloning.TxEditor
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
 import net.corda.networkcloner.api.Serializer
-import net.corda.networkcloner.api.TxEditor
 import net.corda.networkcloner.entity.MigrationTask
 import net.corda.networkcloner.util.toTransactionComponents
 import net.corda.node.services.persistence.DBTransactionStorage

@@ -637,6 +637,7 @@ bintrayConfig {
             'corda-serialization-djvm',
             'corda-tools-blob-inspector',
             'corda-tools-explorer',
+            'corda-network-cloner',
             'corda-tools-network-bootstrapper',
             'corda-tools-cliutils',
             'corda-common-configuration-parsing',

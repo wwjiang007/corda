@@ -1,4 +1,4 @@
-package net.corda.networkcloner.entity
+package net.corda.core.cloning
 
 import net.corda.core.identity.Party
 import java.security.KeyPair

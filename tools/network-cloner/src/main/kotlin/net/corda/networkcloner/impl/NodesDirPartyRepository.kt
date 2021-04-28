@@ -1,8 +1,8 @@
 package net.corda.networkcloner.impl
 
+import net.corda.core.cloning.PartyAndPrivateKey
 import net.corda.core.identity.Party
 import net.corda.networkcloner.api.PartyRepository
-import net.corda.networkcloner.entity.PartyAndPrivateKey
 import net.corda.nodeapi.internal.crypto.getCertificateAndKeyPair
 import net.corda.nodeapi.internal.crypto.x509
 import java.io.File
