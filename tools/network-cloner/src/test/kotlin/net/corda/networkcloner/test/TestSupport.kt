@@ -5,6 +5,8 @@ import net.corda.core.internal.toPath
 import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.api.PartyRepository
 import net.corda.networkcloner.api.Serializer
+import net.corda.networkcloner.api.TxEditorFactory
+import net.corda.networkcloner.impl.DirectoryBasedTxEditorFactory
 import net.corda.networkcloner.impl.NodeDatabaseImpl
 import net.corda.networkcloner.impl.NodesDirPartyRepository
 import net.corda.networkcloner.impl.SerializerImpl
@@ -32,6 +34,10 @@ open class TestSupport {
 
     private fun getSnapshotsDirectory() : File {
         return TestSupport::class.java.getResource("/snapshots").toPath().toFile()
+    }
+
+    fun getTxEditorFactory(snapshot: String) : TxEditorFactory {
+        return DirectoryBasedTxEditorFactory(File(getSnapshotDirectory(snapshot),"tx-editor-plugins"))
     }
 
     fun getPartyRepository(snapshot : String, sourceOrDestination: String) : PartyRepository {
