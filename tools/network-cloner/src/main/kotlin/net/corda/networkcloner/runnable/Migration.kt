@@ -8,7 +8,7 @@ import net.corda.networkcloner.entity.MigrationTask
 import net.corda.networkcloner.util.toTransactionComponents
 import net.corda.node.services.persistence.DBTransactionStorage
 
-class Migration(val migrationTask: MigrationTask, val serializer: Serializer, val txEditors : List<TxEditor>) : Runnable {
+abstract class Migration(val migrationTask: MigrationTask, val serializer: Serializer) : Runnable {
 
     override fun run() {
         val sourceMigrationData = migrationTask.sourceNodeDatabase.readMigrationData()
@@ -18,7 +18,7 @@ class Migration(val migrationTask: MigrationTask, val serializer: Serializer, va
             val sourceWireTransaction = sourceSignedTransaction.coreTransaction as WireTransaction
             val sourceTransactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-            val destTransactionComponents = txEditors.fold(sourceTransactionComponents) { tCs, txEditor -> txEditor.edit(tCs, migrationTask.migrationContext.identities) }
+            val destTransactionComponents = getTxEditors().fold(sourceTransactionComponents) { tCs, txEditor -> txEditor.edit(tCs, migrationTask.migrationContext.identities) }
             val destComponentGroups = destTransactionComponents.toComponentGroups()
 
             val destWireTransaction = WireTransaction(destComponentGroups, sourceWireTransaction.privacySalt, sourceWireTransaction.digestService)
@@ -33,4 +33,6 @@ class Migration(val migrationTask: MigrationTask, val serializer: Serializer, va
 
         migrationTask.destinationNodeDatabase.writeMigrationData(destMigrationData)
     }
+
+    abstract fun getTxEditors() : List<TxEditor>
 }
