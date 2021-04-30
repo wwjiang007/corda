@@ -8,8 +8,7 @@ import net.corda.core.serialization.internal.nodeSerializationEnv
 import net.corda.core.serialization.serialize
 import net.corda.core.transactions.SignedTransaction
 import net.corda.networkcloner.api.Serializer
-import net.corda.node.VersionInfo
-import net.corda.node.internal.cordapp.JarScanningCordappLoader
+import net.corda.nodeapi.internal.cordapp.CordappLoader
 import net.corda.nodeapi.internal.rpc.client.AMQPClientSerializationScheme
 import net.corda.nodeapi.internal.serialization.amqp.AMQPServerSerializationScheme
 import net.corda.serialization.internal.AMQP_P2P_CONTEXT
@@ -18,17 +17,10 @@ import net.corda.serialization.internal.CordaSerializationEncoding
 import net.corda.serialization.internal.SerializationFactoryImpl
 import net.corda.serialization.internal.amqp.SerializationFactoryCacheKey
 import net.corda.serialization.internal.amqp.SerializerFactory
-import java.nio.file.Path
 
-class SerializerImpl(destinationCordappsDirectory : Path) : Serializer {
+class SerializerImpl(cordappLoader : CordappLoader) : Serializer {
 
     init {
-        val cordappLoader = JarScanningCordappLoader.fromDirectories(
-                listOf(destinationCordappsDirectory),
-                VersionInfo.UNKNOWN,
-                extraCordapps = emptyList(),
-                signerKeyFingerprintBlacklist = emptyList()
-        )
         val classloader = cordappLoader.appClassLoader
         nodeSerializationEnv = SerializationEnvironment.with(
                 SerializationFactoryImpl().apply {

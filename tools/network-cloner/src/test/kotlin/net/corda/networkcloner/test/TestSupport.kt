@@ -2,18 +2,16 @@ package net.corda.networkcloner.test
 
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.internal.toPath
+import net.corda.networkcloner.api.CordappsRepository
 import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.api.PartyRepository
 import net.corda.networkcloner.api.Serializer
-import net.corda.networkcloner.api.TxEditorFactory
-import net.corda.networkcloner.impl.DirectoryBasedTxEditorFactory
+import net.corda.networkcloner.impl.CordappsRepositoryImpl
 import net.corda.networkcloner.impl.NodeDatabaseImpl
 import net.corda.networkcloner.impl.NodesDirPartyRepository
 import net.corda.networkcloner.impl.SerializerImpl
 import java.io.File
-import java.nio.file.Paths
 import java.util.*
-import kotlin.test.assertTrue
 
 open class TestSupport {
 
@@ -23,8 +21,8 @@ open class TestSupport {
     //@todo this storing to a static property doesn't really work if different tests ask for different snapshot
     fun getSerializer(snapshot: String) : Serializer {
         return if (serializer == null) {
-            val pathToCordapps = SerializerTests::class.java.getResource("/snapshots/$snapshot/source/client/cordapps").path
-            SerializerImpl(Paths.get(pathToCordapps)).also {
+            val cordappLoader = getCordappsRepository(snapshot).getCordappLoader()
+            SerializerImpl(cordappLoader).also {
                 serializer = it
             }
         } else {
@@ -36,10 +34,6 @@ open class TestSupport {
         return TestSupport::class.java.getResource("/snapshots").toPath().toFile()
     }
 
-    fun getTxEditorFactory(snapshot: String) : TxEditorFactory {
-        return DirectoryBasedTxEditorFactory(File(getSnapshotDirectory(snapshot),"tx-editor-plugins"))
-    }
-
     fun getPartyRepository(snapshot : String, sourceOrDestination: String) : PartyRepository {
         val nodesDir = File(getSnapshotDirectory(snapshot), sourceOrDestination)
         return NodesDirPartyRepository(nodesDir)
@@ -48,6 +42,17 @@ open class TestSupport {
     fun getNodeDatabase(snapshot: String, sourceOrDestination: String, node: String) : NodeDatabase {
         val pathToDbFileWithoutSuffix = TxEditorTests::class.java.getResource("/snapshots/$snapshot/$sourceOrDestination/$node/persistence.mv.db").path.removeSuffix(".mv.db")
         return NodeDatabaseImpl("jdbc:h2:$pathToDbFileWithoutSuffix","sa","")
+    }
+
+    fun getCordappsRepository(snapshot: String) : CordappsRepository {
+        return if (cordappsRepository == null) {
+            val pathToCordapps = File(getSnapshotDirectory(snapshot),"tx-editor-plugins")
+            CordappsRepositoryImpl(pathToCordapps).also {
+                cordappsRepository = it
+            }
+        } else {
+            cordappsRepository!!
+        }
     }
 
     fun getSnapshotDirectory(snapshot: String) : File {
@@ -64,6 +69,7 @@ open class TestSupport {
 
     companion object {
         var serializer : Serializer? = null
+        var cordappsRepository : CordappsRepository? = null
     }
 
 }

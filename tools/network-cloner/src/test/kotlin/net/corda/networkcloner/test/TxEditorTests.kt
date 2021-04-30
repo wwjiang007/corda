@@ -4,6 +4,8 @@ import net.corda.networkcloner.util.IdentityFactory
 import net.corda.networkcloner.util.toTransactionComponents
 import org.junit.Ignore
 import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class TxEditorTests : TestSupport() {
 
@@ -19,13 +21,13 @@ class TxEditorTests : TestSupport() {
         val destPartyRepository = getPartyRepository("s2", "destination")
         val identities = IdentityFactory.getIdentities(sourcePartyRepository, destPartyRepository)
 
-        val txEditorFactory = getTxEditorFactory("s2")
-        val txEditors = txEditorFactory.getTxEditors()
+        val cordappRepository = getCordappsRepository("s2")
+        val txEditors = cordappRepository.getTxEditors()
+        assertEquals(1, txEditors.size)
+        val txEditor = txEditors.single()
         val transactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-
-        /*
-        val editedTransactionComponents = partyReplacingTxEditor.edit(transactionComponents, identities)
+        val editedTransactionComponents = txEditor.edit(transactionComponents, identities)
 
         assertTrue(editedTransactionComponents.outputs.all {
             it.data.participants.intersect(identities.map { it.sourceParty }).isEmpty()
@@ -35,7 +37,7 @@ class TxEditorTests : TestSupport() {
             it.data.participants.intersect(identities.map { it.destinationPartyAndPrivateKey.party }).isNotEmpty()
         }, "All outputs should have at least one participant from the destination list of parties")
 
-         */
+
     }
 
 }
