@@ -1,10 +1,12 @@
 package net.corda.networkcloner.test
 
 import net.corda.networkcloner.impl.txeditors.TxCommandsEditor
+import net.corda.networkcloner.impl.txeditors.TxNotaryEditor
 import net.corda.networkcloner.util.IdentityFactory
 import net.corda.networkcloner.util.toTransactionComponents
 import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class TxEditorTests : TestSupport() {
@@ -62,5 +64,27 @@ class TxEditorTests : TestSupport() {
         assertTrue(editedTransactionComponents.commands.all {
             it.signers.intersect(identities.map { it.destinationPartyAndPrivateKey.party.owningKey }).isNotEmpty()
         }, "All commands signers should have at least one signer from the destination list of owning keys")
+    }
+
+    @Test
+    fun `Notary TxEditor can be applied and works`() {
+        val nodeDatabase = getNodeDatabase("s1","source","client")
+        val sourceTxByteArray = nodeDatabase.readMigrationData().transactions.first().transaction
+
+        val serializer = getSerializer("s1")
+        val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)
+
+        val sourcePartyRepository = getPartyRepository("s1","source")
+        val destPartyRepository = getPartyRepository("s1", "destination")
+        val identities = IdentityFactory.getIdentities(sourcePartyRepository, destPartyRepository)
+
+        val txNotaryEditor = TxNotaryEditor()
+        val transactionComponents = sourceSignedTransaction.toTransactionComponents()
+
+        val editedTransactionComponents = txNotaryEditor.edit(transactionComponents, identities)
+
+        val expectedNotary = destPartyRepository.getParties().find { it.name.toString().contains("Notary", true) }
+        assertNotNull(expectedNotary)
+        assertEquals(expectedNotary, editedTransactionComponents.notary)
     }
 }
