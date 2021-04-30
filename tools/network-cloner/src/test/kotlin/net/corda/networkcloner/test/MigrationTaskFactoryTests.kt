@@ -15,7 +15,7 @@ class MigrationTaskFactoryTests : TestSupport() {
         val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory)
         val tasks = factory.getMigrationTasks()
 
-        assertEquals(2, tasks.size)
+        assertEquals(3, tasks.size)
     }
 
 }

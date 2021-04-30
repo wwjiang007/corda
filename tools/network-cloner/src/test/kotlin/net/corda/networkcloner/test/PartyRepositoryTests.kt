@@ -14,7 +14,7 @@ class PartyRepositoryTests : TestSupport() {
         val nodesDirectory = File(getSnapshotDirectory("s1"), "source")
         val partyRepository = NodesDirPartyRepository(nodesDirectory)
         val parties = partyRepository.getParties()
-        assertEquals(2, parties.size)
+        assertEquals(3, parties.size)
         val clientParty = parties.find { it.name == clientX500Name }
         val operatorParty = parties.find { it.name == operatorX500Name }
         assertNotNull(clientParty)
@@ -27,7 +27,7 @@ class PartyRepositoryTests : TestSupport() {
         val nodesDirectory = File(getSnapshotDirectory("s1"), "destination")
         val partyRepository = NodesDirPartyRepository(nodesDirectory)
         val partiesWithPrivateKeys = partyRepository.getPartiesWithPrivateKeys()
-        assertEquals(2, partiesWithPrivateKeys.size)
+        assertEquals(3, partiesWithPrivateKeys.size)
         val clientParty = partiesWithPrivateKeys.find { it.party.name == clientX500Name }
         val operatorParty = partiesWithPrivateKeys.find { it.party.name == operatorX500Name }
         assertNotNull(clientParty)

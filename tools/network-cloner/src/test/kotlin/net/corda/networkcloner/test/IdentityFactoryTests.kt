@@ -18,7 +18,7 @@ class IdentityFactoryTests : TestSupport() {
         val destinationPartyRepository = NodesDirPartyRepository(destinationNodesDirectory)
 
         val identities = IdentityFactory.getIdentities(sourcePartyRepository, destinationPartyRepository)
-        assertEquals(2, identities.size)
+        assertEquals(3, identities.size)
         identities.forEach {
             assertEquals(it.sourceParty.name, it.destinationPartyAndPrivateKey.party.name)
             assertNotEquals(it.sourceParty.owningKey, it.destinationPartyAndPrivateKey.party.owningKey)
