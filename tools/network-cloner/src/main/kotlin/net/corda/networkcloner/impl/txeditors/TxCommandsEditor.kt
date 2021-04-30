@@ -1,4 +1,4 @@
-package net.corda.networkcloner.impl
+package net.corda.networkcloner.impl.txeditors
 
 import net.corda.core.cloning.Identity
 import net.corda.core.cloning.TransactionComponents

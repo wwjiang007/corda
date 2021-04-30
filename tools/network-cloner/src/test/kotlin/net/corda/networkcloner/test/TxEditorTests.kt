@@ -1,9 +1,8 @@
 package net.corda.networkcloner.test
 
-import net.corda.networkcloner.impl.TxCommandsEditor
+import net.corda.networkcloner.impl.txeditors.TxCommandsEditor
 import net.corda.networkcloner.util.IdentityFactory
 import net.corda.networkcloner.util.toTransactionComponents
-import org.junit.Ignore
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

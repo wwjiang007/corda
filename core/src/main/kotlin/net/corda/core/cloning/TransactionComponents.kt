@@ -11,8 +11,8 @@ import net.corda.core.internal.createComponentGroups
 
 data class TransactionComponents(val inputs: List<StateRef>, //not in simplest use case
                                  val outputs: List<TransactionState<ContractState>>, //Done
-                                 val commands: List<Command<*>>,
-                                 val attachments: List<SecureHash>,
+                                 val commands: List<Command<*>>, //Done
+                                 val attachments: List<SecureHash>, //shouldn't need changing
                                  val notary: Party?,
                                  val timeWindow: TimeWindow?,
                                  val references: List<StateRef>,
