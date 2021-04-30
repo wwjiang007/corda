@@ -1,5 +1,7 @@
 package net.corda.networkcloner.test
 
+import net.corda.core.cloning.MigrationContext
+import net.corda.core.crypto.SecureHash
 import net.corda.networkcloner.impl.txeditors.TxCommandsEditor
 import net.corda.networkcloner.impl.txeditors.TxNotaryEditor
 import net.corda.networkcloner.util.IdentityFactory
@@ -29,7 +31,7 @@ class TxEditorTests : TestSupport() {
         val txEditor = txEditors.single()
         val transactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-        val editedTransactionComponents = txEditor.edit(transactionComponents, identities)
+        val editedTransactionComponents = txEditor.edit(transactionComponents, MigrationContext(identities, SecureHash.zeroHash, SecureHash.allOnesHash))
 
         assertTrue(editedTransactionComponents.outputs.all {
             it.data.participants.intersect(identities.map { it.sourceParty }).isEmpty()
@@ -55,7 +57,7 @@ class TxEditorTests : TestSupport() {
         val txCommandsEditor = TxCommandsEditor()
         val transactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-        val editedTransactionComponents = txCommandsEditor.edit(transactionComponents, identities)
+        val editedTransactionComponents = txCommandsEditor.edit(transactionComponents, MigrationContext(identities, SecureHash.zeroHash, SecureHash.allOnesHash))
 
         assertTrue(editedTransactionComponents.commands.all {
             it.signers.intersect(identities.map { it.sourceParty.owningKey }).isEmpty()
@@ -81,7 +83,7 @@ class TxEditorTests : TestSupport() {
         val txNotaryEditor = TxNotaryEditor()
         val transactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-        val editedTransactionComponents = txNotaryEditor.edit(transactionComponents, identities)
+        val editedTransactionComponents = txNotaryEditor.edit(transactionComponents, MigrationContext(identities, SecureHash.zeroHash, SecureHash.allOnesHash))
 
         val expectedNotary = destPartyRepository.getParties().find { it.name.toString().contains("Notary", true) }
         assertNotNull(expectedNotary)

@@ -18,7 +18,7 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
             val sourceWireTransaction = sourceSignedTransaction.coreTransaction as WireTransaction
             val sourceTransactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-            val destTransactionComponents = getTxEditors().fold(sourceTransactionComponents) { tCs, txEditor -> txEditor.edit(tCs, migrationTask.migrationContext.identities) }
+            val destTransactionComponents = getTxEditors().fold(sourceTransactionComponents) { tCs, txEditor -> txEditor.edit(tCs, migrationTask.migrationContext) }
             val destComponentGroups = destTransactionComponents.toComponentGroups()
 
             val destWireTransaction = WireTransaction(destComponentGroups, sourceWireTransaction.privacySalt, sourceWireTransaction.digestService)

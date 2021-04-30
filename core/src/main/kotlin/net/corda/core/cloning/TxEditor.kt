@@ -6,7 +6,7 @@ import java.security.PublicKey
 
 interface TxEditor {
 
-    fun edit(transactionComponents : TransactionComponents, identities : List<Identity>) : TransactionComponents
+    fun edit(transactionComponents : TransactionComponents, migrationContext: MigrationContext) : TransactionComponents
 
     fun findDestinationForSourceParty(party : Party, identities: List<Identity>) : Party {
         return identities.find { party == it.sourceParty }?.destinationPartyAndPrivateKey?.party ?: throw RuntimeException("Expected to find destination party for source party ${party.name}")

@@ -1,5 +1,6 @@
 package net.corda.networkcloner.impl
 
+import net.corda.core.crypto.SecureHash
 import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.entity.MigrationData
 import net.corda.networkcloner.util.JpaEntityManagerFactory
@@ -21,6 +22,10 @@ class NodeDatabaseImpl(url : String, username: String, password: String) : NodeD
             entityManager.persist(it)
         }
         entityManager.transaction.commit()
+    }
+
+    override fun readNetworkParametersHash(): SecureHash {
+        return SecureHash.allOnesHash
     }
 
     private fun getTransactions(): List<DBTransactionStorage.DBTransaction> {
