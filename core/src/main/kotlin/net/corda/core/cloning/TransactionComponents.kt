@@ -13,9 +13,9 @@ data class TransactionComponents(val inputs: List<StateRef>, //not in simplest u
                                  val outputs: List<TransactionState<ContractState>>, //Done
                                  val commands: List<Command<*>>, //Done
                                  val attachments: List<SecureHash>, //shouldn't need changing
-                                 val notary: Party?,
-                                 val timeWindow: TimeWindow?,
-                                 val references: List<StateRef>,
+                                 val notary: Party?, //Done
+                                 val timeWindow: TimeWindow?, //shouldn't need changing
+                                 val references: List<StateRef>, //not in simplest use case
                                  val networkParametersHash: SecureHash?) {
 
     fun toComponentGroups() = createComponentGroups(inputs, outputs, commands, attachments, notary, timeWindow, references, networkParametersHash)
