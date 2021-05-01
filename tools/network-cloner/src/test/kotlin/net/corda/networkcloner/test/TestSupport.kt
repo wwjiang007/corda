@@ -1,17 +1,20 @@
 package net.corda.networkcloner.test
 
+import net.corda.core.cloning.MigrationContext
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.internal.toPath
 import net.corda.networkcloner.api.CordappsRepository
 import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.api.PartyRepository
 import net.corda.networkcloner.api.Serializer
+import net.corda.networkcloner.entity.MigrationData
 import net.corda.networkcloner.impl.CordappsRepositoryImpl
 import net.corda.networkcloner.impl.NodeDatabaseImpl
 import net.corda.networkcloner.impl.NodesDirPartyRepository
 import net.corda.networkcloner.impl.SerializerImpl
 import java.io.File
 import java.util.*
+import kotlin.test.assertEquals
 
 open class TestSupport {
 

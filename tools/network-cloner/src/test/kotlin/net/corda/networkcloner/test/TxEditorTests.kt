@@ -94,6 +94,7 @@ class TxEditorTests : TestSupport() {
     @Test
     fun `Network Parameters Hash TxEditor can be applied and works`() {
         val nodeDatabase = getNodeDatabase("s1","source","client")
+        val sourceNetworksParametersHash = nodeDatabase.readNetworkParametersHash()
         val sourceTxByteArray = nodeDatabase.readMigrationData().transactions.first().transaction
 
         val serializer = getSerializer("s1")
@@ -106,7 +107,7 @@ class TxEditorTests : TestSupport() {
         val txNetworkParametersHashEditor = TxNetworkParametersHashEditor()
         val transactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-        val editedTransactionComponents = txNetworkParametersHashEditor.edit(transactionComponents, MigrationContext(identities, SecureHash.zeroHash, SecureHash.allOnesHash))
+        val editedTransactionComponents = txNetworkParametersHashEditor.edit(transactionComponents, MigrationContext(identities, sourceNetworksParametersHash, SecureHash.allOnesHash))
 
         assertEquals(SecureHash.allOnesHash, editedTransactionComponents.networkParametersHash)
     }

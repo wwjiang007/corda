@@ -9,7 +9,7 @@ class TxNotaryEditor : TxEditor {
 
     override fun edit(transactionComponents: TransactionComponents, migrationContext: MigrationContext): TransactionComponents {
         return transactionComponents.notary?.let {
-            transactionComponents.copy(notary = findDestinationForSourceParty(it, migrationContext.identities))
+            transactionComponents.copy(notary = migrationContext.findDestinationForSourceParty(it))
         } ?: transactionComponents
     }
 
