@@ -3,6 +3,7 @@ package net.corda.networkcloner.test
 import net.corda.core.cloning.MigrationContext
 import net.corda.core.cloning.TransactionComponents
 import net.corda.core.identity.CordaX500Name
+import net.corda.core.identity.Party
 import net.corda.core.internal.toPath
 import net.corda.core.transactions.SignedTransaction
 import net.corda.networkcloner.api.CordappsRepository
@@ -90,6 +91,19 @@ open class TestSupport {
                 val expectedParticipants = sourceParticipants.map { context.findDestinationForSourceParty(it) }
                 assertEquals(expectedParticipants, destinationTransaction.outputs[outputIndex].data.participants)
             }
+            val expectedNotary = context.findDestinationForSourceParty(sourceTransaction.notary!!) as Party
+            assertEquals(expectedNotary, destinationTransaction.notary)
+
+            assertEquals(sourceTransaction.commands.size, destinationTransaction.commands.size)
+            sourceTransaction.commands.forEachIndexed { commandIndex, command ->
+                val sourceSigners = command.signers
+                val expectedSigners = sourceSigners.map { context.findDestinationForSourceOwningKey(it) }
+                assertEquals(expectedSigners, destinationTransaction.commands[commandIndex].signers)
+            }
+        }
+
+        destinationTransactions.forEach {
+            assertEquals(context.destinationNetworkParametersHash, it.networkParametersHash)
         }
     }
 
