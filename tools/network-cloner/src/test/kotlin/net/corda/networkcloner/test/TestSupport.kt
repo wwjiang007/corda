@@ -77,15 +77,19 @@ open class TestSupport {
     fun verifyMigration(serializer: Serializer, sourceData : MigrationData, destinationData : MigrationData, context : MigrationContext) {
         val sourceTransactions = sourceData.transactions.map { serializer.deserializeDbBlobIntoTransaction(it.transaction).toTransactionComponents() }
         val destinationTransactions = destinationData.transactions.map { serializer.deserializeDbBlobIntoTransaction(it.transaction).toTransactionComponents() }
-        verifyTransactions(sourceTransactions, destinationTransactions)
+        verifyTransactions(sourceTransactions, destinationTransactions, context)
     }
 
-    fun verifyTransactions(sourceTransactions : List<TransactionComponents>, destinationTransactions : List<TransactionComponents>) {
+    fun verifyTransactions(sourceTransactions : List<TransactionComponents>, destinationTransactions : List<TransactionComponents>, context: MigrationContext) {
         assertEquals(sourceTransactions.size, destinationTransactions.size)
         sourceTransactions.forEachIndexed { index, sourceTransaction ->
             val destinationTransaction = destinationTransactions[index]
             assertEquals(sourceTransaction.outputs.size, destinationTransaction.outputs.size)
-
+            sourceTransaction.outputs.forEachIndexed { outputIndex, outputState ->
+                val sourceParticipants = outputState.data.participants
+                val expectedParticipants = sourceParticipants.map { context.findDestinationForSourceParty(it) }
+                assertEquals(expectedParticipants, destinationTransaction.outputs[outputIndex].data.participants)
+            }
         }
     }
 
