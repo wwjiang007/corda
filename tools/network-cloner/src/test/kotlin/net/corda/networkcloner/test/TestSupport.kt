@@ -1,8 +1,10 @@
 package net.corda.networkcloner.test
 
 import net.corda.core.cloning.MigrationContext
+import net.corda.core.cloning.TransactionComponents
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.internal.toPath
+import net.corda.core.transactions.SignedTransaction
 import net.corda.networkcloner.api.CordappsRepository
 import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.api.PartyRepository
@@ -12,6 +14,7 @@ import net.corda.networkcloner.impl.CordappsRepositoryImpl
 import net.corda.networkcloner.impl.NodeDatabaseImpl
 import net.corda.networkcloner.impl.NodesDirPartyRepository
 import net.corda.networkcloner.impl.SerializerImpl
+import net.corda.networkcloner.util.toTransactionComponents
 import java.io.File
 import java.util.*
 import kotlin.test.assertEquals
@@ -62,12 +65,28 @@ open class TestSupport {
         return File(getSnapshotsDirectory(), snapshot)
     }
 
-    fun copyAndGetSnapshotDirectory(snapshot: String) : File {
+    fun copyAndGetSnapshotDirectory(snapshot: String) : Pair<String,File> {
         val snapshotsDirectory = getSnapshotsDirectory()
         val snapshotDirectory = getSnapshotDirectory(snapshot)
-        val copyDirectory = File(snapshotsDirectory, UUID.randomUUID().toString())
+        val snapshotDirectoryName = UUID.randomUUID().toString()
+        val copyDirectory = File(snapshotsDirectory, snapshotDirectoryName)
         snapshotDirectory.copyRecursively(copyDirectory)
-        return copyDirectory
+        return snapshotDirectoryName to copyDirectory
+    }
+
+    fun verifyMigration(serializer: Serializer, sourceData : MigrationData, destinationData : MigrationData, context : MigrationContext) {
+        val sourceTransactions = sourceData.transactions.map { serializer.deserializeDbBlobIntoTransaction(it.transaction).toTransactionComponents() }
+        val destinationTransactions = destinationData.transactions.map { serializer.deserializeDbBlobIntoTransaction(it.transaction).toTransactionComponents() }
+        verifyTransactions(sourceTransactions, destinationTransactions)
+    }
+
+    fun verifyTransactions(sourceTransactions : List<TransactionComponents>, destinationTransactions : List<TransactionComponents>) {
+        assertEquals(sourceTransactions.size, destinationTransactions.size)
+        sourceTransactions.forEachIndexed { index, sourceTransaction ->
+            val destinationTransaction = destinationTransactions[index]
+            assertEquals(sourceTransaction.outputs.size, destinationTransaction.outputs.size)
+
+        }
     }
 
     companion object {
