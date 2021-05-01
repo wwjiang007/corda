@@ -3,6 +3,7 @@ package net.corda.networkcloner.test
 import net.corda.core.cloning.MigrationContext
 import net.corda.core.crypto.SecureHash
 import net.corda.networkcloner.impl.txeditors.TxCommandsEditor
+import net.corda.networkcloner.impl.txeditors.TxNetworkParametersHashEditor
 import net.corda.networkcloner.impl.txeditors.TxNotaryEditor
 import net.corda.networkcloner.util.IdentityFactory
 import net.corda.networkcloner.util.toTransactionComponents
@@ -88,5 +89,25 @@ class TxEditorTests : TestSupport() {
         val expectedNotary = destPartyRepository.getParties().find { it.name.toString().contains("Notary", true) }
         assertNotNull(expectedNotary)
         assertEquals(expectedNotary, editedTransactionComponents.notary)
+    }
+
+    @Test
+    fun `Network Parameters Hash TxEditor can be applied and works`() {
+        val nodeDatabase = getNodeDatabase("s1","source","client")
+        val sourceTxByteArray = nodeDatabase.readMigrationData().transactions.first().transaction
+
+        val serializer = getSerializer("s1")
+        val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)
+
+        val sourcePartyRepository = getPartyRepository("s1","source")
+        val destPartyRepository = getPartyRepository("s1", "destination")
+        val identities = IdentityFactory.getIdentities(sourcePartyRepository, destPartyRepository)
+
+        val txNetworkParametersHashEditor = TxNetworkParametersHashEditor()
+        val transactionComponents = sourceSignedTransaction.toTransactionComponents()
+
+        val editedTransactionComponents = txNetworkParametersHashEditor.edit(transactionComponents, MigrationContext(identities, SecureHash.zeroHash, SecureHash.allOnesHash))
+
+        assertEquals(SecureHash.allOnesHash, editedTransactionComponents.networkParametersHash)
     }
 }

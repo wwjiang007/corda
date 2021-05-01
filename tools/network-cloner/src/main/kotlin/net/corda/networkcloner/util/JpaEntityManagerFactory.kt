@@ -1,5 +1,6 @@
 package net.corda.networkcloner.util
 
+import net.corda.node.internal.DBNetworkParametersStorage
 import net.corda.node.services.persistence.DBTransactionStorage
 import org.h2.jdbcx.JdbcDataSource
 import org.hibernate.jpa.HibernatePersistenceProvider
@@ -47,7 +48,7 @@ class JpaEntityManagerFactory(val dbUrl : String, val dbUserName : String, val d
     }
 
     private fun getEntities(): List<Class<*>> {
-        return listOf(DBTransactionStorage.DBTransaction::class.java)
+        return listOf(DBTransactionStorage.DBTransaction::class.java, DBNetworkParametersStorage.PersistentNetworkParameters::class.java)
     }
 
     private fun getDataSource(): DataSource {

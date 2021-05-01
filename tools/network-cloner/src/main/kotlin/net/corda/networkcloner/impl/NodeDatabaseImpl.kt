@@ -4,6 +4,7 @@ import net.corda.core.crypto.SecureHash
 import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.entity.MigrationData
 import net.corda.networkcloner.util.JpaEntityManagerFactory
+import net.corda.node.internal.DBNetworkParametersStorage
 import net.corda.node.services.persistence.DBTransactionStorage
 import javax.persistence.EntityManager
 
@@ -25,7 +26,8 @@ class NodeDatabaseImpl(url : String, username: String, password: String) : NodeD
     }
 
     override fun readNetworkParametersHash(): SecureHash {
-        return SecureHash.allOnesHash
+        val query = entityManager.createQuery("SELECT e FROM DBNetworkParametersStorage\$PersistentNetworkParameters e")
+        return SecureHash.parse((query.resultList.single() as DBNetworkParametersStorage.PersistentNetworkParameters).hash)
     }
 
     private fun getTransactions(): List<DBTransactionStorage.DBTransaction> {
