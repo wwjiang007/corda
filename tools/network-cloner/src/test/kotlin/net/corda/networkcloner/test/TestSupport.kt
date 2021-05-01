@@ -90,6 +90,8 @@ open class TestSupport {
                 val sourceParticipants = outputState.data.participants
                 val expectedParticipants = sourceParticipants.map { context.findDestinationForSourceParty(it) }
                 assertEquals(expectedParticipants, destinationTransaction.outputs[outputIndex].data.participants, "Destination output state participants are not as expected")
+                val expectedNotary = context.findDestinationForSourceParty(outputState.notary)
+                assertEquals(expectedNotary, destinationTransaction.outputs[outputIndex].notary, "Destination output state notary not as expected")
             }
             val expectedNotary = context.findDestinationForSourceParty(sourceTransaction.notary!!) as Party
             assertEquals(expectedNotary, destinationTransaction.notary, "Destination notary is not as expected")
