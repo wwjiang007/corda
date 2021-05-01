@@ -89,21 +89,21 @@ open class TestSupport {
             sourceTransaction.outputs.forEachIndexed { outputIndex, outputState ->
                 val sourceParticipants = outputState.data.participants
                 val expectedParticipants = sourceParticipants.map { context.findDestinationForSourceParty(it) }
-                assertEquals(expectedParticipants, destinationTransaction.outputs[outputIndex].data.participants)
+                assertEquals(expectedParticipants, destinationTransaction.outputs[outputIndex].data.participants, "Destination output state participants are not as expected")
             }
             val expectedNotary = context.findDestinationForSourceParty(sourceTransaction.notary!!) as Party
-            assertEquals(expectedNotary, destinationTransaction.notary)
+            assertEquals(expectedNotary, destinationTransaction.notary, "Destination notary is not as expected")
 
             assertEquals(sourceTransaction.commands.size, destinationTransaction.commands.size)
             sourceTransaction.commands.forEachIndexed { commandIndex, command ->
                 val sourceSigners = command.signers
                 val expectedSigners = sourceSigners.map { context.findDestinationForSourceOwningKey(it) }
-                assertEquals(expectedSigners, destinationTransaction.commands[commandIndex].signers)
+                assertEquals(expectedSigners, destinationTransaction.commands[commandIndex].signers, "Destination command signers are not as expected")
             }
         }
 
         destinationTransactions.forEach {
-            assertEquals(context.destinationNetworkParametersHash, it.networkParametersHash)
+            assertEquals(context.destinationNetworkParametersHash, it.networkParametersHash, "Destination network parameter hash is not as expected")
         }
     }
 
