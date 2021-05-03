@@ -46,10 +46,6 @@ fun main(args: Array<String>) {
         val destinationWireTransaction = WireTransaction(componentGroups, wTx.privacySalt, wTx.digestService)
 
 
-
-        val newSignatures = signer.sign(destinationWireTransaction, deserialized.sigs.map { it.by })
-
-
         val sTx = SignedTransaction(destinationWireTransaction, deserialized.sigs)
 
         val serializedFromSignedTx = sTx.serialize(context = SerializationDefaults.STORAGE_CONTEXT.withEncoding(CordaSerializationEncoding.SNAPPY))

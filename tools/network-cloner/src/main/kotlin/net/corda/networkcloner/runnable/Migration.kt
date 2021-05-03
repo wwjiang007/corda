@@ -1,14 +1,18 @@
 package net.corda.networkcloner.runnable
 
+import net.corda.core.cloning.MigrationContext
 import net.corda.core.cloning.TxEditor
+import net.corda.core.crypto.SecureHash
+import net.corda.core.crypto.TransactionSignature
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
 import net.corda.networkcloner.api.Serializer
+import net.corda.networkcloner.api.Signer
 import net.corda.networkcloner.entity.MigrationTask
 import net.corda.networkcloner.util.toTransactionComponents
 import net.corda.node.services.persistence.DBTransactionStorage
 
-abstract class Migration(val migrationTask: MigrationTask, val serializer: Serializer) : Runnable {
+abstract class Migration(val migrationTask: MigrationTask, val serializer: Serializer, val signer : Signer) : Runnable {
 
     override fun run() {
         val sourceMigrationData = migrationTask.sourceNodeDatabase.readMigrationData()
@@ -22,16 +26,22 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
             val destComponentGroups = destTransactionComponents.toComponentGroups()
 
             val destWireTransaction = WireTransaction(destComponentGroups, sourceWireTransaction.privacySalt, sourceWireTransaction.digestService)
-            val destSignedTransaction = SignedTransaction(destWireTransaction, sourceSignedTransaction.sigs)
+            val newSignatures = getSignatures(destWireTransaction.id, sourceSignedTransaction.sigs, migrationTask.migrationContext)
+            val destSignedTransaction = SignedTransaction(destWireTransaction, newSignatures)
             val destTxByteArray = serializer.serializeSignedTransaction(destSignedTransaction)
             with (sourceDbTransaction) {
-                DBTransactionStorage.DBTransaction("xxx", stateMachineRunId, destTxByteArray, status, timestamp)
+                DBTransactionStorage.DBTransaction(destWireTransaction.id.toString(), stateMachineRunId, destTxByteArray, status, timestamp)
             }
         }
 
         val destMigrationData = sourceMigrationData.copy(transactions = destinationTransactions)
 
         migrationTask.destinationNodeDatabase.writeMigrationData(destMigrationData)
+    }
+
+    private fun getSignatures(transactionId : SecureHash, originalSigners : List<TransactionSignature>, migrationContext: MigrationContext) : List<TransactionSignature> {
+        val newSigners = originalSigners.map { migrationContext.getDestinationPartyAndPrivateKey(it.by).keyPair }
+        return signer.sign(transactionId, newSigners)
     }
 
     abstract fun getTxEditors() : List<TxEditor>

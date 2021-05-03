@@ -15,4 +15,8 @@ data class MigrationContext(val identities : List<Identity>, val sourceNetworkPa
         return identities.find { sourceOwningKey == it.sourceParty.owningKey }?.destinationPartyAndPrivateKey?.party?.owningKey ?: throw RuntimeException("Expected to find destination owning key for source owning key ${sourceOwningKey}")
     }
 
+    fun getDestinationPartyAndPrivateKey(sourceOwningKey: PublicKey) : PartyAndPrivateKey {
+        return identities.find { sourceOwningKey == it.sourceParty.owningKey }?.destinationPartyAndPrivateKey ?: throw RuntimeException("Expected to find destination party and private key for owning key $sourceOwningKey")
+    }
+
 }

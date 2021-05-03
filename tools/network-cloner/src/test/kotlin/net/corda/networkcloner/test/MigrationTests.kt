@@ -15,16 +15,16 @@ class MigrationTests : TestSupport() {
 
     @Test
     fun `Data copies from source to destination database`() {
-        val snapshotDirectory = copyAndGetSnapshotDirectory("s2").second
+        val snapshotDirectory = copyAndGetSnapshotDirectory("s1").second
         val sourceNodesDirectory = File(snapshotDirectory, "source")
         val destinationNodesDirectory = File(snapshotDirectory, "destination")
 
         val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory)
-        val task = factory.getMigrationTasks().single()
+        val task = factory.getMigrationTasks().filter { it.sourceNodeDatabase.readMigrationData().transactions.size == 1 }.first()
 
         assertEquals(1, task.sourceNodeDatabase.readMigrationData().transactions.size)
         assertEquals(0, task.destinationNodeDatabase.readMigrationData().transactions.size)
-        val noOpMigration = object : Migration(task, getSerializer("s2")) {
+        val noOpMigration = object : Migration(task, getSerializer("s1"), getSigner()) {
             override fun getTxEditors(): List<TxEditor> = emptyList()
         }
         noOpMigration.run()
@@ -48,7 +48,7 @@ class MigrationTests : TestSupport() {
         assertEquals(1, task.sourceNodeDatabase.readMigrationData().transactions.size)
         assertEquals(0, task.destinationNodeDatabase.readMigrationData().transactions.size)
         val cordappsRepository = getCordappsRepository("s1")
-        DefaultMigration(task, getSerializer("s1"), cordappsRepository).run()
+        DefaultMigration(task, getSerializer("s1"), getSigner(), cordappsRepository).run()
         val sourceMigrationData = task.sourceNodeDatabase.readMigrationData()
         val sourceNetworkParametersHash = task.sourceNodeDatabase.readNetworkParametersHash()
         val destinationMigrationData = task.destinationNodeDatabase.readMigrationData()

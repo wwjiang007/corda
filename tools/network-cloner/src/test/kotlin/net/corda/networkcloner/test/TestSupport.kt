@@ -10,11 +10,13 @@ import net.corda.networkcloner.api.CordappsRepository
 import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.api.PartyRepository
 import net.corda.networkcloner.api.Serializer
+import net.corda.networkcloner.api.Signer
 import net.corda.networkcloner.entity.MigrationData
 import net.corda.networkcloner.impl.CordappsRepositoryImpl
 import net.corda.networkcloner.impl.NodeDatabaseImpl
 import net.corda.networkcloner.impl.NodesDirPartyRepository
 import net.corda.networkcloner.impl.SerializerImpl
+import net.corda.networkcloner.impl.SignerImpl
 import net.corda.networkcloner.util.toTransactionComponents
 import java.io.File
 import java.util.*
@@ -24,6 +26,10 @@ open class TestSupport {
 
     val clientX500Name = CordaX500Name.parse("O=Client,L=London,C=GB")
     val operatorX500Name = CordaX500Name.parse("O=Operator,L=New York,C=US")
+
+    fun getSigner() : Signer {
+        return SignerImpl()
+    }
 
     //@todo this storing to a static property doesn't really work if different tests ask for different snapshot
     fun getSerializer(snapshot: String) : Serializer {
