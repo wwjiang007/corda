@@ -8,6 +8,7 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
 import net.corda.networkcloner.api.Serializer
 import net.corda.networkcloner.api.Signer
+import net.corda.networkcloner.entity.MigrationData
 import net.corda.networkcloner.entity.MigrationTask
 import net.corda.networkcloner.util.toTransactionComponents
 import net.corda.node.services.persistence.DBTransactionStorage
@@ -17,7 +18,15 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
     override fun run() {
         val sourceMigrationData = migrationTask.sourceNodeDatabase.readMigrationData()
 
-        val destinationTransactions = sourceMigrationData.transactions.map { sourceDbTransaction ->
+        val destinationTransactions = getDestinationTransactions(sourceMigrationData)
+
+        val destMigrationData = sourceMigrationData.copy(transactions = destinationTransactions)
+
+        migrationTask.destinationNodeDatabase.writeMigrationData(destMigrationData)
+    }
+
+    private fun getDestinationTransactions(sourceMigrationData : MigrationData) : List<DBTransactionStorage.DBTransaction> {
+        return sourceMigrationData.transactions.map { sourceDbTransaction ->
             val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceDbTransaction.transaction)
             val sourceWireTransaction = sourceSignedTransaction.coreTransaction as WireTransaction
             val sourceTransactionComponents = sourceSignedTransaction.toTransactionComponents()
@@ -33,10 +42,6 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
                 DBTransactionStorage.DBTransaction(destWireTransaction.id.toString(), stateMachineRunId, destTxByteArray, status, timestamp)
             }
         }
-
-        val destMigrationData = sourceMigrationData.copy(transactions = destinationTransactions)
-
-        migrationTask.destinationNodeDatabase.writeMigrationData(destMigrationData)
     }
 
     private fun getSignatures(transactionId : SecureHash, originalSigners : List<TransactionSignature>, migrationContext: MigrationContext) : List<TransactionSignature> {
