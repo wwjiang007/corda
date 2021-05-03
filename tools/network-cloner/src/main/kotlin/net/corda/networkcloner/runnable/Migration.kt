@@ -2,8 +2,10 @@ package net.corda.networkcloner.runnable
 
 import net.corda.core.cloning.MigrationContext
 import net.corda.core.cloning.TxEditor
+import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.TransactionSignature
+import net.corda.core.schemas.PersistentStateRef
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
 import net.corda.networkcloner.api.Serializer
@@ -12,6 +14,7 @@ import net.corda.networkcloner.entity.MigrationData
 import net.corda.networkcloner.entity.MigrationTask
 import net.corda.networkcloner.util.toTransactionComponents
 import net.corda.node.services.persistence.DBTransactionStorage
+import net.corda.node.services.vault.VaultSchemaV1
 
 abstract class Migration(val migrationTask: MigrationTask, val serializer: Serializer, val signer : Signer) : Runnable {
 
@@ -19,13 +22,26 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
         val sourceMigrationData = migrationTask.sourceNodeDatabase.readMigrationData()
 
         val destinationTransactions = getDestinationTransactions(sourceMigrationData)
+        val destinationStatePartyMapping = getDestinationStatePartyMapping(destinationTransactions.keys)
 
-        val destMigrationData = sourceMigrationData.copy(transactions = destinationTransactions)
+        val destMigrationData = sourceMigrationData.copy(transactions = destinationTransactions.values.toList(),
+                                                         persistentParties = destinationStatePartyMapping)
 
         migrationTask.destinationNodeDatabase.writeMigrationData(destMigrationData)
     }
 
-    private fun getDestinationTransactions(sourceMigrationData : MigrationData) : List<DBTransactionStorage.DBTransaction> {
+    private fun getDestinationStatePartyMapping(destinationTransactions : Collection<WireTransaction>) : List<VaultSchemaV1.PersistentParty> {
+        return destinationTransactions.flatMap { transaction ->
+            transaction.outputs.mapIndexed { outputIndex, transactionOutputState ->
+                transactionOutputState.data.participants.map { participant ->
+                    val persistentStateRef = PersistentStateRef(StateRef(transaction.id, outputIndex))
+                    VaultSchemaV1.PersistentParty(persistentStateRef, participant)
+                }
+            }.flatten()
+        }
+    }
+
+    private fun getDestinationTransactions(sourceMigrationData : MigrationData) : Map<WireTransaction, DBTransactionStorage.DBTransaction> {
         return sourceMigrationData.transactions.map { sourceDbTransaction ->
             val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceDbTransaction.transaction)
             val sourceWireTransaction = sourceSignedTransaction.coreTransaction as WireTransaction
@@ -38,10 +54,10 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
             val newSignatures = getSignatures(destWireTransaction.id, sourceSignedTransaction.sigs, migrationTask.migrationContext)
             val destSignedTransaction = SignedTransaction(destWireTransaction, newSignatures)
             val destTxByteArray = serializer.serializeSignedTransaction(destSignedTransaction)
-            with (sourceDbTransaction) {
+            destWireTransaction to with (sourceDbTransaction) {
                 DBTransactionStorage.DBTransaction(destWireTransaction.id.toString(), stateMachineRunId, destTxByteArray, status, timestamp)
             }
-        }
+        }.toMap()
     }
 
     private fun getSignatures(transactionId : SecureHash, originalSigners : List<TransactionSignature>, migrationContext: MigrationContext) : List<TransactionSignature> {

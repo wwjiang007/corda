@@ -22,6 +22,9 @@ class NodeDatabaseImpl(url : String, username: String, password: String) : NodeD
         migrationData.transactions.forEach {
             entityManager.persist(it)
         }
+        migrationData.persistentParties.forEach {
+            entityManager.persist(it)
+        }
         entityManager.transaction.commit()
     }
 
