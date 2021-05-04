@@ -9,6 +9,7 @@ import net.corda.networkcloner.entity.MigrationData
 import net.corda.networkcloner.util.JpaEntityManagerFactory
 import net.corda.node.internal.DBNetworkParametersStorage
 import net.corda.node.services.persistence.DBTransactionStorage
+import net.corda.node.services.vault.VaultSchemaV1
 import javax.persistence.EntityManager
 
 class NodeDatabaseImpl(url : String, username: String, password: String, wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, wellKnownPartyFromAnonymous: (AbstractParty) -> Party?) : NodeDatabase {
@@ -17,7 +18,8 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
 
     override fun readMigrationData(): MigrationData {
         val transactions = getTransactions()
-        return MigrationData(transactions, emptyList(), emptyList(), emptyList())
+        val persistentParties = getPersistentParties()
+        return MigrationData(transactions, persistentParties, emptyList(), emptyList())
     }
 
     override fun writeMigrationData(migrationData: MigrationData) {
@@ -34,6 +36,12 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
     override fun readNetworkParametersHash(): SecureHash {
         val query = entityManager.createQuery("SELECT e FROM DBNetworkParametersStorage\$PersistentNetworkParameters e")
         return SecureHash.parse((query.resultList.single() as DBNetworkParametersStorage.PersistentNetworkParameters).hash)
+    }
+
+    private fun getPersistentParties(): List<VaultSchemaV1.PersistentParty> {
+        val query = entityManager.createQuery("SELECT e FROM VaultSchemaV1\$PersistentParty e")
+        @Suppress("UNCHECKED_CAST")
+        return query.resultList as List<VaultSchemaV1.PersistentParty>
     }
 
     private fun getTransactions(): List<DBTransactionStorage.DBTransaction> {

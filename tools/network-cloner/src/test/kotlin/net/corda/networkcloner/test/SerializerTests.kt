@@ -14,7 +14,7 @@ class SerializerTests : TestSupport() {
     @Test
     fun `Transaction blob is identical when gone through deserialization and serialization`() {
         val pathToTestDb = SerializerTests::class.java.getResource("/snapshots/s1/source/client/persistence.mv.db").path.removeSuffix(".mv.db")
-        val transactionsStore = NodeDatabaseImpl("jdbc:h2:$pathToTestDb","sa","", {_ -> throw UnsupportedOperationException()}, { _ -> throw UnsupportedOperationException()})
+        val transactionsStore = NodeDatabaseImpl("jdbc:h2:$pathToTestDb","sa","", {_ -> null}, { _ -> null})
         val sourceTxByteArray = transactionsStore.readMigrationData().transactions.first().transaction
 
         val serializer = getSerializer("s1")
