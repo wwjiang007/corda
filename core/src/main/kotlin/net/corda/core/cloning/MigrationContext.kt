@@ -2,21 +2,13 @@ package net.corda.core.cloning
 
 import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.CordaX500Name
+import net.corda.core.identity.Party
 import java.lang.RuntimeException
 import java.security.PublicKey
 
-data class MigrationContext(val identities : List<Identity>, val sourceNetworkParametersHash : SecureHash, val destinationNetworkParametersHash : SecureHash) {
+data class MigrationContext(val identitySpace : IdentitySpace, val sourceNetworkParametersHash : SecureHash, val destinationNetworkParametersHash : SecureHash) {
 
-    fun findDestinationForSourceParty(party : AbstractParty) : AbstractParty {
-        return identities.find { party == it.sourceParty }?.destinationPartyAndPrivateKey?.party ?: throw RuntimeException("Expected to find destination party for source party $party")
-    }
 
-    fun findDestinationForSourceOwningKey(sourceOwningKey : PublicKey) : PublicKey {
-        return identities.find { sourceOwningKey == it.sourceParty.owningKey }?.destinationPartyAndPrivateKey?.party?.owningKey ?: throw RuntimeException("Expected to find destination owning key for source owning key ${sourceOwningKey}")
-    }
-
-    fun getDestinationPartyAndPrivateKey(sourceOwningKey: PublicKey) : PartyAndPrivateKey {
-        return identities.find { sourceOwningKey == it.sourceParty.owningKey }?.destinationPartyAndPrivateKey ?: throw RuntimeException("Expected to find destination party and private key for owning key $sourceOwningKey")
-    }
 
 }

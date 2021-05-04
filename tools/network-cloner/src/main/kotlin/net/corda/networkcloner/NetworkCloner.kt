@@ -19,7 +19,7 @@ fun main(args: Array<String>) {
 
     val cordappLoader = CordappsRepositoryImpl(File("/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildDestination/nodes/Operator/cordapps"))
     val serializer = SerializerImpl(cordappLoader.getCordappLoader())
-    val transactionStore = NodeDatabaseImpl("jdbc:h2:/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildSource/nodes/Operator/persistence", "sa", "")
+    val transactionStore = NodeDatabaseImpl("jdbc:h2:/Users/alex.koller/Projects/contract-sdk/examples/test-app/buildSource/nodes/Operator/persistence", "sa", "", { _ -> throw UnsupportedOperationException()}, { _ -> throw java.lang.UnsupportedOperationException()})
     val migrationData = transactionStore.readMigrationData()
     val signer = SignerImpl()
 

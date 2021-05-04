@@ -2,11 +2,10 @@ package net.corda.networkcloner.test
 
 import net.corda.core.cloning.MigrationContext
 import net.corda.core.cloning.TxEditor
+import net.corda.networkcloner.impl.IdentitySpaceImpl
 import net.corda.networkcloner.impl.NodesToNodesMigrationTaskFactory
-import net.corda.networkcloner.impl.SerializerImpl
 import net.corda.networkcloner.runnable.DefaultMigration
 import net.corda.networkcloner.runnable.Migration
-import net.corda.networkcloner.util.IdentityFactory
 import org.junit.Test
 import java.io.File
 import kotlin.test.assertEquals
@@ -37,7 +36,8 @@ class MigrationTests : TestSupport() {
         val (snapshotDirectoryName,snapshotDirectory) = copyAndGetSnapshotDirectory("s1")
         val sourcePartyRepository = getPartyRepository(snapshotDirectoryName, "source")
         val destinationPartyRepository = getPartyRepository(snapshotDirectoryName, "destination")
-        val identities = IdentityFactory.getIdentities(sourcePartyRepository, destinationPartyRepository)
+        val identitySpace = IdentitySpaceImpl(sourcePartyRepository, destinationPartyRepository)
+        val identities = identitySpace.getIdentities()
         val serializer = getSerializer(snapshotDirectoryName)
         val sourceNodesDirectory = File(snapshotDirectory, "source")
         val destinationNodesDirectory = File(snapshotDirectory, "destination")
@@ -55,7 +55,7 @@ class MigrationTests : TestSupport() {
         val destinationNetworkParametersHash = task.destinationNodeDatabase.readNetworkParametersHash()
         assertEquals(1, sourceMigrationData.transactions.size)
         assertEquals(1, destinationMigrationData.transactions.size, "The transaction should have been copied from source to destination")
-        verifyMigration(serializer, sourceMigrationData, destinationMigrationData, MigrationContext(identities, sourceNetworkParametersHash, destinationNetworkParametersHash))
+        verifyMigration(serializer, sourceMigrationData, destinationMigrationData, MigrationContext(identitySpace, sourceNetworkParametersHash, destinationNetworkParametersHash))
     }
 
 }

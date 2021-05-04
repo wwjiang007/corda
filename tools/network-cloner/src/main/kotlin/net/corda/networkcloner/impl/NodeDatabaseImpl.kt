@@ -1,6 +1,9 @@
 package net.corda.networkcloner.impl
 
 import net.corda.core.crypto.SecureHash
+import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.CordaX500Name
+import net.corda.core.identity.Party
 import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.entity.MigrationData
 import net.corda.networkcloner.util.JpaEntityManagerFactory
@@ -8,9 +11,9 @@ import net.corda.node.internal.DBNetworkParametersStorage
 import net.corda.node.services.persistence.DBTransactionStorage
 import javax.persistence.EntityManager
 
-class NodeDatabaseImpl(url : String, username: String, password: String) : NodeDatabase {
+class NodeDatabaseImpl(url : String, username: String, password: String, wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, wellKnownPartyFromAnonymous: (AbstractParty) -> Party?) : NodeDatabase {
 
-    private val entityManager : EntityManager = JpaEntityManagerFactory(url, username, password).entityManager
+    private val entityManager : EntityManager = JpaEntityManagerFactory(url, username, password, wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous).entityManager
 
     override fun readMigrationData(): MigrationData {
         val transactions = getTransactions()

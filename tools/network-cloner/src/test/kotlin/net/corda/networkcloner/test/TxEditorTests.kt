@@ -2,10 +2,10 @@ package net.corda.networkcloner.test
 
 import net.corda.core.cloning.MigrationContext
 import net.corda.core.crypto.SecureHash
+import net.corda.networkcloner.impl.IdentitySpaceImpl
 import net.corda.networkcloner.impl.txeditors.TxCommandsEditor
 import net.corda.networkcloner.impl.txeditors.TxNetworkParametersHashEditor
 import net.corda.networkcloner.impl.txeditors.TxNotaryEditor
-import net.corda.networkcloner.util.IdentityFactory
 import net.corda.networkcloner.util.toTransactionComponents
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -24,7 +24,8 @@ class TxEditorTests : TestSupport() {
 
         val sourcePartyRepository = getPartyRepository("s1","source")
         val destPartyRepository = getPartyRepository("s1", "destination")
-        val identities = IdentityFactory.getIdentities(sourcePartyRepository, destPartyRepository)
+        val identitySpace = IdentitySpaceImpl(sourcePartyRepository, destPartyRepository)
+        val identities = identitySpace.getIdentities()
 
         val cordappRepository = getCordappsRepository("s1")
         val txEditors = cordappRepository.getTxEditors()
@@ -32,7 +33,7 @@ class TxEditorTests : TestSupport() {
         val txEditor = txEditors.single()
         val transactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-        val editedTransactionComponents = txEditor.edit(transactionComponents, MigrationContext(identities, SecureHash.zeroHash, SecureHash.allOnesHash))
+        val editedTransactionComponents = txEditor.edit(transactionComponents, MigrationContext(identitySpace, SecureHash.zeroHash, SecureHash.allOnesHash))
 
         assertTrue(editedTransactionComponents.outputs.all {
             it.data.participants.intersect(identities.map { it.sourceParty }).isEmpty()
@@ -53,12 +54,13 @@ class TxEditorTests : TestSupport() {
 
         val sourcePartyRepository = getPartyRepository("s1","source")
         val destPartyRepository = getPartyRepository("s1", "destination")
-        val identities = IdentityFactory.getIdentities(sourcePartyRepository, destPartyRepository)
+        val identitySpace = IdentitySpaceImpl(sourcePartyRepository, destPartyRepository)
+        val identities = identitySpace.getIdentities()
 
         val txCommandsEditor = TxCommandsEditor()
         val transactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-        val editedTransactionComponents = txCommandsEditor.edit(transactionComponents, MigrationContext(identities, SecureHash.zeroHash, SecureHash.allOnesHash))
+        val editedTransactionComponents = txCommandsEditor.edit(transactionComponents, MigrationContext(identitySpace, SecureHash.zeroHash, SecureHash.allOnesHash))
 
         assertTrue(editedTransactionComponents.commands.all {
             it.signers.intersect(identities.map { it.sourceParty.owningKey }).isEmpty()
@@ -79,12 +81,12 @@ class TxEditorTests : TestSupport() {
 
         val sourcePartyRepository = getPartyRepository("s1","source")
         val destPartyRepository = getPartyRepository("s1", "destination")
-        val identities = IdentityFactory.getIdentities(sourcePartyRepository, destPartyRepository)
+        val identitySpace = IdentitySpaceImpl(sourcePartyRepository, destPartyRepository)
 
         val txNotaryEditor = TxNotaryEditor()
         val transactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-        val editedTransactionComponents = txNotaryEditor.edit(transactionComponents, MigrationContext(identities, SecureHash.zeroHash, SecureHash.allOnesHash))
+        val editedTransactionComponents = txNotaryEditor.edit(transactionComponents, MigrationContext(identitySpace, SecureHash.zeroHash, SecureHash.allOnesHash))
 
         val expectedNotary = destPartyRepository.getParties().find { it.name.toString().contains("Notary", true) }
         assertNotNull(expectedNotary)
@@ -102,12 +104,13 @@ class TxEditorTests : TestSupport() {
 
         val sourcePartyRepository = getPartyRepository("s1","source")
         val destPartyRepository = getPartyRepository("s1", "destination")
-        val identities = IdentityFactory.getIdentities(sourcePartyRepository, destPartyRepository)
+        val identitySpace = IdentitySpaceImpl(sourcePartyRepository, destPartyRepository)
+        val identities = identitySpace.getIdentities()
 
         val txNetworkParametersHashEditor = TxNetworkParametersHashEditor()
         val transactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-        val editedTransactionComponents = txNetworkParametersHashEditor.edit(transactionComponents, MigrationContext(identities, sourceNetworksParametersHash, SecureHash.allOnesHash))
+        val editedTransactionComponents = txNetworkParametersHashEditor.edit(transactionComponents, MigrationContext(identitySpace, sourceNetworksParametersHash, SecureHash.allOnesHash))
 
         assertEquals(SecureHash.allOnesHash, editedTransactionComponents.networkParametersHash)
     }

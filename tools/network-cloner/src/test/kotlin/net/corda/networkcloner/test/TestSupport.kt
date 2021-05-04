@@ -2,6 +2,7 @@ package net.corda.networkcloner.test
 
 import net.corda.core.cloning.MigrationContext
 import net.corda.core.cloning.TransactionComponents
+import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.internal.toPath
@@ -52,9 +53,9 @@ open class TestSupport {
         return NodesDirPartyRepository(nodesDir)
     }
 
-    fun getNodeDatabase(snapshot: String, sourceOrDestination: String, node: String) : NodeDatabase {
+    fun getNodeDatabase(snapshot: String, sourceOrDestination: String, node: String, wellKnownPartyFromX500Name: (CordaX500Name) -> Party? = {_ -> null}, wellKnownPartyFromAnonymous: (AbstractParty) -> Party? = {_ -> null}) : NodeDatabase {
         val pathToDbFileWithoutSuffix = TxEditorTests::class.java.getResource("/snapshots/$snapshot/$sourceOrDestination/$node/persistence.mv.db").path.removeSuffix(".mv.db")
-        return NodeDatabaseImpl("jdbc:h2:$pathToDbFileWithoutSuffix","sa","")
+        return NodeDatabaseImpl("jdbc:h2:$pathToDbFileWithoutSuffix","sa","", wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous)
     }
 
     fun getCordappsRepository(snapshot: String) : CordappsRepository {
@@ -94,18 +95,18 @@ open class TestSupport {
             assertEquals(sourceTransaction.outputs.size, destinationTransaction.outputs.size)
             sourceTransaction.outputs.forEachIndexed { outputIndex, outputState ->
                 val sourceParticipants = outputState.data.participants
-                val expectedParticipants = sourceParticipants.map { context.findDestinationForSourceParty(it) }
+                val expectedParticipants = sourceParticipants.map { context.identitySpace.findDestinationForSourceParty(it) }
                 assertEquals(expectedParticipants, destinationTransaction.outputs[outputIndex].data.participants, "Destination output state participants are not as expected")
-                val expectedNotary = context.findDestinationForSourceParty(outputState.notary)
+                val expectedNotary = context.identitySpace.findDestinationForSourceParty(outputState.notary)
                 assertEquals(expectedNotary, destinationTransaction.outputs[outputIndex].notary, "Destination output state notary not as expected")
             }
-            val expectedNotary = context.findDestinationForSourceParty(sourceTransaction.notary!!) as Party
+            val expectedNotary = context.identitySpace.findDestinationForSourceParty(sourceTransaction.notary!!) as Party
             assertEquals(expectedNotary, destinationTransaction.notary, "Destination notary is not as expected")
 
             assertEquals(sourceTransaction.commands.size, destinationTransaction.commands.size)
             sourceTransaction.commands.forEachIndexed { commandIndex, command ->
                 val sourceSigners = command.signers
-                val expectedSigners = sourceSigners.map { context.findDestinationForSourceOwningKey(it) }
+                val expectedSigners = sourceSigners.map { context.identitySpace.findDestinationForSourceOwningKey(it) }
                 assertEquals(expectedSigners, destinationTransaction.commands[commandIndex].signers, "Destination command signers are not as expected")
             }
         }

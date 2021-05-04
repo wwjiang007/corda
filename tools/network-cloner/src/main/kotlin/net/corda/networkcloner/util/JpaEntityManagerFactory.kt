@@ -1,5 +1,8 @@
 package net.corda.networkcloner.util
 
+import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.CordaX500Name
+import net.corda.core.identity.Party
 import net.corda.node.internal.DBNetworkParametersStorage
 import net.corda.node.services.persistence.DBTransactionStorage
 import net.corda.node.services.vault.VaultSchemaV1
@@ -19,14 +22,14 @@ import javax.persistence.spi.PersistenceUnitTransactionType
 import javax.sql.DataSource
 import kotlin.collections.HashMap
 
-class JpaEntityManagerFactory(val dbUrl : String, val dbUserName : String, val dbPassword : String) {
+class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbPassword: String, private val wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, private val wellKnownPartyFromAnonymous: (AbstractParty) -> Party?) {
     val entityManager: EntityManager
-    get() = entityManagerFactory.createEntityManager()
+        get() = entityManagerFactory.createEntityManager()
 
     private val entityManagerFactory: EntityManagerFactory
-    get() {
+        get() {
             val persistenceUnitInfo: PersistenceUnitInfo = getPersistenceUnitInfo(UUID.randomUUID().toString())
-            val configuration: Map<String?, Any?> = HashMap()
+            val configuration: Map<String?, Any?> = mapOf("hibernate.metadata_builder_contributor" to AttributeConverterMetadataBuilderContributor(wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous))
             return EntityManagerFactoryBuilderImpl(
                     PersistenceUnitInfoDescriptor(persistenceUnitInfo), configuration)
                     .build()
@@ -60,10 +63,10 @@ class JpaEntityManagerFactory(val dbUrl : String, val dbUserName : String, val d
         return dataSource
     }
 
-    class HibernatePersistenceUnitInfo(private val persistenceUnitName : String, private val managedClassNames : List<String>, private val properties : Properties) : PersistenceUnitInfo {
+    class HibernatePersistenceUnitInfo(private val persistenceUnitName: String, private val managedClassNames: List<String>, private val properties: Properties) : PersistenceUnitInfo {
         private val transformers: MutableList<ClassTransformer?> = mutableListOf()
-        private var jtaDataSource : DataSource? = null
-        private var nonjtaDataSource : DataSource? = null
+        private var jtaDataSource: DataSource? = null
+        private var nonjtaDataSource: DataSource? = null
         private var transactionType = PersistenceUnitTransactionType.RESOURCE_LOCAL
 
         override fun getPersistenceUnitName(): String = persistenceUnitName

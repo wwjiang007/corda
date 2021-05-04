@@ -61,7 +61,7 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
     }
 
     private fun getSignatures(transactionId : SecureHash, originalSigners : List<TransactionSignature>, migrationContext: MigrationContext) : List<TransactionSignature> {
-        val newSigners = originalSigners.map { migrationContext.getDestinationPartyAndPrivateKey(it.by).keyPair }
+        val newSigners = originalSigners.map { migrationContext.identitySpace.getDestinationPartyAndPrivateKey(it.by).keyPair }
         return signer.sign(transactionId, newSigners)
     }
 

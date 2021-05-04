@@ -8,7 +8,7 @@ class TxCommandsEditor : TxEditor {
 
     override fun edit(transactionComponents: TransactionComponents, migrationContext: MigrationContext): TransactionComponents {
         val newCommands = transactionComponents.commands.map {
-            val newSigners = it.signers.map { signerPublicKey -> migrationContext.findDestinationForSourceOwningKey(signerPublicKey) }
+            val newSigners = it.signers.map { signerPublicKey -> migrationContext.identitySpace.findDestinationForSourceOwningKey(signerPublicKey) }
             it.copy(signers = newSigners)
         }
         return transactionComponents.copy(commands = newCommands)

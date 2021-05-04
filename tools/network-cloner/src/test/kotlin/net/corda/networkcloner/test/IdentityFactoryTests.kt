@@ -1,7 +1,7 @@
 package net.corda.networkcloner.test
 
+import net.corda.networkcloner.impl.IdentitySpaceImpl
 import net.corda.networkcloner.impl.NodesDirPartyRepository
-import net.corda.networkcloner.util.IdentityFactory
 import org.junit.Test
 import java.io.File
 import kotlin.test.assertEquals
@@ -17,7 +17,7 @@ class IdentityFactoryTests : TestSupport() {
         val destinationNodesDirectory = File(getSnapshotDirectory("s1"), "destination")
         val destinationPartyRepository = NodesDirPartyRepository(destinationNodesDirectory)
 
-        val identities = IdentityFactory.getIdentities(sourcePartyRepository, destinationPartyRepository)
+        val identities = IdentitySpaceImpl(sourcePartyRepository, destinationPartyRepository).getIdentities()
         assertEquals(3, identities.size)
         identities.forEach {
             assertEquals(it.sourceParty.name, it.destinationPartyAndPrivateKey.party.name)
