@@ -52,7 +52,7 @@ class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbP
     }
 
     private fun getEntities(): List<Class<*>> {
-        return listOf(DBTransactionStorage.DBTransaction::class.java, DBNetworkParametersStorage.PersistentNetworkParameters::class.java, VaultSchemaV1.PersistentParty::class.java)
+        return listOf(DBTransactionStorage.DBTransaction::class.java, DBNetworkParametersStorage.PersistentNetworkParameters::class.java, VaultSchemaV1.PersistentParty::class.java, VaultSchemaV1.VaultLinearStates::class.java)
     }
 
     private fun getDataSource(): DataSource {
