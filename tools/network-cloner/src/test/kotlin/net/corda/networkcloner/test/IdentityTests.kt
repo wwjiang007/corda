@@ -34,8 +34,8 @@ class IdentityTests : TestSupport() {
             assertNotNull(sourceData.persistentParties.map { it.x500Name as Party }.find { it.name == expectedX500Name })
         }
 
-        identitySpace.getIdentities().map { it.sourceParty.owningKey }.forEach { expectedOwningKey ->
-            assertNotNull(sourceData.persistentParties.find { it.x500Name?.owningKey == expectedOwningKey })
+        identitySpace.getIdentities().map { it.sourceParty }.filterNot { it.name.toString().contains("notary",true) }.forEach { expectedSourceParty ->
+            assertNotNull(sourceData.persistentParties.find { it.x500Name?.owningKey == expectedSourceParty.owningKey })
         }
     }
 
