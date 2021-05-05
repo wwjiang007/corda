@@ -37,6 +37,20 @@ class IdentityTests : TestSupport() {
         identitySpace.getIdentities().map { it.sourceParty }.filterNot { it.name.toString().contains("notary",true) }.forEach { expectedSourceParty ->
             assertNotNull(sourceData.persistentParties.find { it.x500Name?.owningKey == expectedSourceParty.owningKey })
         }
+
+        val tempSnapshot = copyAndGetSnapshotDirectory("s1").first
+        val destinationDb = getNodeDatabase(tempSnapshot,"destination", "client", identitySpace::getDestinationPartyFromX500Name, identitySpace::getDestinationPartyFromAnonymous)
+        destinationDb.writeMigrationData(sourceData)
+        val destinationData = destinationDb.readMigrationData()
+
+        assertEquals(2, destinationData.persistentParties.size)
+        listOf(clientX500Name, operatorX500Name).forEach { expectedX500Name ->
+            assertNotNull(destinationData.persistentParties.map { it.x500Name as Party }.find { it.name == expectedX500Name })
+        }
+
+        identitySpace.getIdentities().map { it.destinationPartyAndPrivateKey.party }.filterNot { it.name.toString().contains("notary",true) }.forEach { expectedDestinationParty ->
+            assertNotNull(destinationData.persistentParties.find { it.x500Name?.owningKey == expectedDestinationParty.owningKey })
+        }
     }
 
     private fun getIdentitySpace(snapshot : String) : IdentitySpace {
