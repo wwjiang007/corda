@@ -1,9 +1,13 @@
 package net.corda.networkcloner.test
 
 import net.corda.core.cloning.IdentitySpace
+import net.corda.core.contracts.StateRef
+import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.Party
+import net.corda.core.schemas.PersistentStateRef
 import net.corda.networkcloner.impl.IdentitySpaceImpl
 import net.corda.networkcloner.impl.NodesDirPartyRepository
+import net.corda.node.services.vault.VaultSchemaV1
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 import java.io.File
@@ -40,7 +44,7 @@ class IdentityTests : TestSupport() {
 
         val tempSnapshot = copyAndGetSnapshotDirectory("s1").first
         val destinationDb = getNodeDatabase(tempSnapshot,"destination", "client", identitySpace::getDestinationPartyFromX500Name, identitySpace::getDestinationPartyFromAnonymous)
-        destinationDb.writeMigrationData(sourceData)
+        destinationDb.writeMigrationData(sourceData.copy(persistentParties = sourceData.persistentParties.map { VaultSchemaV1.PersistentParty(PersistentStateRef(StateRef(SecureHash.allOnesHash,0)), identitySpace.findDestinationForSourceParty(it.x500Name!!)) }))
         val destinationData = destinationDb.readMigrationData()
 
         assertEquals(2, destinationData.persistentParties.size)
