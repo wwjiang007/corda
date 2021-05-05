@@ -28,7 +28,7 @@ class IdentityTests : TestSupport() {
     }
 
     @Test
-    fun `xxx`() {
+    fun `Persistent parties can be read and written`() {
         val identitySpace = getIdentitySpace("s1")
         val sourceDb = getNodeDatabase("s1", "source", "client", identitySpace::getSourcePartyFromX500Name, identitySpace::getSourcePartyFromAnonymous)
         val sourceData = sourceDb.readMigrationData()
@@ -44,7 +44,8 @@ class IdentityTests : TestSupport() {
 
         val tempSnapshot = copyAndGetSnapshotDirectory("s1").first
         val destinationDb = getNodeDatabase(tempSnapshot,"destination", "client", identitySpace::getDestinationPartyFromX500Name, identitySpace::getDestinationPartyFromAnonymous)
-        destinationDb.writeMigrationData(sourceData.copy(persistentParties = sourceData.persistentParties.map { VaultSchemaV1.PersistentParty(PersistentStateRef(StateRef(SecureHash.allOnesHash,0)), identitySpace.findDestinationForSourceParty(it.x500Name!!)) }))
+        val migratedPersistentParties = sourceData.persistentParties.map { VaultSchemaV1.PersistentParty(PersistentStateRef(StateRef(SecureHash.allOnesHash,0)), identitySpace.findDestinationForSourceParty(it.x500Name!!)) }
+        destinationDb.writeMigrationData(sourceData.copy(persistentParties = migratedPersistentParties))
         val destinationData = destinationDb.readMigrationData()
 
         assertEquals(2, destinationData.persistentParties.size)
