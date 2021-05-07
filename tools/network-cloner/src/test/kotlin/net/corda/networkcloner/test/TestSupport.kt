@@ -29,6 +29,7 @@ open class TestSupport {
 
     val clientX500Name = CordaX500Name.parse("O=Client,L=London,C=GB")
     val operatorX500Name = CordaX500Name.parse("O=Operator,L=New York,C=US")
+    val notaryX500Name = CordaX500Name.parse("O=Notary,L=London,C=GB")
 
     fun getSigner() : Signer {
         return SignerImpl()

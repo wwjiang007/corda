@@ -28,7 +28,7 @@ class IdentityTests : TestSupport() {
     }
 
     @Test
-    fun `Persistent parties can be read and written`() {
+    fun `Db entries containing parties can be read and written`() {
         val identitySpace = getIdentitySpace("s1")
         val sourceDb = getNodeDatabase("s1", "source", "client", identitySpace::getSourcePartyFromX500Name, identitySpace::getSourcePartyFromAnonymous)
         val sourceData = sourceDb.readMigrationData()
@@ -45,10 +45,12 @@ class IdentityTests : TestSupport() {
         val tempSnapshot = copyAndGetSnapshotDirectory("s1").first
         val destinationDb = getNodeDatabase(tempSnapshot,"destination", "client", identitySpace::getDestinationPartyFromX500Name, identitySpace::getDestinationPartyFromAnonymous)
         val migratedPersistentParties = sourceData.persistentParties.map { VaultSchemaV1.PersistentParty(PersistentStateRef(StateRef(SecureHash.allOnesHash,0)), identitySpace.findDestinationForSourceParty(it.x500Name!!)) }
-        destinationDb.writeMigrationData(sourceData.copy(persistentParties = migratedPersistentParties))
+        val migratedVaultStates = sourceData.vaultStates.map { VaultSchemaV1.VaultStates(notary = identitySpace.findDestinationForSourceParty(it.notary) as Party, contractStateClassName = it.contractStateClassName, stateStatus = it.stateStatus, recordedTime = it.recordedTime, consumedTime = it.consumedTime, lockId = it.lockId, relevancyStatus = it.relevancyStatus, lockUpdateTime = it.lockUpdateTime, constraintType = it.constraintType, constraintData = it.constraintData).apply { stateRef = PersistentStateRef(StateRef(SecureHash.allOnesHash, 1)) } }
+        destinationDb.writeMigrationData(sourceData.copy(persistentParties = migratedPersistentParties, vaultStates = migratedVaultStates))
         val destinationData = destinationDb.readMigrationData()
 
         assertEquals(2, destinationData.persistentParties.size)
+        assertEquals(1, destinationData.vaultStates.size)
         listOf(clientX500Name, operatorX500Name).forEach { expectedX500Name ->
             assertNotNull(destinationData.persistentParties.map { it.x500Name as Party }.find { it.name == expectedX500Name })
         }
@@ -56,6 +58,10 @@ class IdentityTests : TestSupport() {
         identitySpace.getIdentities().map { it.destinationPartyAndPrivateKey.party }.filterNot { it.name.toString().contains("notary",true) }.forEach { expectedDestinationParty ->
             assertNotNull(destinationData.persistentParties.find { it.x500Name?.owningKey == expectedDestinationParty.owningKey })
         }
+
+        val expectedNotary = identitySpace.getDestinationPartyFromX500Name(notaryX500Name)
+        assertNotNull(expectedNotary)
+        assertEquals(expectedNotary, destinationData.vaultStates.single().notary)
     }
 
     private fun getIdentitySpace(snapshot : String) : IdentitySpace {

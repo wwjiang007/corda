@@ -35,6 +35,9 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
         migrationData.vaultLinearStates.forEach {
             entityManager.persist(it)
         }
+        migrationData.vaultStates.forEach {
+            entityManager.persist(it)
+        }
         entityManager.transaction.commit()
     }
 
