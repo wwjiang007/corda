@@ -20,7 +20,8 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
         val transactions = getTransactions()
         val persistentParties = getPersistentParties()
         val vaultLinearStates = getVaultLinearStates()
-        return MigrationData(transactions, persistentParties, vaultLinearStates, emptyList())
+        val vaultStates = getVaultStates()
+        return MigrationData(transactions, persistentParties, vaultLinearStates, vaultStates)
     }
 
     override fun writeMigrationData(migrationData: MigrationData) {
@@ -40,6 +41,12 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
     override fun readNetworkParametersHash(): SecureHash {
         val query = entityManager.createQuery("SELECT e FROM DBNetworkParametersStorage\$PersistentNetworkParameters e")
         return SecureHash.parse((query.resultList.single() as DBNetworkParametersStorage.PersistentNetworkParameters).hash)
+    }
+
+    private fun getVaultStates(): List<VaultSchemaV1.VaultStates> {
+        val query = entityManager.createQuery("SELECT e FROM VaultSchemaV1\$VaultStates e")
+        @Suppress("UNCHECKED_CAST")
+        return query.resultList as List<VaultSchemaV1.VaultStates>
     }
 
     private fun getVaultLinearStates(): List<VaultSchemaV1.VaultLinearStates> {
