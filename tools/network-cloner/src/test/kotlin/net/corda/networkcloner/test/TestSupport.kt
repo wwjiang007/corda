@@ -88,7 +88,8 @@ open class TestSupport {
         val sourceTransactions = sourceData.transactions.map { serializer.deserializeDbBlobIntoTransaction(it.transaction).toTransactionComponents() }
         val destinationTransactions = destinationData.transactions.map { serializer.deserializeDbBlobIntoTransaction(it.transaction).toTransactionComponents() }
         verifyTransactions(sourceTransactions, destinationTransactions, context)
-        verifyPersistentParties(sourceData)
+        verifyPersistentParties(destinationData)
+        verifyVaultLinearStates(destinationData)
     }
 
     fun verifyTransactions(sourceTransactions : List<TransactionComponents>, destinationTransactions : List<TransactionComponents>, context: MigrationContext) {
@@ -123,6 +124,13 @@ open class TestSupport {
         //check that all transactions are referenced from the persistent parties table
         assertTrue(destinationData.transactions.all {
             destinationData.persistentParties.find { persistentParty ->  persistentParty.compositeKey.stateRef?.txId == it.txId } != null
+        })
+    }
+
+    fun verifyVaultLinearStates(destinationData: MigrationData) {
+        //check that all transactions are referenced from the vault linear states table
+        assertTrue(destinationData.transactions.all {
+            destinationData.vaultLinearStates.find { vaultLinearState ->  vaultLinearState.stateRef?.txId == it.txId } != null
         })
     }
 
