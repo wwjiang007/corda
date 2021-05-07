@@ -2,6 +2,7 @@ package net.corda.networkcloner.runnable
 
 import net.corda.core.cloning.MigrationContext
 import net.corda.core.cloning.TxEditor
+import net.corda.core.contracts.LinearState
 import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.TransactionSignature
@@ -23,11 +24,29 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
 
         val destinationTransactions = getDestinationTransactions(sourceMigrationData)
         val destinationStatePartyMapping = getDestinationStatePartyMapping(destinationTransactions.keys)
+        val destinationVaultLinearStates = getDestinationVaultLinearStates(destinationTransactions.keys)
 
         val destMigrationData = sourceMigrationData.copy(transactions = destinationTransactions.values.toList(),
-                                                         persistentParties = destinationStatePartyMapping)
+                                                         persistentParties = destinationStatePartyMapping,
+                                                         vaultLinearStates = destinationVaultLinearStates)
 
         migrationTask.destinationNodeDatabase.writeMigrationData(destMigrationData)
+    }
+
+    private fun getDestinationVaultLinearStates(destinationTransactions: Collection<WireTransaction>) : List<VaultSchemaV1.VaultLinearStates> {
+        return destinationTransactions.flatMap { transaction ->
+            transaction.outputs.mapIndexedNotNull { outputIndex, transactionOutputState ->
+                val outputState = transactionOutputState.data
+                if (outputState is LinearState) {
+                    val persistentStateRef = PersistentStateRef(StateRef(transaction.id, outputIndex))
+                    VaultSchemaV1.VaultLinearStates(outputState.linearId.externalId, outputState.linearId.id).apply {
+                        stateRef = persistentStateRef
+                    }
+                } else {
+                    null
+                }
+            }
+        }
     }
 
     private fun getDestinationStatePartyMapping(destinationTransactions : Collection<WireTransaction>) : List<VaultSchemaV1.PersistentParty> {

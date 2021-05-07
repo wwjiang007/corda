@@ -27,8 +27,14 @@ class MigrationTests : TestSupport() {
             override fun getTxEditors(): List<TxEditor> = emptyList()
         }
         noOpMigration.run()
-        assertEquals(1, task.sourceNodeDatabase.readMigrationData().transactions.size)
-        assertEquals(1, task.destinationNodeDatabase.readMigrationData().transactions.size, "The transaction should have been copied from source to destination")
+        val sourceMigrationData = task.sourceNodeDatabase.readMigrationData()
+        val destinationMigrationData = task.destinationNodeDatabase.readMigrationData()
+        assertEquals(1, sourceMigrationData.transactions.size)
+        assertEquals(1, destinationMigrationData.transactions.size, "The transaction should have been copied from source to destination")
+        assertEquals(2, sourceMigrationData.persistentParties.size)
+        assertEquals(2, destinationMigrationData.persistentParties.size, "The persistent parties should have been copied from source to destination")
+        assertEquals(1, sourceMigrationData.vaultLinearStates.size)
+        assertEquals(1, destinationMigrationData.vaultLinearStates.size)
     }
 
     @Test
@@ -37,7 +43,6 @@ class MigrationTests : TestSupport() {
         val sourcePartyRepository = getPartyRepository(snapshotDirectoryName, "source")
         val destinationPartyRepository = getPartyRepository(snapshotDirectoryName, "destination")
         val identitySpace = IdentitySpaceImpl(sourcePartyRepository, destinationPartyRepository)
-        val identities = identitySpace.getIdentities()
         val serializer = getSerializer(snapshotDirectoryName)
         val sourceNodesDirectory = File(snapshotDirectory, "source")
         val destinationNodesDirectory = File(snapshotDirectory, "destination")
