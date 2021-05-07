@@ -19,6 +19,8 @@ import net.corda.networkcloner.impl.NodesDirPartyRepository
 import net.corda.networkcloner.impl.SerializerImpl
 import net.corda.networkcloner.impl.SignerImpl
 import net.corda.networkcloner.util.toTransactionComponents
+import net.corda.node.services.vault.VaultSchemaV1
+import org.junit.Assert.assertTrue
 import java.io.File
 import java.util.*
 import kotlin.test.assertEquals
@@ -86,6 +88,7 @@ open class TestSupport {
         val sourceTransactions = sourceData.transactions.map { serializer.deserializeDbBlobIntoTransaction(it.transaction).toTransactionComponents() }
         val destinationTransactions = destinationData.transactions.map { serializer.deserializeDbBlobIntoTransaction(it.transaction).toTransactionComponents() }
         verifyTransactions(sourceTransactions, destinationTransactions, context)
+        verifyPersistentParties(sourceData)
     }
 
     fun verifyTransactions(sourceTransactions : List<TransactionComponents>, destinationTransactions : List<TransactionComponents>, context: MigrationContext) {
@@ -114,6 +117,13 @@ open class TestSupport {
         destinationTransactions.forEach {
             assertEquals(context.destinationNetworkParametersHash, it.networkParametersHash, "Destination network parameter hash is not as expected")
         }
+    }
+
+    fun verifyPersistentParties(destinationData: MigrationData) {
+        //check that all transactions are referenced from the persistent parties table
+        assertTrue(destinationData.transactions.all {
+            destinationData.persistentParties.find { persistentParty ->  persistentParty.compositeKey.stateRef?.txId == it.txId } != null
+        })
     }
 
     companion object {
