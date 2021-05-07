@@ -14,3 +14,6 @@ Questions/Answers
 
 1) Why not use the LedgerRecovery thing to distribute edited transactions across the network?
    - Because other parties than participants may have the transaction in production (e.g. Observer)
+
+2) Why not just modify Corda signature checking mechanism to let anything pass?
+   - It's not just about the signatures. The states have parties, which the flows may want to contact via the network, whilst the x500 would still be on the netmap the owning key would be different. With unclear consequences.
