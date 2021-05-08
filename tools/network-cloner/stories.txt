@@ -17,3 +17,10 @@ Questions/Answers
 
 2) Why not just modify Corda signature checking mechanism to let anything pass?
    - It's not just about the signatures. The states have parties, which the flows may want to contact via the network, whilst the x500 would still be on the netmap the owning key would be different. With unclear consequences.
+
+Todo
+
+1) Input states
+2) Reference states
+3) Notary database
+4) Confidential identities

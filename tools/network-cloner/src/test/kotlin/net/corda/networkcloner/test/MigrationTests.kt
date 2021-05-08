@@ -23,7 +23,7 @@ class MigrationTests : TestSupport() {
 
         assertEquals(1, task.sourceNodeDatabase.readMigrationData().transactions.size)
         assertEquals(0, task.destinationNodeDatabase.readMigrationData().transactions.size)
-        val noOpMigration = object : Migration(task, getSerializer("s1"), getSigner()) {
+        val noOpMigration = object : Migration(task, getSerializer("s1"), getSigner(), false) {
             override fun getTxEditors(): List<TxEditor> = emptyList()
         }
         noOpMigration.run()

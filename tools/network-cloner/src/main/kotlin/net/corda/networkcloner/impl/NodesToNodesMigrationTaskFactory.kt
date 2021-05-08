@@ -32,7 +32,7 @@ class NodesToNodesMigrationTaskFactory(val source : File, val destination : File
     }
 
     private fun getTransactionStores(nodesDir : File, wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, wellKnownPartyFromAnonymous: (AbstractParty) -> Party?) : Map<CordaX500Name, NodeDatabase> {
-        return nodesDir.listFiles().filter { it.isDirectory }.map {
+        return nodesDir.listFiles().filter { it.isDirectory && !it.isHidden }.map {
             val nodeConf = File(it, "node.conf").also {
                 if (!it.exists()) {
                     throw RuntimeException("Expected $it to exist")

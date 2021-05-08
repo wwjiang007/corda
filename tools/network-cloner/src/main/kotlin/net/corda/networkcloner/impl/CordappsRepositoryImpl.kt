@@ -11,7 +11,7 @@ import java.net.URLClassLoader
 import java.nio.file.Paths
 import java.util.jar.JarFile
 
-class CordappsRepositoryImpl(val pathToCordapps : File) : CordappsRepository {
+class CordappsRepositoryImpl(private val pathToCordapps : File) : CordappsRepository {
 
     private val _cordappLoader = createCordappLoader(pathToCordapps)
     private val _txEditors = loadTxEditors()

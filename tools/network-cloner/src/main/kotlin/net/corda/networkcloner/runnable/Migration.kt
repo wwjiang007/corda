@@ -21,7 +21,7 @@ import net.corda.networkcloner.util.toTransactionComponents
 import net.corda.node.services.persistence.DBTransactionStorage
 import net.corda.node.services.vault.VaultSchemaV1
 
-abstract class Migration(val migrationTask: MigrationTask, val serializer: Serializer, val signer: Signer) : Runnable {
+abstract class Migration(val migrationTask: MigrationTask, val serializer: Serializer, val signer: Signer, val dryRun: Boolean) : Runnable {
 
     override fun run() {
         val sourceMigrationData = migrationTask.sourceNodeDatabase.readMigrationData()
@@ -38,7 +38,11 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
                 vaultLinearStates = destinationVaultLinearStates,
                 vaultStates = destinationVaultStates)
 
-        migrationTask.destinationNodeDatabase.writeMigrationData(destMigrationData)
+        if (dryRun) {
+            println("This is a dry run, not writing migration data to destination database")
+        } else {
+            migrationTask.destinationNodeDatabase.writeMigrationData(destMigrationData)
+        }
     }
 
     private fun getDestinationVaultLinearStates(destinationTransactions: Collection<WireTransaction>): List<VaultSchemaV1.VaultLinearStates> {
