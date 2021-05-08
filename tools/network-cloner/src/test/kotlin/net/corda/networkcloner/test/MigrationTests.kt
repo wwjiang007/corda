@@ -34,7 +34,9 @@ class MigrationTests : TestSupport() {
         assertEquals(2, sourceMigrationData.persistentParties.size)
         assertEquals(2, destinationMigrationData.persistentParties.size, "The persistent parties should have been copied from source to destination")
         assertEquals(1, sourceMigrationData.vaultLinearStates.size)
-        assertEquals(1, destinationMigrationData.vaultLinearStates.size)
+        assertEquals(1, destinationMigrationData.vaultLinearStates.size, "The vault linear states should have been copied from source to destination")
+        assertEquals(1, sourceMigrationData.vaultStates.size)
+        assertEquals(1, destinationMigrationData.vaultStates.size, "The vault states should have been copied from source to destination")
     }
 
     @Test
