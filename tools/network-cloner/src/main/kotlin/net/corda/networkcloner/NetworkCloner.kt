@@ -33,7 +33,7 @@ fun main(args: Array<String>) {
     val cordappsRepository = CordappsRepositoryImpl(pathToCordapps)
     val serializer = SerializerImpl(cordappsRepository.getCordappLoader())
     val signer = SignerImpl()
-    migrationTasks.forEach {
+    migrationTasks.filterNot { it.identity.sourceParty.toString().contains("notary", true) }.forEach {
         DefaultMigration(it, serializer, signer, cordappsRepository, true).run()
     }
 
