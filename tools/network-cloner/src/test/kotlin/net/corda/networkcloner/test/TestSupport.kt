@@ -64,7 +64,7 @@ open class TestSupport {
     fun getCordappsRepository(snapshot: String) : CordappsRepository {
         return if (cordappsRepository == null) {
             val pathToCordapps = File(getSnapshotDirectory(snapshot),"tx-editor-plugins")
-            CordappsRepositoryImpl(pathToCordapps).also {
+            CordappsRepositoryImpl(pathToCordapps, 1).also {
                 cordappsRepository = it
             }
         } else {

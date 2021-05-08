@@ -1,6 +1,7 @@
 package net.corda.networkcloner.impl
 
 import net.corda.core.cloning.TxEditor
+import net.corda.networkcloner.FailedAssumptionException
 import net.corda.networkcloner.api.CordappsRepository
 import net.corda.node.VersionInfo
 import net.corda.node.internal.cordapp.JarScanningCordappLoader
@@ -11,7 +12,7 @@ import java.net.URLClassLoader
 import java.nio.file.Paths
 import java.util.jar.JarFile
 
-class CordappsRepositoryImpl(private val pathToCordapps : File) : CordappsRepository {
+class CordappsRepositoryImpl(private val pathToCordapps : File, private val expectedNumberOfTxEditors : Int) : CordappsRepository {
 
     private val _cordappLoader = createCordappLoader(pathToCordapps)
     private val _txEditors = loadTxEditors()
@@ -45,7 +46,11 @@ class CordappsRepositoryImpl(private val pathToCordapps : File) : CordappsReposi
             _cordappLoader.appClassLoader.loadClass(it.name)
         }
 
-        return txEditorClasses.map { it.newInstance() as TxEditor }
+        return txEditorClasses.map { it.newInstance() as TxEditor }.also {
+            if (it.size != expectedNumberOfTxEditors) {
+                throw FailedAssumptionException("Expected to find $expectedNumberOfTxEditors transaction editors in the cordapps, found ${it.size}")
+            }
+        }
     }
 
     private fun getClassNamesFromJarFile(givenFile: File): Set<String> {
