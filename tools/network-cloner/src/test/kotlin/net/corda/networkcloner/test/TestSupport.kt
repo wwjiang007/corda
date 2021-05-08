@@ -91,6 +91,7 @@ open class TestSupport {
         verifyTransactions(sourceTransactions, destinationTransactions, context)
         verifyPersistentParties(destinationData)
         verifyVaultLinearStates(destinationData)
+        verifyVaultStates(destinationData)
     }
 
     fun verifyTransactions(sourceTransactions : List<TransactionComponents>, destinationTransactions : List<TransactionComponents>, context: MigrationContext) {
@@ -132,6 +133,13 @@ open class TestSupport {
         //check that all transactions are referenced from the vault linear states table
         assertTrue(destinationData.transactions.all {
             destinationData.vaultLinearStates.find { vaultLinearState ->  vaultLinearState.stateRef?.txId == it.txId } != null
+        })
+    }
+
+    fun verifyVaultStates(destinationData: MigrationData) {
+        //check that all transactions are referenced from the vault states table
+        assertTrue(destinationData.transactions.all {
+            destinationData.vaultStates.find { vaultState ->  vaultState.stateRef?.txId == it.txId } != null
         })
     }
 
