@@ -24,6 +24,7 @@ import net.corda.node.services.vault.VaultSchemaV1
 abstract class Migration(val migrationTask: MigrationTask, val serializer: Serializer, val signer: Signer, val dryRun: Boolean) : Runnable {
 
     override fun run() {
+        println("Executing migration task $migrationTask")
         val sourceMigrationData = migrationTask.sourceNodeDatabase.readMigrationData()
         val sourceTransactions = sourceMigrationData.transactions.map {
             val signedTransaction = serializer.deserializeDbBlobIntoTransaction(it.transaction)
