@@ -25,8 +25,12 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
 
     override fun run() {
         val sourceMigrationData = migrationTask.sourceNodeDatabase.readMigrationData()
+        val sourceTransactions = sourceMigrationData.transactions.map {
+            val signedTransaction = serializer.deserializeDbBlobIntoTransaction(it.transaction)
+            SourceTransaction(it, signedTransaction)
+        }
 
-        val destinationTransactions = getDestinationTransactions(sourceMigrationData)
+        val destinationTransactions = getDestinationTransactions(sourceTransactions, emptyMap())
         val destinationWireTransactions = destinationTransactions.map { it.wireTransaction }
         val destinationDbTransactions = destinationTransactions.map { it.dbTransaction }
         val destinationStatePartyMapping = getDestinationStatePartyMapping(destinationWireTransactions)
@@ -73,9 +77,10 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
         }
     }
 
-    private fun getDestinationTransactions(sourceMigrationData: MigrationData): List<DestinationTransaction> {
-        return sourceMigrationData.transactions.map { sourceDbTransaction ->
-            val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceDbTransaction.transaction)
+    private fun getDestinationTransactions(sourceTransactions : List<SourceTransaction>, sourceToDestTxId : Map<SecureHash, SecureHash>): List<DestinationTransaction> {
+        return sourceTransactions.map { sourceTransaction ->
+            val sourceDbTransaction = sourceTransaction.dbTransaction
+            val sourceSignedTransaction = sourceTransaction.signedTransaction
             val sourceWireTransaction = sourceSignedTransaction.coreTransaction as WireTransaction
             val sourceTransactionComponents = sourceSignedTransaction.toTransactionComponents()
 
@@ -125,5 +130,6 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
 
     abstract fun getTxEditors(): List<TxEditor>
 
+    private data class SourceTransaction(val dbTransaction: DBTransactionStorage.DBTransaction, val signedTransaction: SignedTransaction)
     private data class DestinationTransaction(val wireTransaction: WireTransaction, val dbTransaction: DBTransactionStorage.DBTransaction, val sourceTransactionId: String)
 }
