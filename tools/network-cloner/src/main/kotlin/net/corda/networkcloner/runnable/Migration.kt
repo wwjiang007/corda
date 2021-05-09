@@ -30,7 +30,7 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
             SourceTransaction(it, signedTransaction)
         }
 
-        val destinationTransactions = getDestinationTransactions(sourceTransactions, emptyMap())
+        val destinationTransactions = getDestinationTransactions(sourceTransactions, mutableMapOf())
         val destinationWireTransactions = destinationTransactions.map { it.wireTransaction }
         val destinationDbTransactions = destinationTransactions.map { it.dbTransaction }
         val destinationStatePartyMapping = getDestinationStatePartyMapping(destinationWireTransactions)
@@ -77,25 +77,43 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
         }
     }
 
-    private fun getDestinationTransactions(sourceTransactions : List<SourceTransaction>, sourceToDestTxId : Map<SecureHash, SecureHash>): List<DestinationTransaction> {
-        return sourceTransactions.map { sourceTransaction ->
-            val sourceDbTransaction = sourceTransaction.dbTransaction
-            val sourceSignedTransaction = sourceTransaction.signedTransaction
-            val sourceWireTransaction = sourceSignedTransaction.coreTransaction as WireTransaction
-            val sourceTransactionComponents = sourceSignedTransaction.toTransactionComponents()
-
-            val destTransactionComponents = getTxEditors().fold(sourceTransactionComponents) { tCs, txEditor -> txEditor.edit(tCs, migrationTask.migrationContext) }
-            val destComponentGroups = destTransactionComponents.toComponentGroups()
-
-            val destWireTransaction = WireTransaction(destComponentGroups, sourceWireTransaction.privacySalt, sourceWireTransaction.digestService)
-            val newSignatures = getSignatures(destWireTransaction.id, sourceSignedTransaction.sigs, migrationTask.migrationContext)
-            val destSignedTransaction = SignedTransaction(destWireTransaction, newSignatures)
-            val destTxByteArray = serializer.serializeSignedTransaction(destSignedTransaction)
-            val dbTransaction = with(sourceDbTransaction) {
-                DBTransactionStorage.DBTransaction(destWireTransaction.id.toString(), stateMachineRunId, destTxByteArray, status, timestamp)
+    private fun getDestinationTransactions(sourceTransactions : List<SourceTransaction>, sourceToDestTxId : MutableMap<SecureHash, SecureHash>): List<DestinationTransaction> {
+        println("Migrating ${sourceTransactions.size} source transactions")
+        val leftOverSourceTransactions = mutableListOf<SourceTransaction>()
+        val destinationTransactions = sourceTransactions.mapNotNull { sourceTransaction ->
+            if (readyForMigration(sourceTransaction, sourceToDestTxId)) {
+                createDestinationTransaction(sourceTransaction).also {
+                    sourceToDestTxId.put(sourceTransaction.signedTransaction.id, it.wireTransaction.id)
+                }
+            } else {
+                leftOverSourceTransactions.add(sourceTransaction)
+                null
             }
-            DestinationTransaction(destWireTransaction, dbTransaction, sourceDbTransaction.txId)
         }
+        return if (leftOverSourceTransactions.isEmpty()) {
+            destinationTransactions
+        } else {
+            destinationTransactions + getDestinationTransactions(leftOverSourceTransactions, sourceToDestTxId)
+        }
+    }
+
+    private fun createDestinationTransaction(sourceTransaction : SourceTransaction) : DestinationTransaction {
+        val sourceDbTransaction = sourceTransaction.dbTransaction
+        val sourceSignedTransaction = sourceTransaction.signedTransaction
+        val sourceWireTransaction = sourceSignedTransaction.coreTransaction as WireTransaction
+        val sourceTransactionComponents = sourceSignedTransaction.toTransactionComponents()
+
+        val destTransactionComponents = getTxEditors().fold(sourceTransactionComponents) { tCs, txEditor -> txEditor.edit(tCs, migrationTask.migrationContext) }
+        val destComponentGroups = destTransactionComponents.toComponentGroups()
+
+        val destWireTransaction = WireTransaction(destComponentGroups, sourceWireTransaction.privacySalt, sourceWireTransaction.digestService)
+        val newSignatures = getSignatures(destWireTransaction.id, sourceSignedTransaction.sigs, migrationTask.migrationContext)
+        val destSignedTransaction = SignedTransaction(destWireTransaction, newSignatures)
+        val destTxByteArray = serializer.serializeSignedTransaction(destSignedTransaction)
+        val dbTransaction = with(sourceDbTransaction) {
+            DBTransactionStorage.DBTransaction(destWireTransaction.id.toString(), stateMachineRunId, destTxByteArray, status, timestamp)
+        }
+        return DestinationTransaction(destWireTransaction, dbTransaction, sourceDbTransaction.txId)
     }
 
     private fun getDestinationVaultStates(sourceVaultStates: List<VaultSchemaV1.VaultStates>, destinationTransactions: List<DestinationTransaction>, identitySpace: IdentitySpace): List<VaultSchemaV1.VaultStates> {
@@ -126,6 +144,13 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
     private fun getSignatures(transactionId: SecureHash, originalSigners: List<TransactionSignature>, migrationContext: MigrationContext): List<TransactionSignature> {
         val newSigners = originalSigners.map { migrationContext.identitySpace.getDestinationPartyAndPrivateKey(it.by).keyPair }
         return signer.sign(transactionId, newSigners)
+    }
+
+    private fun readyForMigration(sourceTransaction : SourceTransaction, sourceToDestTxId: Map<SecureHash, SecureHash>) : Boolean {
+        val stateRefsToCheck = sourceTransaction.signedTransaction.inputs + sourceTransaction.signedTransaction.references
+        return stateRefsToCheck.all {
+            sourceToDestTxId.containsKey(it.txhash)
+        }
     }
 
     abstract fun getTxEditors(): List<TxEditor>
