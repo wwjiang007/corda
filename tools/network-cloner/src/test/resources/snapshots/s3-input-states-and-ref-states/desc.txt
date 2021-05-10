@@ -1,0 +1,2 @@
+1. Activated membership state for Client tx1 -> tx2
+2. Issued receipt for operator tx3
