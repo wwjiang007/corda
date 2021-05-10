@@ -14,8 +14,18 @@ import java.util.jar.JarFile
 
 class CordappsRepositoryImpl(private val pathToCordapps : File, private val expectedNumberOfTxEditors : Int) : CordappsRepository {
 
-    private val _cordappLoader = createCordappLoader(pathToCordapps)
-    private val _txEditors = loadTxEditors()
+    private val _cordappLoader : CordappLoader
+    private val _txEditors : List<TxEditor>
+
+    init {
+        verifyPathToCordapps()
+        _cordappLoader = createCordappLoader(pathToCordapps)
+        _txEditors = loadTxEditors()
+    }
+
+    private fun verifyPathToCordapps() {
+        require(pathToCordapps.exists() && pathToCordapps.isDirectory) { "Directory $pathToCordapps either doesn't exist or is not a directory" }
+    }
 
     override fun getCordappLoader(): CordappLoader {
         return _cordappLoader
