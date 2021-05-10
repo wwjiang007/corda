@@ -27,7 +27,7 @@ class NodesToNodesMigrationTaskFactory(val source : File, val destination : File
         return identities.map { identity ->
             val sourceTransactionsStore = sourceTransactionStores[identity.sourceParty.name] ?: throw RuntimeException("Expected to find source transactions store for identity $identity")
             val destinationTransactionsStore = destinationTransactionStores[identity.destinationPartyAndPrivateKey.party.name] ?: throw RuntimeException("Expected to find destination transactions store for identity $identity")
-            MigrationTask(identity, sourceTransactionsStore, destinationTransactionsStore, MigrationContext(identitySpace, sourceNetworkParametersHash, destinationNetworkParametershash))
+            MigrationTask(identity, sourceTransactionsStore, destinationTransactionsStore, MigrationContext(identitySpace, sourceNetworkParametersHash, destinationNetworkParametershash, emptyMap()))
         }
     }
 

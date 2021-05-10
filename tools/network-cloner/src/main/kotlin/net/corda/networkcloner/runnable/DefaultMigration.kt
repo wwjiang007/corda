@@ -6,6 +6,7 @@ import net.corda.networkcloner.api.Serializer
 import net.corda.networkcloner.api.Signer
 import net.corda.networkcloner.entity.MigrationTask
 import net.corda.networkcloner.impl.txeditors.TxCommandsEditor
+import net.corda.networkcloner.impl.txeditors.TxInputStatesEditor
 import net.corda.networkcloner.impl.txeditors.TxNetworkParametersHashEditor
 import net.corda.networkcloner.impl.txeditors.TxNotaryEditor
 
@@ -13,6 +14,6 @@ class DefaultMigration(migrationTask: MigrationTask, serializer: Serializer, sig
 
     override fun getTxEditors(): List<TxEditor> {
         val cordappTxEditors = cordappsRepository.getTxEditors()
-        return cordappTxEditors + listOf(TxCommandsEditor(), TxNotaryEditor(), TxNetworkParametersHashEditor())
+        return cordappTxEditors + listOf(TxCommandsEditor(), TxNotaryEditor(), TxNetworkParametersHashEditor(), TxInputStatesEditor())
     }
 }

@@ -33,7 +33,7 @@ class TxEditorTests : TestSupport() {
         val txEditor = txEditors.single()
         val transactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-        val editedTransactionComponents = txEditor.edit(transactionComponents, MigrationContext(identitySpace, SecureHash.zeroHash, SecureHash.allOnesHash))
+        val editedTransactionComponents = txEditor.edit(transactionComponents, MigrationContext(identitySpace, SecureHash.zeroHash, SecureHash.allOnesHash, emptyMap()))
 
         assertTrue(editedTransactionComponents.outputs.all {
             it.data.participants.intersect(identities.map { it.sourceParty }).isEmpty()
@@ -60,7 +60,7 @@ class TxEditorTests : TestSupport() {
         val txCommandsEditor = TxCommandsEditor()
         val transactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-        val editedTransactionComponents = txCommandsEditor.edit(transactionComponents, MigrationContext(identitySpace, SecureHash.zeroHash, SecureHash.allOnesHash))
+        val editedTransactionComponents = txCommandsEditor.edit(transactionComponents, MigrationContext(identitySpace, SecureHash.zeroHash, SecureHash.allOnesHash, emptyMap()))
 
         assertTrue(editedTransactionComponents.commands.all {
             it.signers.intersect(identities.map { it.sourceParty.owningKey }).isEmpty()
@@ -86,7 +86,7 @@ class TxEditorTests : TestSupport() {
         val txNotaryEditor = TxNotaryEditor()
         val transactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-        val editedTransactionComponents = txNotaryEditor.edit(transactionComponents, MigrationContext(identitySpace, SecureHash.zeroHash, SecureHash.allOnesHash))
+        val editedTransactionComponents = txNotaryEditor.edit(transactionComponents, MigrationContext(identitySpace, SecureHash.zeroHash, SecureHash.allOnesHash, emptyMap()))
 
         val expectedNotary = destPartyRepository.getParties().find { it.name.toString().contains("Notary", true) }
         assertNotNull(expectedNotary)
@@ -105,12 +105,11 @@ class TxEditorTests : TestSupport() {
         val sourcePartyRepository = getPartyRepository("s1","source")
         val destPartyRepository = getPartyRepository("s1", "destination")
         val identitySpace = IdentitySpaceImpl(sourcePartyRepository, destPartyRepository)
-        val identities = identitySpace.getIdentities()
 
         val txNetworkParametersHashEditor = TxNetworkParametersHashEditor()
         val transactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-        val editedTransactionComponents = txNetworkParametersHashEditor.edit(transactionComponents, MigrationContext(identitySpace, sourceNetworksParametersHash, SecureHash.allOnesHash))
+        val editedTransactionComponents = txNetworkParametersHashEditor.edit(transactionComponents, MigrationContext(identitySpace, sourceNetworksParametersHash, SecureHash.allOnesHash, emptyMap()))
 
         assertEquals(SecureHash.allOnesHash, editedTransactionComponents.networkParametersHash)
     }

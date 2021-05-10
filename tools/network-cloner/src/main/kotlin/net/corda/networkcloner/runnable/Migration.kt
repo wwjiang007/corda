@@ -83,7 +83,7 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
         val leftOverSourceTransactions = mutableListOf<SourceTransaction>()
         val destinationTransactions = sourceTransactions.mapNotNull { sourceTransaction ->
             if (readyForMigration(sourceTransaction, sourceToDestTxId)) {
-                createDestinationTransaction(sourceTransaction).also {
+                createDestinationTransaction(sourceTransaction, sourceToDestTxId).also {
                     sourceToDestTxId.put(sourceTransaction.signedTransaction.id, it.wireTransaction.id)
                 }
             } else {
@@ -98,13 +98,14 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
         }
     }
 
-    private fun createDestinationTransaction(sourceTransaction : SourceTransaction) : DestinationTransaction {
+    private fun createDestinationTransaction(sourceTransaction : SourceTransaction, sourceToDestTxId : Map<SecureHash, SecureHash>) : DestinationTransaction {
         val sourceDbTransaction = sourceTransaction.dbTransaction
         val sourceSignedTransaction = sourceTransaction.signedTransaction
         val sourceWireTransaction = sourceSignedTransaction.coreTransaction as WireTransaction
         val sourceTransactionComponents = sourceSignedTransaction.toTransactionComponents()
 
-        val destTransactionComponents = getTxEditors().fold(sourceTransactionComponents) { tCs, txEditor -> txEditor.edit(tCs, migrationTask.migrationContext) }
+        val migrationContext = migrationTask.migrationContext.copy(sourceTxIdToDestTxId = sourceToDestTxId)
+        val destTransactionComponents = getTxEditors().fold(sourceTransactionComponents) { tCs, txEditor -> txEditor.edit(tCs, migrationContext) }
         val destComponentGroups = destTransactionComponents.toComponentGroups()
 
         val destWireTransaction = WireTransaction(destComponentGroups, sourceWireTransaction.privacySalt, sourceWireTransaction.digestService)

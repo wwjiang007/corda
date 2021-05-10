@@ -63,7 +63,7 @@ class MigrationTests : TestSupport() {
         val destinationNetworkParametersHash = task.destinationNodeDatabase.readNetworkParametersHash()
         assertEquals(1, sourceMigrationData.transactions.size)
         assertEquals(1, destinationMigrationData.transactions.size, "The transaction should have been copied from source to destination")
-        verifyMigration(serializer, sourceMigrationData, destinationMigrationData, MigrationContext(identitySpace, sourceNetworkParametersHash, destinationNetworkParametersHash))
+        verifyMigration(serializer, sourceMigrationData, destinationMigrationData, MigrationContext(identitySpace, sourceNetworkParametersHash, destinationNetworkParametersHash, emptyMap()))
     }
 
     @Test
@@ -91,7 +91,7 @@ class MigrationTests : TestSupport() {
         val destinationNetworkParametersHash = task.destinationNodeDatabase.readNetworkParametersHash()
         assertEquals(3, sourceMigrationData.transactions.size)
         assertEquals(3, destinationMigrationData.transactions.size, "The transaction should have been copied from source to destination")
-        verifyMigration(serializer, sourceMigrationData, destinationMigrationData, MigrationContext(identitySpace, sourceNetworkParametersHash, destinationNetworkParametersHash))
+        verifyMigration(serializer, sourceMigrationData, destinationMigrationData, MigrationContext(identitySpace, sourceNetworkParametersHash, destinationNetworkParametersHash, emptyMap()))
     }
 
 }
