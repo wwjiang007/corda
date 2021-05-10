@@ -46,7 +46,7 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
         if (dryRun) {
             println("This is a dry run for ${migrationTask.identity.sourceParty}, not writing migration data to destination database")
         } else {
-            println("Writing migrated data to dataase of party ${migrationTask.identity.sourceParty}")
+            println("Writing migrated data to database of party ${migrationTask.identity.sourceParty}")
             migrationTask.destinationNodeDatabase.writeMigrationData(destMigrationData)
         }
     }
