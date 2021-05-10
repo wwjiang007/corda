@@ -20,7 +20,6 @@ Questions/Answers
 
 Todo
 
-1) Input states
 2) Reference states
 3) Notary database
 4) Confidential identities
