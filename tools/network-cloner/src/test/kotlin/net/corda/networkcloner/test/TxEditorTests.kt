@@ -19,7 +19,7 @@ class TxEditorTests : TestSupport() {
         val nodeDatabase = getNodeDatabase("s1","source","client")
         val sourceTxByteArray = nodeDatabase.readMigrationData().transactions.first().transaction
 
-        val serializer = getSerializer("s1")
+        val serializer = getSerializer()
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)
 
         val sourcePartyRepository = getPartyRepository("s1","source")
@@ -27,7 +27,7 @@ class TxEditorTests : TestSupport() {
         val identitySpace = IdentitySpaceImpl(sourcePartyRepository, destPartyRepository)
         val identities = identitySpace.getIdentities()
 
-        val cordappRepository = getCordappsRepository("s1")
+        val cordappRepository = getCordappsRepository()
         val txEditors = cordappRepository.getTxEditors()
         assertEquals(1, txEditors.size)
         val txEditor = txEditors.single()
@@ -49,7 +49,7 @@ class TxEditorTests : TestSupport() {
         val nodeDatabase = getNodeDatabase("s1","source","client")
         val sourceTxByteArray = nodeDatabase.readMigrationData().transactions.first().transaction
 
-        val serializer = getSerializer("s1")
+        val serializer = getSerializer()
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)
 
         val sourcePartyRepository = getPartyRepository("s1","source")
@@ -76,7 +76,7 @@ class TxEditorTests : TestSupport() {
         val nodeDatabase = getNodeDatabase("s1","source","client")
         val sourceTxByteArray = nodeDatabase.readMigrationData().transactions.first().transaction
 
-        val serializer = getSerializer("s1")
+        val serializer = getSerializer()
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)
 
         val sourcePartyRepository = getPartyRepository("s1","source")
@@ -99,7 +99,7 @@ class TxEditorTests : TestSupport() {
         val sourceNetworksParametersHash = nodeDatabase.readNetworkParametersHash()
         val sourceTxByteArray = nodeDatabase.readMigrationData().transactions.first().transaction
 
-        val serializer = getSerializer("s1")
+        val serializer = getSerializer()
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)
 
         val sourcePartyRepository = getPartyRepository("s1","source")

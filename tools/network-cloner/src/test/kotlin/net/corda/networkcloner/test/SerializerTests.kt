@@ -17,7 +17,7 @@ class SerializerTests : TestSupport() {
         val transactionsStore = NodeDatabaseImpl("jdbc:h2:$pathToTestDb","sa","", {_ -> null}, { _ -> null})
         val sourceTxByteArray = transactionsStore.readMigrationData().transactions.first().transaction
 
-        val serializer = getSerializer("s1")
+        val serializer = getSerializer()
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)
         val sourceWireTransaction = sourceSignedTransaction.coreTransaction as WireTransaction
 

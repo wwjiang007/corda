@@ -35,10 +35,9 @@ open class TestSupport {
         return SignerImpl()
     }
 
-    //@todo this storing to a static property doesn't really work if different tests ask for different snapshot
-    fun getSerializer(snapshot: String) : Serializer {
+    fun getSerializer() : Serializer {
         return if (serializer == null) {
-            val cordappLoader = getCordappsRepository(snapshot).getCordappLoader()
+            val cordappLoader = getCordappsRepository().getCordappLoader()
             SerializerImpl(cordappLoader).also {
                 serializer = it
             }
@@ -61,9 +60,9 @@ open class TestSupport {
         return NodeDatabaseImpl("jdbc:h2:$pathToDbFileWithoutSuffix","sa","", wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous)
     }
 
-    fun getCordappsRepository(snapshot: String) : CordappsRepository {
+    fun getCordappsRepository() : CordappsRepository {
         return if (cordappsRepository == null) {
-            val pathToCordapps = File(getSnapshotDirectory(snapshot),"tx-editor-plugins")
+            val pathToCordapps = File(getSnapshotsDirectory(),"tx-editor-plugins")
             CordappsRepositoryImpl(pathToCordapps, 1).also {
                 cordappsRepository = it
             }
