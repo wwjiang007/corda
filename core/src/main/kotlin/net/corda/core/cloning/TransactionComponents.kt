@@ -9,7 +9,8 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.Party
 import net.corda.core.internal.createComponentGroups
 
-data class TransactionComponents(val inputs: List<StateRef>, //not in simplest use case
+data class TransactionComponents(val txId: SecureHash,
+                                 val inputs: List<StateRef>, //not in simplest use case
                                  val outputs: List<TransactionState<ContractState>>, //Done
                                  val commands: List<Command<*>>, //Done
                                  val attachments: List<SecureHash>, //shouldn't need changing

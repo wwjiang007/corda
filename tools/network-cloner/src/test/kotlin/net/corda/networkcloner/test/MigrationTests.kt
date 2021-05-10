@@ -67,7 +67,6 @@ class MigrationTests : TestSupport() {
     }
 
     @Test
-    @Ignore
     fun `Transactions with input states and reference states can migrate`() {
         val (snapshotDirectoryName,snapshotDirectory) = copyAndGetSnapshotDirectory("s3-input-states-and-ref-states")
         val sourcePartyRepository = getPartyRepository(snapshotDirectoryName, "source")

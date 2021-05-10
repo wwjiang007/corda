@@ -95,6 +95,7 @@ open class TestSupport {
 
     fun verifyTransactions(sourceTransactions : List<TransactionComponents>, destinationTransactions : List<TransactionComponents>, context: MigrationContext) {
         assertEquals(sourceTransactions.size, destinationTransactions.size)
+        val sourceTxHashToDestTxHash = sourceTransactions.map { it.txId }.zip(destinationTransactions.map { it.txId }).toMap()
         sourceTransactions.forEachIndexed { index, sourceTransaction ->
             val destinationTransaction = destinationTransactions[index]
             assertEquals(sourceTransaction.outputs.size, destinationTransaction.outputs.size)
@@ -114,6 +115,12 @@ open class TestSupport {
                 val expectedSigners = sourceSigners.map { context.identitySpace.findDestinationForSourceOwningKey(it) }
                 assertEquals(expectedSigners, destinationTransaction.commands[commandIndex].signers, "Destination command signers are not as expected")
             }
+            assertEquals(sourceTransaction.inputs.size, destinationTransaction.inputs.size)
+            sourceTransaction.inputs.forEachIndexed { inputIndex, inputState ->
+                val expectedDestInputStateTxId = sourceTxHashToDestTxHash[inputState.txhash]
+                assertEquals(expectedDestInputStateTxId, destinationTransaction.inputs[inputIndex].txhash)
+            }
+            assertEquals(sourceTransaction.references.size, destinationTransaction.references.size)
         }
 
         destinationTransactions.forEach {
