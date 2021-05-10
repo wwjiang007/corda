@@ -9,11 +9,12 @@ import net.corda.networkcloner.impl.txeditors.TxCommandsEditor
 import net.corda.networkcloner.impl.txeditors.TxInputStatesEditor
 import net.corda.networkcloner.impl.txeditors.TxNetworkParametersHashEditor
 import net.corda.networkcloner.impl.txeditors.TxNotaryEditor
+import net.corda.networkcloner.impl.txeditors.TxReferenceStatesEditor
 
 class DefaultMigration(migrationTask: MigrationTask, serializer: Serializer, signer: Signer, val cordappsRepository: CordappsRepository, dryRun : Boolean = false) : Migration(migrationTask, serializer, signer, dryRun) {
 
     override fun getTxEditors(): List<TxEditor> {
         val cordappTxEditors = cordappsRepository.getTxEditors()
-        return cordappTxEditors + listOf(TxCommandsEditor(), TxNotaryEditor(), TxNetworkParametersHashEditor(), TxInputStatesEditor())
+        return cordappTxEditors + listOf(TxCommandsEditor(), TxNotaryEditor(), TxNetworkParametersHashEditor(), TxInputStatesEditor(), TxReferenceStatesEditor())
     }
 }

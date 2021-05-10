@@ -121,6 +121,10 @@ open class TestSupport {
                 assertEquals(expectedDestInputStateTxId, destinationTransaction.inputs[inputIndex].txhash)
             }
             assertEquals(sourceTransaction.references.size, destinationTransaction.references.size)
+            sourceTransaction.references.forEachIndexed { referenceIndex, referenceState ->
+                val expectedDestReferenceStateTxId = sourceTxHashToDestTxHash[referenceState.txhash]
+                assertEquals(expectedDestReferenceStateTxId, destinationTransaction.references[referenceIndex].txhash)
+            }
         }
 
         destinationTransactions.forEach {
