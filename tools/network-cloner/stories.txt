@@ -20,6 +20,5 @@ Questions/Answers
 
 Todo
 
-2) Reference states
-3) Notary database
-4) Confidential identities
+1) Notary database
+2) Confidential identities
