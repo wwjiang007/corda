@@ -18,7 +18,10 @@ Questions/Answers
 2) Why not just modify Corda signature checking mechanism to let anything pass?
    - It's not just about the signatures. The states have parties, which the flows may want to contact via the network, whilst the x500 would still be on the netmap the owning key would be different. With unclear consequences.
 
+3) Why not dump the whole copy of the prod db somewhere and edit that db in place?
+   - We would have to replace the node identities network parameters, presumably reregister in the test network. It seems easier to be dumping the data into an existing node registered on the existing network.
 Todo
 
 1) Notary database
 2) Confidential identities
+3) what about persisted map schema tables and other custom off ledger tables
