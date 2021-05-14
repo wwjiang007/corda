@@ -53,9 +53,9 @@ open class TestSupport {
         return NodesDirPartyRepository(nodesDir)
     }
 
-    fun getNodeDatabase(snapshot: String, sourceOrDestination: String, node: String, wellKnownPartyFromX500Name: (CordaX500Name) -> Party? = {_ -> null}, wellKnownPartyFromAnonymous: (AbstractParty) -> Party? = {_ -> null}) : NodeDatabase {
+    fun getNodeDatabase(snapshot: String, sourceOrDestination: String, node: String, wellKnownPartyFromX500Name: (CordaX500Name) -> Party? = {_ -> null}, wellKnownPartyFromAnonymous: (AbstractParty) -> Party? = {_ -> null}, additionalMappedClasses : List<Class<*>> = emptyList()) : NodeDatabase {
         val pathToDbFileWithoutSuffix = TxEditorTests::class.java.getResource("/snapshots/$snapshot/$sourceOrDestination/$node/persistence.mv.db").path.removeSuffix(".mv.db")
-        return NodeDatabaseImpl("jdbc:h2:$pathToDbFileWithoutSuffix","sa","", wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous)
+        return NodeDatabaseImpl("jdbc:h2:$pathToDbFileWithoutSuffix","sa","", wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous, additionalMappedClasses)
     }
 
     fun getCordappsRepository() : CordappsRepository {

@@ -1,5 +1,6 @@
 package net.corda.networkcloner.test
 
+import net.corda.core.cloning.AdditionalMigration
 import net.corda.core.cloning.MigrationContext
 import net.corda.core.cloning.TxEditor
 import net.corda.networkcloner.FailedAssumptionException
@@ -19,13 +20,14 @@ class MigrationTests : TestSupport() {
         val sourceNodesDirectory = File(snapshotDirectory, "source")
         val destinationNodesDirectory = File(snapshotDirectory, "destination")
 
-        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory)
+        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory, getCordappsRepository())
         val task = factory.getMigrationTasks().filter { it.sourceNodeDatabase.readCoreCordaData().transactions.size == 1 }.first()
 
         assertEquals(1, task.sourceNodeDatabase.readCoreCordaData().transactions.size)
         assertEquals(0, task.destinationNodeDatabase.readCoreCordaData().transactions.size)
         val noOpMigration = object : Migration(task, getSerializer(), getSigner(), false) {
             override fun getTxEditors(): List<TxEditor> = emptyList()
+            override fun getAdditionalMigrations(): List<AdditionalMigration> = emptyList()
         }
         noOpMigration.run()
         val sourceMigrationData = task.sourceNodeDatabase.readCoreCordaData()
@@ -52,7 +54,7 @@ class MigrationTests : TestSupport() {
         val sourceNodesDirectory = File(snapshotDirectory, "source")
         val destinationNodesDirectory = File(snapshotDirectory, "destination")
 
-        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory)
+        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory, getCordappsRepository())
         val task = factory.getMigrationTasks().filter { it.sourceNodeDatabase.readCoreCordaData().transactions.size == 1 }.first()
 
         assertEquals(1, task.sourceNodeDatabase.readCoreCordaData().transactions.size)
@@ -78,7 +80,7 @@ class MigrationTests : TestSupport() {
         val sourceNodesDirectory = File(snapshotDirectory, "source")
         val destinationNodesDirectory = File(snapshotDirectory, "destination")
 
-        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory)
+        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory, getCordappsRepository())
         val migrationTasks = factory.getMigrationTasks()
         assertEquals(3, migrationTasks.size)
         val task = migrationTasks.filter { it.identity.sourceParty.name.toString().contains("client", true) }.single()
@@ -102,13 +104,14 @@ class MigrationTests : TestSupport() {
         val sourceNodesDirectory = File(snapshotDirectory, "source")
         val destinationNodesDirectory = File(snapshotDirectory, "destination")
 
-        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory)
+        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory, getCordappsRepository())
         val task = factory.getMigrationTasks().filter { it.identity.sourceParty.name.toString().contains("client", true) }.single()
 
         assertEquals(3, task.sourceNodeDatabase.readCoreCordaData().dbAttachments.size)
         assertEquals(1, task.destinationNodeDatabase.readCoreCordaData().dbAttachments.size)
         val noOpMigration = object : Migration(task, getSerializer(), getSigner(), false) {
             override fun getTxEditors(): List<TxEditor> = emptyList()
+            override fun getAdditionalMigrations(): List<AdditionalMigration> = emptyList()
         }
         noOpMigration.run()
         val sourceMigrationData = task.sourceNodeDatabase.readCoreCordaData()

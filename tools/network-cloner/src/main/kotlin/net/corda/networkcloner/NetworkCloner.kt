@@ -17,12 +17,12 @@ fun main(args: Array<String>) {
     require(pathToCordapps.exists() && pathToCordapps.isDirectory) {"$pathToCordapps must exist and be a directory"}
 
     println("The migration is commencing from $sourceDir to $destDir")
+    val cordappsRepository = CordappsRepositoryImpl(pathToCordapps, 1, 0)
 
-    val migrationTaskFactory = NodesToNodesMigrationTaskFactory(sourceDir, destDir)
+    val migrationTaskFactory = NodesToNodesMigrationTaskFactory(sourceDir, destDir, cordappsRepository)
     val migrationTasks = migrationTaskFactory.getMigrationTasks()
     println("There are ${migrationTasks.size} migration tasks: $migrationTasks")
 
-    val cordappsRepository = CordappsRepositoryImpl(pathToCordapps, 1, 0)
     val serializer = SerializerImpl(cordappsRepository.getCordappLoader())
     val signer = SignerImpl()
     migrationTasks.filterNot { it.identity.sourceParty.toString().contains("notary", true) }.forEach {

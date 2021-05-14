@@ -12,7 +12,7 @@ class MigrationTaskFactoryTests : TestSupport() {
         val sourceNodesDirectory = File(getSnapshotDirectory("s1"), "source")
         val destinationNodesDirectory = File(getSnapshotDirectory("s1"), "destination")
 
-        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory)
+        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory, getCordappsRepository())
         val tasks = factory.getMigrationTasks()
 
         assertEquals(3, tasks.size)

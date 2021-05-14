@@ -1,5 +1,6 @@
 package net.corda.networkcloner.impl
 
+import net.corda.core.cloning.NodeDb
 import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.CordaX500Name
@@ -13,9 +14,9 @@ import net.corda.node.services.persistence.NodeAttachmentService
 import net.corda.node.services.vault.VaultSchemaV1
 import javax.persistence.EntityManager
 
-class NodeDatabaseImpl(url : String, username: String, password: String, wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, wellKnownPartyFromAnonymous: (AbstractParty) -> Party?) : NodeDatabase {
+class NodeDatabaseImpl(url : String, username: String, password: String, wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, wellKnownPartyFromAnonymous: (AbstractParty) -> Party?, additionalManagedClasses : List<Class<*>>) : NodeDatabase {
 
-    private val entityManager : EntityManager = JpaEntityManagerFactory(url, username, password, wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous).entityManager
+    private val entityManager : EntityManager = JpaEntityManagerFactory(url, username, password, wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous, additionalManagedClasses).entityManager
 
     override fun readCoreCordaData(): CoreCordaData {
         val transactions = getTransactions()
@@ -46,6 +47,10 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
             entityManager.merge(it)
         }
         entityManager.transaction.commit()
+    }
+
+    override fun getNarrowDb(): NodeDb {
+        return NodeDbImpl(entityManager)
     }
 
     override fun readNetworkParametersHash(): SecureHash {
@@ -81,6 +86,18 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
         val query = entityManager.createQuery("SELECT e FROM DBTransactionStorage\$DBTransaction e")
         @Suppress("UNCHECKED_CAST")
         return query.resultList as List<DBTransactionStorage.DBTransaction>
+    }
+
+    class NodeDbImpl(val entityManager: EntityManager) : NodeDb {
+
+        override fun <T> readEntities(): List<T> {
+            TODO("Not yet implemented")
+        }
+
+        override fun <T> writeEntities(entities: List<T>) {
+            TODO("Not yet implemented")
+        }
+
     }
 
 

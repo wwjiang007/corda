@@ -1,5 +1,6 @@
 package net.corda.networkcloner.runnable
 
+import net.corda.core.cloning.AdditionalMigration
 import net.corda.core.cloning.IdentitySpace
 import net.corda.core.cloning.MigrationContext
 import net.corda.core.cloning.TxEditor
@@ -43,10 +44,15 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
                 vaultStates = destinationVaultStates)
 
         if (dryRun) {
-            println("This is a dry run for ${migrationTask.identity.sourceParty}, not writing migration data to destination database")
+            println("This is a dry run for ${migrationTask.identity.sourceParty}, not writing migration data to destination database or calling any additional migration tasks")
         } else {
             println("Writing migrated data to database of party ${migrationTask.identity.sourceParty}")
             migrationTask.destinationNodeDatabase.writeCoreCordaData(destMigrationData)
+            migrationTask.additionalMigrations.forEach { additionalMigration ->
+                val sourceDb = migrationTask.sourceNodeDatabase.getNarrowDb()
+                val destinationDb = migrationTask.destinationNodeDatabase.getNarrowDb()
+                additionalMigration.migrate(sourceDb, destinationDb, migrationTask.migrationContext)
+            }
         }
     }
 
@@ -155,6 +161,7 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
     }
 
     abstract fun getTxEditors(): List<TxEditor>
+    abstract fun getAdditionalMigrations(): List<AdditionalMigration>
 
     private data class SourceTransaction(val dbTransaction: DBTransactionStorage.DBTransaction, val signedTransaction: SignedTransaction)
     private data class DestinationTransaction(val wireTransaction: WireTransaction, val dbTransaction: DBTransactionStorage.DBTransaction, val sourceTransactionId: String)

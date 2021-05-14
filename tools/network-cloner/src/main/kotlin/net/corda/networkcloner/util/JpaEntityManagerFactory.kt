@@ -23,7 +23,7 @@ import javax.persistence.spi.PersistenceUnitTransactionType
 import javax.sql.DataSource
 import kotlin.collections.HashMap
 
-class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbPassword: String, private val wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, private val wellKnownPartyFromAnonymous: (AbstractParty) -> Party?) {
+class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbPassword: String, private val wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, private val wellKnownPartyFromAnonymous: (AbstractParty) -> Party?, val additionalManagedClasses : List<Class<*>>) {
     val entityManager: EntityManager
         get() = entityManagerFactory.createEntityManager()
 
@@ -58,7 +58,7 @@ class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbP
                       VaultSchemaV1.PersistentParty::class.java,
                       VaultSchemaV1.VaultLinearStates::class.java,
                       VaultSchemaV1.VaultStates::class.java,
-                      NodeAttachmentService.DBAttachment::class.java)
+                      NodeAttachmentService.DBAttachment::class.java) + additionalManagedClasses
     }
 
     private fun getDataSource(): DataSource {
