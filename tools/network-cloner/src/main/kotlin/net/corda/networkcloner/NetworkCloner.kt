@@ -22,7 +22,7 @@ fun main(args: Array<String>) {
     val migrationTasks = migrationTaskFactory.getMigrationTasks()
     println("There are ${migrationTasks.size} migration tasks: $migrationTasks")
 
-    val cordappsRepository = CordappsRepositoryImpl(pathToCordapps, 1)
+    val cordappsRepository = CordappsRepositoryImpl(pathToCordapps, 1, 0)
     val serializer = SerializerImpl(cordappsRepository.getCordappLoader())
     val signer = SignerImpl()
     migrationTasks.filterNot { it.identity.sourceParty.toString().contains("notary", true) }.forEach {
