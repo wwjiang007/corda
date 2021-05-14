@@ -5,7 +5,7 @@ import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.networkcloner.api.NodeDatabase
-import net.corda.networkcloner.entity.MigrationData
+import net.corda.networkcloner.entity.CoreCordaData
 import net.corda.networkcloner.util.JpaEntityManagerFactory
 import net.corda.node.internal.DBNetworkParametersStorage
 import net.corda.node.services.persistence.DBTransactionStorage
@@ -17,30 +17,30 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
 
     private val entityManager : EntityManager = JpaEntityManagerFactory(url, username, password, wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous).entityManager
 
-    override fun readMigrationData(): MigrationData {
+    override fun readMigrationData(): CoreCordaData {
         val transactions = getTransactions()
         val persistentParties = getPersistentParties()
         val vaultLinearStates = getVaultLinearStates()
         val vaultStates = getVaultStates()
         val dbAttachments = getDbAttachments()
-        return MigrationData(transactions, persistentParties, vaultLinearStates, vaultStates, dbAttachments)
+        return CoreCordaData(transactions, persistentParties, vaultLinearStates, vaultStates, dbAttachments)
     }
 
-    override fun writeMigrationData(migrationData: MigrationData) {
+    override fun writeMigrationData(coreCordaData: CoreCordaData) {
         entityManager.transaction.begin()
-        migrationData.transactions.forEach {
+        coreCordaData.transactions.forEach {
             entityManager.persist(it)
         }
-        migrationData.persistentParties.forEach {
+        coreCordaData.persistentParties.forEach {
             entityManager.persist(it)
         }
-        migrationData.vaultLinearStates.forEach {
+        coreCordaData.vaultLinearStates.forEach {
             entityManager.persist(it)
         }
-        migrationData.vaultStates.forEach {
+        coreCordaData.vaultStates.forEach {
             entityManager.persist(it)
         }
-        migrationData.dbAttachments.forEach {
+        coreCordaData.dbAttachments.forEach {
             //@todo the below line is a hack how to fetch the lazily loaded list. Without it it won't work
             println("${it.contractClassNames}")
             entityManager.merge(it)

@@ -15,7 +15,6 @@ import net.corda.networkcloner.FailedAssumptionException
 import net.corda.networkcloner.NoDestinationTransactionFoundException
 import net.corda.networkcloner.api.Serializer
 import net.corda.networkcloner.api.Signer
-import net.corda.networkcloner.entity.MigrationData
 import net.corda.networkcloner.entity.MigrationTask
 import net.corda.networkcloner.util.toTransactionComponents
 import net.corda.node.services.persistence.DBTransactionStorage

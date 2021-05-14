@@ -6,20 +6,18 @@ import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.internal.toPath
-import net.corda.core.transactions.SignedTransaction
 import net.corda.networkcloner.api.CordappsRepository
 import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.api.PartyRepository
 import net.corda.networkcloner.api.Serializer
 import net.corda.networkcloner.api.Signer
-import net.corda.networkcloner.entity.MigrationData
+import net.corda.networkcloner.entity.CoreCordaData
 import net.corda.networkcloner.impl.CordappsRepositoryImpl
 import net.corda.networkcloner.impl.NodeDatabaseImpl
 import net.corda.networkcloner.impl.NodesDirPartyRepository
 import net.corda.networkcloner.impl.SerializerImpl
 import net.corda.networkcloner.impl.SignerImpl
 import net.corda.networkcloner.util.toTransactionComponents
-import net.corda.node.services.vault.VaultSchemaV1
 import org.junit.Assert.assertTrue
 import java.io.File
 import java.util.*
@@ -84,7 +82,7 @@ open class TestSupport {
         return snapshotDirectoryName to copyDirectory
     }
 
-    fun verifyMigration(serializer: Serializer, sourceData : MigrationData, destinationData : MigrationData, context : MigrationContext) {
+    fun verifyMigration(serializer: Serializer, sourceData : CoreCordaData, destinationData : CoreCordaData, context : MigrationContext) {
         val sourceTransactions = sourceData.transactions.map { serializer.deserializeDbBlobIntoTransaction(it.transaction).toTransactionComponents() }
         val destinationTransactions = destinationData.transactions.map { serializer.deserializeDbBlobIntoTransaction(it.transaction).toTransactionComponents() }
         verifyTransactions(sourceTransactions, destinationTransactions, context)
@@ -132,21 +130,21 @@ open class TestSupport {
         }
     }
 
-    fun verifyPersistentParties(destinationData: MigrationData) {
+    fun verifyPersistentParties(destinationData: CoreCordaData) {
         //check that all transactions are referenced from the persistent parties table
         assertTrue(destinationData.transactions.all {
             destinationData.persistentParties.find { persistentParty ->  persistentParty.compositeKey.stateRef?.txId == it.txId } != null
         })
     }
 
-    fun verifyVaultLinearStates(destinationData: MigrationData) {
+    fun verifyVaultLinearStates(destinationData: CoreCordaData) {
         //check that all transactions are referenced from the vault linear states table
         assertTrue(destinationData.transactions.all {
             destinationData.vaultLinearStates.find { vaultLinearState ->  vaultLinearState.stateRef?.txId == it.txId } != null
         })
     }
 
-    fun verifyVaultStates(destinationData: MigrationData) {
+    fun verifyVaultStates(destinationData: CoreCordaData) {
         //check that all transactions are referenced from the vault states table
         assertTrue(destinationData.transactions.all {
             destinationData.vaultStates.find { vaultState ->  vaultState.stateRef?.txId == it.txId } != null
