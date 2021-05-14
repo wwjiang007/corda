@@ -9,6 +9,7 @@ import net.corda.networkcloner.entity.MigrationData
 import net.corda.networkcloner.util.JpaEntityManagerFactory
 import net.corda.node.internal.DBNetworkParametersStorage
 import net.corda.node.services.persistence.DBTransactionStorage
+import net.corda.node.services.persistence.NodeAttachmentService
 import net.corda.node.services.vault.VaultSchemaV1
 import javax.persistence.EntityManager
 
@@ -21,7 +22,8 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
         val persistentParties = getPersistentParties()
         val vaultLinearStates = getVaultLinearStates()
         val vaultStates = getVaultStates()
-        return MigrationData(transactions, persistentParties, vaultLinearStates, vaultStates)
+        val dbAttachments = getDbAttachments()
+        return MigrationData(transactions, persistentParties, vaultLinearStates, vaultStates, dbAttachments)
     }
 
     override fun writeMigrationData(migrationData: MigrationData) {
@@ -38,12 +40,23 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
         migrationData.vaultStates.forEach {
             entityManager.persist(it)
         }
+        migrationData.dbAttachments.forEach {
+            //@todo the below line is a hack how to fetch the lazily loaded list. Without it it won't work
+            println("${it.contractClassNames}")
+            entityManager.merge(it)
+        }
         entityManager.transaction.commit()
     }
 
     override fun readNetworkParametersHash(): SecureHash {
         val query = entityManager.createQuery("SELECT e FROM DBNetworkParametersStorage\$PersistentNetworkParameters e")
         return SecureHash.parse((query.resultList.single() as DBNetworkParametersStorage.PersistentNetworkParameters).hash)
+    }
+
+    private fun getDbAttachments(): List<NodeAttachmentService.DBAttachment> {
+        val query = entityManager.createQuery("SELECT e FROM NodeAttachmentService\$DBAttachment e")
+        @Suppress("UNCHECKED_CAST")
+        return (query.resultList as List<NodeAttachmentService.DBAttachment>)
     }
 
     private fun getVaultStates(): List<VaultSchemaV1.VaultStates> {

@@ -2,11 +2,11 @@ package net.corda.networkcloner.test
 
 import net.corda.core.cloning.MigrationContext
 import net.corda.core.cloning.TxEditor
+import net.corda.networkcloner.FailedAssumptionException
 import net.corda.networkcloner.impl.IdentitySpaceImpl
 import net.corda.networkcloner.impl.NodesToNodesMigrationTaskFactory
 import net.corda.networkcloner.runnable.DefaultMigration
 import net.corda.networkcloner.runnable.Migration
-import org.junit.Ignore
 import org.junit.Test
 import java.io.File
 import kotlin.test.assertEquals
@@ -38,6 +38,8 @@ class MigrationTests : TestSupport() {
         assertEquals(1, destinationMigrationData.vaultLinearStates.size, "The vault linear states should have been copied from source to destination")
         assertEquals(1, sourceMigrationData.vaultStates.size)
         assertEquals(1, destinationMigrationData.vaultStates.size, "The vault states should have been copied from source to destination")
+        assertEquals(1, sourceMigrationData.dbAttachments.size)
+        assertEquals(1, destinationMigrationData.dbAttachments.size, "The identical attachment shouldn't have resulted in any change")
     }
 
     @Test
@@ -92,6 +94,33 @@ class MigrationTests : TestSupport() {
         assertEquals(3, sourceMigrationData.transactions.size)
         assertEquals(3, destinationMigrationData.transactions.size, "The transaction should have been copied from source to destination")
         verifyMigration(serializer, sourceMigrationData, destinationMigrationData, MigrationContext(identitySpace, sourceNetworkParametersHash, destinationNetworkParametersHash, emptyMap()))
+    }
+
+    @Test
+    fun `Attachments copy from source to destination database`() {
+        val snapshotDirectory = copyAndGetSnapshotDirectory("s4-attachments").second
+        val sourceNodesDirectory = File(snapshotDirectory, "source")
+        val destinationNodesDirectory = File(snapshotDirectory, "destination")
+
+        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory)
+        val task = factory.getMigrationTasks().filter { it.identity.sourceParty.name.toString().contains("client", true) }.single()
+
+        assertEquals(3, task.sourceNodeDatabase.readMigrationData().dbAttachments.size)
+        assertEquals(1, task.destinationNodeDatabase.readMigrationData().dbAttachments.size)
+        val noOpMigration = object : Migration(task, getSerializer(), getSigner(), false) {
+            override fun getTxEditors(): List<TxEditor> = emptyList()
+        }
+        noOpMigration.run()
+        val sourceMigrationData = task.sourceNodeDatabase.readMigrationData()
+        val destinationMigrationData = task.destinationNodeDatabase.readMigrationData()
+        assertEquals(3, sourceMigrationData.dbAttachments.size)
+        assertEquals(3, destinationMigrationData.dbAttachments.size, "The attachments should have been copied from source to destination")
+        sourceMigrationData.dbAttachments.forEach { sourceAttachment ->
+            val destinationAttachment = destinationMigrationData.dbAttachments.find { it.attId == sourceAttachment.attId } ?: throw FailedAssumptionException("Expected to find attachment in destination database for source attachment id ${sourceAttachment.attId}")
+            assertEquals(3, destinationAttachment.contractClassNames?.size)
+            assertEquals(1, destinationAttachment.signers?.size)
+
+        }
     }
 
 }

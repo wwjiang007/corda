@@ -1,19 +1,11 @@
 package net.corda.networkcloner
 
-import net.corda.core.internal.createComponentGroups
-import net.corda.core.serialization.SerializationDefaults
-import net.corda.core.serialization.serialize
-import net.corda.core.transactions.SignedTransaction
-import net.corda.core.transactions.WireTransaction
 import net.corda.networkcloner.impl.CordappsRepositoryImpl
 import net.corda.networkcloner.impl.SerializerImpl
 import net.corda.networkcloner.impl.SignerImpl
-import net.corda.networkcloner.impl.NodeDatabaseImpl
 import net.corda.networkcloner.impl.NodesToNodesMigrationTaskFactory
 import net.corda.networkcloner.runnable.DefaultMigration
-import net.corda.serialization.internal.CordaSerializationEncoding
 import java.io.File
-import java.nio.file.Paths
 
 fun main(args: Array<String>) {
     val sourceDir = File(args[0])

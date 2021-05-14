@@ -5,6 +5,7 @@ import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.node.internal.DBNetworkParametersStorage
 import net.corda.node.services.persistence.DBTransactionStorage
+import net.corda.node.services.persistence.NodeAttachmentService
 import net.corda.node.services.vault.VaultSchemaV1
 import org.h2.jdbcx.JdbcDataSource
 import org.hibernate.jpa.HibernatePersistenceProvider
@@ -52,7 +53,12 @@ class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbP
     }
 
     private fun getEntities(): List<Class<*>> {
-        return listOf(DBTransactionStorage.DBTransaction::class.java, DBNetworkParametersStorage.PersistentNetworkParameters::class.java, VaultSchemaV1.PersistentParty::class.java, VaultSchemaV1.VaultLinearStates::class.java, VaultSchemaV1.VaultStates::class.java)
+        return listOf(DBTransactionStorage.DBTransaction::class.java,
+                      DBNetworkParametersStorage.PersistentNetworkParameters::class.java,
+                      VaultSchemaV1.PersistentParty::class.java,
+                      VaultSchemaV1.VaultLinearStates::class.java,
+                      VaultSchemaV1.VaultStates::class.java,
+                      NodeAttachmentService.DBAttachment::class.java)
     }
 
     private fun getDataSource(): DataSource {
