@@ -17,7 +17,7 @@ class TxEditorTests : TestSupport() {
     @Test
     fun `Test app TxEditor can be loaded and applied`() {
         val nodeDatabase = getNodeDatabase("s1","source","client")
-        val sourceTxByteArray = nodeDatabase.readMigrationData().transactions.first().transaction
+        val sourceTxByteArray = nodeDatabase.readCoreCordaData().transactions.first().transaction
 
         val serializer = getSerializer()
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)
@@ -47,7 +47,7 @@ class TxEditorTests : TestSupport() {
     @Test
     fun `Commands TxEditor can be applied and works`() {
         val nodeDatabase = getNodeDatabase("s1","source","client")
-        val sourceTxByteArray = nodeDatabase.readMigrationData().transactions.first().transaction
+        val sourceTxByteArray = nodeDatabase.readCoreCordaData().transactions.first().transaction
 
         val serializer = getSerializer()
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)
@@ -74,7 +74,7 @@ class TxEditorTests : TestSupport() {
     @Test
     fun `Notary TxEditor can be applied and works`() {
         val nodeDatabase = getNodeDatabase("s1","source","client")
-        val sourceTxByteArray = nodeDatabase.readMigrationData().transactions.first().transaction
+        val sourceTxByteArray = nodeDatabase.readCoreCordaData().transactions.first().transaction
 
         val serializer = getSerializer()
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)
@@ -97,7 +97,7 @@ class TxEditorTests : TestSupport() {
     fun `Network Parameters Hash TxEditor can be applied and works`() {
         val nodeDatabase = getNodeDatabase("s1","source","client")
         val sourceNetworksParametersHash = nodeDatabase.readNetworkParametersHash()
-        val sourceTxByteArray = nodeDatabase.readMigrationData().transactions.first().transaction
+        val sourceTxByteArray = nodeDatabase.readCoreCordaData().transactions.first().transaction
 
         val serializer = getSerializer()
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)

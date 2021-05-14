@@ -11,7 +11,6 @@ import net.corda.node.services.vault.VaultSchemaV1
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 import java.io.File
-import kotlin.math.exp
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 
@@ -31,7 +30,7 @@ class IdentityTests : TestSupport() {
     fun `Db entries containing parties can be read and written`() {
         val identitySpace = getIdentitySpace("s1")
         val sourceDb = getNodeDatabase("s1", "source", "client", identitySpace::getSourcePartyFromX500Name, identitySpace::getSourcePartyFromAnonymous)
-        val sourceData = sourceDb.readMigrationData()
+        val sourceData = sourceDb.readCoreCordaData()
 
         assertEquals(2, sourceData.persistentParties.size)
         listOf(clientX500Name, operatorX500Name).forEach { expectedX500Name ->
@@ -46,8 +45,8 @@ class IdentityTests : TestSupport() {
         val destinationDb = getNodeDatabase(tempSnapshot,"destination", "client", identitySpace::getDestinationPartyFromX500Name, identitySpace::getDestinationPartyFromAnonymous)
         val migratedPersistentParties = sourceData.persistentParties.map { VaultSchemaV1.PersistentParty(PersistentStateRef(StateRef(SecureHash.allOnesHash,0)), identitySpace.findDestinationForSourceParty(it.x500Name!!)) }
         val migratedVaultStates = sourceData.vaultStates.map { VaultSchemaV1.VaultStates(notary = identitySpace.findDestinationForSourceParty(it.notary) as Party, contractStateClassName = it.contractStateClassName, stateStatus = it.stateStatus, recordedTime = it.recordedTime, consumedTime = it.consumedTime, lockId = it.lockId, relevancyStatus = it.relevancyStatus, lockUpdateTime = it.lockUpdateTime, constraintType = it.constraintType, constraintData = it.constraintData).apply { stateRef = PersistentStateRef(StateRef(SecureHash.allOnesHash, 1)) } }
-        destinationDb.writeMigrationData(sourceData.copy(persistentParties = migratedPersistentParties, vaultStates = migratedVaultStates))
-        val destinationData = destinationDb.readMigrationData()
+        destinationDb.writeCoreCordaData(sourceData.copy(persistentParties = migratedPersistentParties, vaultStates = migratedVaultStates))
+        val destinationData = destinationDb.readCoreCordaData()
 
         assertEquals(2, destinationData.persistentParties.size)
         assertEquals(1, destinationData.vaultStates.size)

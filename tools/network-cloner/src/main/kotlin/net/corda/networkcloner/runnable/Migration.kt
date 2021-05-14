@@ -24,7 +24,7 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
 
     override fun run() {
         println("Executing migration task $migrationTask")
-        val sourceMigrationData = migrationTask.sourceNodeDatabase.readMigrationData()
+        val sourceMigrationData = migrationTask.sourceNodeDatabase.readCoreCordaData()
         val sourceTransactions = sourceMigrationData.transactions.map {
             val signedTransaction = serializer.deserializeDbBlobIntoTransaction(it.transaction)
             SourceTransaction(it, signedTransaction)
@@ -46,7 +46,7 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
             println("This is a dry run for ${migrationTask.identity.sourceParty}, not writing migration data to destination database")
         } else {
             println("Writing migrated data to database of party ${migrationTask.identity.sourceParty}")
-            migrationTask.destinationNodeDatabase.writeMigrationData(destMigrationData)
+            migrationTask.destinationNodeDatabase.writeCoreCordaData(destMigrationData)
         }
     }
 

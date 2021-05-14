@@ -17,7 +17,7 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
 
     private val entityManager : EntityManager = JpaEntityManagerFactory(url, username, password, wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous).entityManager
 
-    override fun readMigrationData(): CoreCordaData {
+    override fun readCoreCordaData(): CoreCordaData {
         val transactions = getTransactions()
         val persistentParties = getPersistentParties()
         val vaultLinearStates = getVaultLinearStates()
@@ -26,7 +26,7 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
         return CoreCordaData(transactions, persistentParties, vaultLinearStates, vaultStates, dbAttachments)
     }
 
-    override fun writeMigrationData(coreCordaData: CoreCordaData) {
+    override fun writeCoreCordaData(coreCordaData: CoreCordaData) {
         entityManager.transaction.begin()
         coreCordaData.transactions.forEach {
             entityManager.persist(it)

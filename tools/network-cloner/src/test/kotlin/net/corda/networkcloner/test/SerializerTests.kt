@@ -1,12 +1,10 @@
 package net.corda.networkcloner.test
 
-import net.corda.core.internal.createComponentGroups
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
 import net.corda.networkcloner.impl.NodeDatabaseImpl
 import net.corda.networkcloner.util.toTransactionComponents
 import org.junit.Test
-import java.lang.UnsupportedOperationException
 import kotlin.test.assertTrue
 
 class SerializerTests : TestSupport() {
@@ -15,7 +13,7 @@ class SerializerTests : TestSupport() {
     fun `Transaction blob is identical when gone through deserialization and serialization`() {
         val pathToTestDb = SerializerTests::class.java.getResource("/snapshots/s1/source/client/persistence.mv.db").path.removeSuffix(".mv.db")
         val transactionsStore = NodeDatabaseImpl("jdbc:h2:$pathToTestDb","sa","", {_ -> null}, { _ -> null})
-        val sourceTxByteArray = transactionsStore.readMigrationData().transactions.first().transaction
+        val sourceTxByteArray = transactionsStore.readCoreCordaData().transactions.first().transaction
 
         val serializer = getSerializer()
         val sourceSignedTransaction = serializer.deserializeDbBlobIntoTransaction(sourceTxByteArray)

@@ -5,8 +5,8 @@ import net.corda.networkcloner.entity.CoreCordaData
 
 interface NodeDatabase {
 
-    fun readMigrationData() : CoreCordaData
-    fun writeMigrationData(coreCordaData: CoreCordaData)
+    fun readCoreCordaData() : CoreCordaData
+    fun writeCoreCordaData(coreCordaData: CoreCordaData)
     fun readNetworkParametersHash() : SecureHash
 
 }
