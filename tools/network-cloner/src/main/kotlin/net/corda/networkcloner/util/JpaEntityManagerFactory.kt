@@ -8,6 +8,8 @@ import net.corda.node.services.persistence.DBTransactionStorage
 import net.corda.node.services.persistence.NodeAttachmentService
 import net.corda.node.services.vault.VaultSchemaV1
 import org.h2.jdbcx.JdbcDataSource
+import org.hibernate.cfg.AvailableSettings
+import org.hibernate.cfg.Configuration
 import org.hibernate.jpa.HibernatePersistenceProvider
 import org.hibernate.jpa.boot.internal.EntityManagerFactoryBuilderImpl
 import org.hibernate.jpa.boot.internal.PersistenceUnitInfoDescriptor
@@ -23,21 +25,22 @@ import javax.persistence.spi.PersistenceUnitTransactionType
 import javax.sql.DataSource
 import kotlin.collections.HashMap
 
-class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbPassword: String, private val wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, private val wellKnownPartyFromAnonymous: (AbstractParty) -> Party?, val additionalManagedClasses : List<Class<*>>) {
+class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbPassword: String, private val wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, private val wellKnownPartyFromAnonymous: (AbstractParty) -> Party?, val additionalManagedClasses : List<Class<*>>, private val additionalJars : List<URL>, private val additionalClassLoaders: List<ClassLoader>) {
     val entityManager: EntityManager
         get() = entityManagerFactory.createEntityManager()
 
     private val entityManagerFactory: EntityManagerFactory
         get() {
             val persistenceUnitInfo: PersistenceUnitInfo = getPersistenceUnitInfo(UUID.randomUUID().toString())
-            val configuration: Map<String?, Any?> = mapOf("hibernate.metadata_builder_contributor" to AttributeConverterMetadataBuilderContributor(wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous))
+            val configuration: Map<String?, Any?> = mapOf("hibernate.metadata_builder_contributor" to AttributeConverterMetadataBuilderContributor(wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous),
+                                                          AvailableSettings.CLASSLOADERS to additionalClassLoaders)
             return EntityManagerFactoryBuilderImpl(
                     PersistenceUnitInfoDescriptor(persistenceUnitInfo), configuration)
                     .build()
         }
 
     private fun getPersistenceUnitInfo(name: String): HibernatePersistenceUnitInfo {
-        return HibernatePersistenceUnitInfo(name, getEntityClassNames(), getProperties())
+        return HibernatePersistenceUnitInfo(name, getEntityClassNames(), getProperties(), additionalJars)
     }
 
     private fun getEntityClassNames(): List<String> {
@@ -69,7 +72,7 @@ class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbP
         return dataSource
     }
 
-    class HibernatePersistenceUnitInfo(private val persistenceUnitName: String, private val managedClassNames: List<String>, private val properties: Properties) : PersistenceUnitInfo {
+    class HibernatePersistenceUnitInfo(private val persistenceUnitName: String, private val managedClassNames: List<String>, private val properties: Properties, private val additionalJars: List<URL>) : PersistenceUnitInfo {
         private val transformers: MutableList<ClassTransformer?> = mutableListOf()
         private var jtaDataSource: DataSource? = null
         private var nonjtaDataSource: DataSource? = null
@@ -105,7 +108,7 @@ class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbP
 
         override fun getMappingFileNames(): MutableList<String> = mutableListOf()
 
-        override fun getJarFileUrls(): MutableList<URL> = mutableListOf()
+        override fun getJarFileUrls(): MutableList<URL> = additionalJars.toMutableList()
 
         override fun getPersistenceUnitRootUrl(): URL? = null
 

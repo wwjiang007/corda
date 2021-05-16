@@ -126,4 +126,17 @@ class MigrationTests : TestSupport() {
         }
     }
 
+    @Test
+    fun `Additional migrations copy from source to destination database`() {
+        val snapshotDirectory = copyAndGetSnapshotDirectory("s5-mapped-schema-table").second
+        val sourceNodesDirectory = File(snapshotDirectory, "source")
+        val destinationNodesDirectory = File(snapshotDirectory, "destination")
+
+        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory, getCordappsRepository())
+        val task = factory.getMigrationTasks().filter { it.identity.sourceParty.name.toString().contains("client", true) }.single()
+
+        val migration = DefaultMigration(task, getSerializer(), getSigner(), getCordappsRepository(), false)
+        migration.run()
+    }
+
 }

@@ -10,6 +10,7 @@ import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.entity.MigrationTask
 import java.io.File
 import java.lang.RuntimeException
+import java.net.URL
 
 class NodesToNodesMigrationTaskFactory(val source : File, val destination : File, val cordappsRepository: CordappsRepository) : MigrationTaskFactory {
 
@@ -20,9 +21,11 @@ class NodesToNodesMigrationTaskFactory(val source : File, val destination : File
         val identities = identitySpace.getIdentities()
         val additionalMigrations = cordappsRepository.getAdditionalMigrations()
         val additionalManagedClasses = additionalMigrations.flatMap { it.getManagedClasses() }
+        val cordappsUrls = cordappsRepository.getCordappsURLs()
+        val classloader = cordappsRepository.getCordappLoader().appClassLoader
 
-        val sourceTransactionStores = getTransactionStores(source, identitySpace::getSourcePartyFromX500Name, identitySpace::getSourcePartyFromAnonymous, additionalManagedClasses)
-        val destinationTransactionStores = getTransactionStores(destination, identitySpace::getDestinationPartyFromX500Name, identitySpace::getDestinationPartyFromAnonymous, additionalManagedClasses)
+        val sourceTransactionStores = getTransactionStores(source, identitySpace::getSourcePartyFromX500Name, identitySpace::getSourcePartyFromAnonymous, additionalManagedClasses, cordappsUrls, listOf(classloader))
+        val destinationTransactionStores = getTransactionStores(destination, identitySpace::getDestinationPartyFromX500Name, identitySpace::getDestinationPartyFromAnonymous, additionalManagedClasses, cordappsUrls, listOf(classloader))
 
         val sourceNetworkParametersHash = sourceTransactionStores.values.map { it.readNetworkParametersHash() }.toSet().single()
         val destinationNetworkParametershash = destinationTransactionStores.values.map { it.readNetworkParametersHash() }.toSet().single()
@@ -34,7 +37,7 @@ class NodesToNodesMigrationTaskFactory(val source : File, val destination : File
         }
     }
 
-    private fun getTransactionStores(nodesDir : File, wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, wellKnownPartyFromAnonymous: (AbstractParty) -> Party?, additionalManagedClasses : List<Class<*>>) : Map<CordaX500Name, NodeDatabase> {
+    private fun getTransactionStores(nodesDir : File, wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, wellKnownPartyFromAnonymous: (AbstractParty) -> Party?, additionalManagedClasses : List<Class<*>>, cordappsUrls : List<URL>, additionalClassLoaders : List<ClassLoader>) : Map<CordaX500Name, NodeDatabase> {
         return nodesDir.listFiles().filter { it.isDirectory && !it.isHidden }.map {
             val nodeConf = File(it, "node.conf").also {
                 if (!it.exists()) {
@@ -49,7 +52,7 @@ class NodesToNodesMigrationTaskFactory(val source : File, val destination : File
                     throw RuntimeException("Expected $it to exist")
                 }
             }.path.removeSuffix(".mv.db")
-            val transactionStore = NodeDatabaseImpl("jdbc:h2:$pathToDb", "sa","", wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous, additionalManagedClasses)
+            val transactionStore = NodeDatabaseImpl("jdbc:h2:$pathToDb", "sa","", wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous, additionalManagedClasses, cordappsUrls, additionalClassLoaders)
             x500Name to transactionStore
         }.toMap()
     }

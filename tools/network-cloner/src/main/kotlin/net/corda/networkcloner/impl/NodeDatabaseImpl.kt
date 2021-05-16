@@ -5,6 +5,7 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
+import net.corda.core.internal.packageName_
 import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.entity.CoreCordaData
 import net.corda.networkcloner.util.JpaEntityManagerFactory
@@ -12,11 +13,12 @@ import net.corda.node.internal.DBNetworkParametersStorage
 import net.corda.node.services.persistence.DBTransactionStorage
 import net.corda.node.services.persistence.NodeAttachmentService
 import net.corda.node.services.vault.VaultSchemaV1
+import java.net.URL
 import javax.persistence.EntityManager
 
-class NodeDatabaseImpl(url : String, username: String, password: String, wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, wellKnownPartyFromAnonymous: (AbstractParty) -> Party?, additionalManagedClasses : List<Class<*>>) : NodeDatabase {
+class NodeDatabaseImpl(url : String, username: String, password: String, wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, wellKnownPartyFromAnonymous: (AbstractParty) -> Party?, val additionalManagedClasses : List<Class<*>>, additionalJars : List<URL>, additionalClassLoaders: List<ClassLoader>) : NodeDatabase {
 
-    private val entityManager : EntityManager = JpaEntityManagerFactory(url, username, password, wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous, additionalManagedClasses).entityManager
+    private val entityManager : EntityManager = JpaEntityManagerFactory(url, username, password, wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous, additionalManagedClasses, additionalJars, additionalClassLoaders).entityManager
 
     override fun readCoreCordaData(): CoreCordaData {
         val transactions = getTransactions()
@@ -90,8 +92,13 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
 
     class NodeDbImpl(val entityManager: EntityManager) : NodeDb {
 
-        override fun <T> readEntities(): List<T> {
-            TODO("Not yet implemented")
+        override fun <T> readEntities(clazz : Class<T>): List<T> {
+            val className = clazz.name.removePrefix("${clazz.packageName_}.")
+            val blah = entityManager.metamodel.entities
+            entityManager.metamodel.managedTypes
+            val query = entityManager.createQuery("SELECT e FROM ReceiptSchemaV1\$PersistentReceiptState e")
+            @Suppress("UNCHECKED_CAST")
+            return query.resultList as List<T>
         }
 
         override fun <T> writeEntities(entities: List<T>) {

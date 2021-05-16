@@ -18,12 +18,14 @@ class CordappsRepositoryImpl(private val pathToCordapps : File, private val expe
     private val _cordappLoader : CordappLoader
     private val _txEditors : List<TxEditor>
     private val _additionalMigrations : List<AdditionalMigration>
+    private val _jarUrls : List<URL>
 
     init {
         verifyPathToCordapps()
         _cordappLoader = createCordappLoader(pathToCordapps)
         _txEditors = loadTxEditors()
         _additionalMigrations = loadAdditionalMigrations()
+        _jarUrls = getJarFiles().map { it.toURI().toURL() }
     }
 
     private fun verifyPathToCordapps() {
@@ -40,6 +42,10 @@ class CordappsRepositoryImpl(private val pathToCordapps : File, private val expe
 
     override fun getAdditionalMigrations(): List<AdditionalMigration> {
         return _additionalMigrations
+    }
+
+    override fun getCordappsURLs(): List<URL> {
+        return _jarUrls
     }
 
     private fun createCordappLoader(directory: File) : CordappLoader {
@@ -85,9 +91,13 @@ class CordappsRepositoryImpl(private val pathToCordapps : File, private val expe
     }
 
     private fun getAllClassesViaTemporaryClassLoader() : List<Class<*>> {
-        return pathToCordapps.listFiles().filter { it.isFile && it.name.endsWith(".jar",true) }.flatMap {
+        return getJarFiles().flatMap {
             getClassesFromJarFile(it)
         }
+    }
+
+    private fun getJarFiles() : List<File> {
+        return pathToCordapps.listFiles().filter { it.isFile && it.name.endsWith(".jar",true) }
     }
 
     private fun getClassNamesFromJarFile(givenFile: File): Set<String> {
