@@ -132,11 +132,17 @@ class MigrationTests : TestSupport() {
         val sourceNodesDirectory = File(snapshotDirectory, "source")
         val destinationNodesDirectory = File(snapshotDirectory, "destination")
 
-        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory, getCordappsRepository())
+        val cordappsRepository = getCordappsRepository()
+        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory, cordappsRepository)
         val task = factory.getMigrationTasks().filter { it.identity.sourceParty.name.toString().contains("client", true) }.single()
 
         val migration = DefaultMigration(task, getSerializer(), getSigner(), getCordappsRepository(), false)
+        val persistentReceiptStateClass = cordappsRepository.getCordappLoader().appClassLoader.loadClass("com.r3.corda.lib.contracts.contractsdk.testapp.contracts.ReceiptSchemaV1\$PersistentReceiptState")
+        assertEquals(1, task.sourceNodeDatabase.getNarrowDb().readEntities(persistentReceiptStateClass).size)
+        assertEquals(0, task.destinationNodeDatabase.getNarrowDb().readEntities(persistentReceiptStateClass).size)
         migration.run()
+        assertEquals(1, task.sourceNodeDatabase.getNarrowDb().readEntities(persistentReceiptStateClass).size)
+        assertEquals(1, task.destinationNodeDatabase.getNarrowDb().readEntities(persistentReceiptStateClass).size)
     }
 
 }

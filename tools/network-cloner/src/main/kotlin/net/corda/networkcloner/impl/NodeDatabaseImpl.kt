@@ -93,8 +93,6 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
     class NodeDbImpl(val entityManager: EntityManager) : NodeDb {
 
         override fun <T> readEntities(clazz : Class<T>): List<T> {
-            val className = clazz.name.removePrefix("${clazz.packageName_}.")
-            val blah = entityManager.metamodel.entities
             entityManager.metamodel.managedTypes
             val query = entityManager.createQuery("SELECT e FROM ReceiptSchemaV1\$PersistentReceiptState e")
             @Suppress("UNCHECKED_CAST")
@@ -102,7 +100,9 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
         }
 
         override fun <T> writeEntities(entities: List<T>) {
-            TODO("Not yet implemented")
+            entityManager.transaction.begin()
+            entities.forEach { entityManager.persist(it) }
+            entityManager.transaction.commit()
         }
 
     }
