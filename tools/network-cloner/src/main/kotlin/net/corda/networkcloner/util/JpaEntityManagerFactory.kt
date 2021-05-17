@@ -25,7 +25,7 @@ import javax.persistence.spi.PersistenceUnitTransactionType
 import javax.sql.DataSource
 import kotlin.collections.HashMap
 
-class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbPassword: String, private val wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, private val wellKnownPartyFromAnonymous: (AbstractParty) -> Party?, val additionalManagedClasses : List<Class<*>>, private val additionalJars : List<URL>, private val additionalClassLoaders: List<ClassLoader>) {
+class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbPassword: String, private val wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, private val wellKnownPartyFromAnonymous: (AbstractParty) -> Party?, val additionalManagedClasses : List<Class<*>>, private val additionalClassLoaders: List<ClassLoader>) {
     val entityManager: EntityManager
         get() = entityManagerFactory.createEntityManager()
 
@@ -40,7 +40,7 @@ class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbP
         }
 
     private fun getPersistenceUnitInfo(name: String): HibernatePersistenceUnitInfo {
-        return HibernatePersistenceUnitInfo(name, getEntityClassNames(), getProperties(), additionalJars)
+        return HibernatePersistenceUnitInfo(name, getEntityClassNames(), getProperties())
     }
 
     private fun getEntityClassNames(): List<String> {
@@ -72,7 +72,7 @@ class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbP
         return dataSource
     }
 
-    class HibernatePersistenceUnitInfo(private val persistenceUnitName: String, private val managedClassNames: List<String>, private val properties: Properties, private val additionalJars: List<URL>) : PersistenceUnitInfo {
+    class HibernatePersistenceUnitInfo(private val persistenceUnitName: String, private val managedClassNames: List<String>, private val properties: Properties) : PersistenceUnitInfo {
         private val transformers: MutableList<ClassTransformer?> = mutableListOf()
         private var jtaDataSource: DataSource? = null
         private var nonjtaDataSource: DataSource? = null
@@ -108,7 +108,7 @@ class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbP
 
         override fun getMappingFileNames(): MutableList<String> = mutableListOf()
 
-        override fun getJarFileUrls(): MutableList<URL> = additionalJars.toMutableList()
+        override fun getJarFileUrls(): MutableList<URL> = mutableListOf()
 
         override fun getPersistenceUnitRootUrl(): URL? = null
 

@@ -16,9 +16,9 @@ import net.corda.node.services.vault.VaultSchemaV1
 import java.net.URL
 import javax.persistence.EntityManager
 
-class NodeDatabaseImpl(url : String, username: String, password: String, wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, wellKnownPartyFromAnonymous: (AbstractParty) -> Party?, val additionalManagedClasses : List<Class<*>>, additionalJars : List<URL>, additionalClassLoaders: List<ClassLoader>) : NodeDatabase {
+class NodeDatabaseImpl(url : String, username: String, password: String, wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, wellKnownPartyFromAnonymous: (AbstractParty) -> Party?, additionalManagedClasses : List<Class<*>>, additionalClassLoaders: List<ClassLoader>) : NodeDatabase {
 
-    private val entityManager : EntityManager = JpaEntityManagerFactory(url, username, password, wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous, additionalManagedClasses, additionalJars, additionalClassLoaders).entityManager
+    private val entityManager : EntityManager = JpaEntityManagerFactory(url, username, password, wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous, additionalManagedClasses, additionalClassLoaders).entityManager
 
     override fun readMigrationData(entityClasses: List<Class<out Any>>): MigrationData {
         val coreCordaData = readCoreCordaData()
