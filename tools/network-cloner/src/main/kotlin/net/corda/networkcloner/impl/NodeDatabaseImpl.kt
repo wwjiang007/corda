@@ -1,6 +1,5 @@
 package net.corda.networkcloner.impl
 
-import net.corda.core.cloning.NodeDb
 import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.CordaX500Name
@@ -8,6 +7,7 @@ import net.corda.core.identity.Party
 import net.corda.core.internal.packageName_
 import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.entity.CoreCordaData
+import net.corda.networkcloner.entity.MigrationData
 import net.corda.networkcloner.util.JpaEntityManagerFactory
 import net.corda.node.internal.DBNetworkParametersStorage
 import net.corda.node.services.persistence.DBTransactionStorage
@@ -20,6 +20,12 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
 
     private val entityManager : EntityManager = JpaEntityManagerFactory(url, username, password, wellKnownPartyFromX500Name, wellKnownPartyFromAnonymous, additionalManagedClasses, additionalJars, additionalClassLoaders).entityManager
 
+    override fun readMigrationData(entityClasses: List<Class<out Any>>): MigrationData {
+        val coreCordaData = readCoreCordaData()
+        val persistentStatesData = entityClasses.map { it to readEntities(it) }.toMap()
+        return MigrationData(coreCordaData, persistentStatesData)
+    }
+
     override fun readCoreCordaData(): CoreCordaData {
         val transactions = getTransactions()
         val persistentParties = getPersistentParties()
@@ -29,30 +35,15 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
         return CoreCordaData(transactions, persistentParties, vaultLinearStates, vaultStates, dbAttachments)
     }
 
-    override fun writeCoreCordaData(coreCordaData: CoreCordaData) {
+    override fun writeMigrationData(migrationData: MigrationData) {
         entityManager.transaction.begin()
-        coreCordaData.transactions.forEach {
-            entityManager.persist(it)
-        }
-        coreCordaData.persistentParties.forEach {
-            entityManager.persist(it)
-        }
-        coreCordaData.vaultLinearStates.forEach {
-            entityManager.persist(it)
-        }
-        coreCordaData.vaultStates.forEach {
-            entityManager.persist(it)
-        }
-        coreCordaData.dbAttachments.forEach {
-            //@todo the below line is a hack how to fetch the lazily loaded list. Without it it won't work
-            println("${it.contractClassNames}")
-            entityManager.merge(it)
-        }
+        write(migrationData.coreCordaData)
+        migrationData.entities.values.forEach { write(it) }
         entityManager.transaction.commit()
     }
 
-    override fun getNarrowDb(): NodeDb {
-        return NodeDbImpl(entityManager)
+    override fun writeCoreCordaData(coreCordaData: CoreCordaData) {
+        writeMigrationData(MigrationData(coreCordaData, emptyMap()))
     }
 
     override fun readNetworkParametersHash(): SecureHash {
@@ -90,22 +81,35 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
         return query.resultList as List<DBTransactionStorage.DBTransaction>
     }
 
-    class NodeDbImpl(val entityManager: EntityManager) : NodeDb {
-
-        override fun <T> readEntities(clazz : Class<T>): List<T> {
-            entityManager.metamodel.managedTypes
-            val query = entityManager.createQuery("SELECT e FROM ReceiptSchemaV1\$PersistentReceiptState e")
-            @Suppress("UNCHECKED_CAST")
-            return query.resultList as List<T>
-        }
-
-        override fun <T> writeEntities(entities: List<T>) {
-            entityManager.transaction.begin()
-            entities.forEach { entityManager.persist(it) }
-            entityManager.transaction.commit()
-        }
-
+    private fun <T> readEntities(clazz : Class<T>): List<T> {
+        val className = clazz.name.removePrefix("${clazz.packageName_}.")
+        val query = entityManager.createQuery("SELECT e FROM $className e")
+        @Suppress("UNCHECKED_CAST")
+        return query.resultList as List<T>
     }
 
+    private fun <T> write(entities: List<T>) {
+        entities.forEach { entityManager.persist(it) }
+    }
+
+    private fun write(coreCordaData: CoreCordaData) {
+        coreCordaData.transactions.forEach {
+            entityManager.persist(it)
+        }
+        coreCordaData.persistentParties.forEach {
+            entityManager.persist(it)
+        }
+        coreCordaData.vaultLinearStates.forEach {
+            entityManager.persist(it)
+        }
+        coreCordaData.vaultStates.forEach {
+            entityManager.persist(it)
+        }
+        coreCordaData.dbAttachments.forEach {
+            //@todo the below line is a hack how to fetch the lazily loaded list. Without it it won't work
+            println("${it.contractClassNames}")
+            entityManager.merge(it)
+        }
+    }
 
 }

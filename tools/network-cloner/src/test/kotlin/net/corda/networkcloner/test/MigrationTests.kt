@@ -1,9 +1,11 @@
 package net.corda.networkcloner.test
 
-import net.corda.core.cloning.AdditionalMigration
 import net.corda.core.cloning.MigrationContext
+import net.corda.core.cloning.EntityMigration
 import net.corda.core.cloning.TxEditor
+import net.corda.core.schemas.PersistentState
 import net.corda.networkcloner.FailedAssumptionException
+import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.impl.IdentitySpaceImpl
 import net.corda.networkcloner.impl.NodesToNodesMigrationTaskFactory
 import net.corda.networkcloner.runnable.DefaultMigration
@@ -27,7 +29,7 @@ class MigrationTests : TestSupport() {
         assertEquals(0, task.destinationNodeDatabase.readCoreCordaData().transactions.size)
         val noOpMigration = object : Migration(task, getSerializer(), getSigner(), false) {
             override fun getTxEditors(): List<TxEditor> = emptyList()
-            override fun getAdditionalMigrations(): List<AdditionalMigration> = emptyList()
+            override fun getEntityMigrations(): List<EntityMigration<*>> = emptyList()
         }
         noOpMigration.run()
         val sourceMigrationData = task.sourceNodeDatabase.readCoreCordaData()
@@ -55,12 +57,16 @@ class MigrationTests : TestSupport() {
         val destinationNodesDirectory = File(snapshotDirectory, "destination")
 
         val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory, getCordappsRepository())
-        val task = factory.getMigrationTasks().filter { it.sourceNodeDatabase.readCoreCordaData().transactions.size == 1 }.first()
+        val task = factory.getMigrationTasks().filter { it.identity.sourceParty.name.toString().contains("client", true) }.first()
 
         assertEquals(1, task.sourceNodeDatabase.readCoreCordaData().transactions.size)
         assertEquals(0, task.destinationNodeDatabase.readCoreCordaData().transactions.size)
         val cordappsRepository = getCordappsRepository()
-        DefaultMigration(task, getSerializer(), getSigner(), cordappsRepository).run()
+        object : DefaultMigration(task, getSerializer(), getSigner(), cordappsRepository) {
+            override fun getEntityMigrations(): List<EntityMigration<*>> {
+                return emptyList()
+            }
+        }.run()
         val sourceMigrationData = task.sourceNodeDatabase.readCoreCordaData()
         val sourceNetworkParametersHash = task.sourceNodeDatabase.readNetworkParametersHash()
         val destinationMigrationData = task.destinationNodeDatabase.readCoreCordaData()
@@ -88,7 +94,11 @@ class MigrationTests : TestSupport() {
         assertEquals(3, task.sourceNodeDatabase.readCoreCordaData().transactions.size)
         assertEquals(0, task.destinationNodeDatabase.readCoreCordaData().transactions.size)
         val cordappsRepository = getCordappsRepository()
-        DefaultMigration(task, getSerializer(), getSigner(), cordappsRepository).run()
+        object : DefaultMigration(task, getSerializer(), getSigner(), cordappsRepository) {
+            override fun getEntityMigrations(): List<EntityMigration<*>> {
+                return emptyList()
+            }
+        }.run()
         val sourceMigrationData = task.sourceNodeDatabase.readCoreCordaData()
         val sourceNetworkParametersHash = task.sourceNodeDatabase.readNetworkParametersHash()
         val destinationMigrationData = task.destinationNodeDatabase.readCoreCordaData()
@@ -111,7 +121,7 @@ class MigrationTests : TestSupport() {
         assertEquals(1, task.destinationNodeDatabase.readCoreCordaData().dbAttachments.size)
         val noOpMigration = object : Migration(task, getSerializer(), getSigner(), false) {
             override fun getTxEditors(): List<TxEditor> = emptyList()
-            override fun getAdditionalMigrations(): List<AdditionalMigration> = emptyList()
+            override fun getEntityMigrations(): List<EntityMigration<*>> = emptyList()
         }
         noOpMigration.run()
         val sourceMigrationData = task.sourceNodeDatabase.readCoreCordaData()
@@ -137,12 +147,16 @@ class MigrationTests : TestSupport() {
         val task = factory.getMigrationTasks().filter { it.identity.sourceParty.name.toString().contains("client", true) }.single()
 
         val migration = DefaultMigration(task, getSerializer(), getSigner(), getCordappsRepository(), false)
-        val persistentReceiptStateClass = cordappsRepository.getCordappLoader().appClassLoader.loadClass("com.r3.corda.lib.contracts.contractsdk.testapp.contracts.ReceiptSchemaV1\$PersistentReceiptState")
-        assertEquals(1, task.sourceNodeDatabase.getNarrowDb().readEntities(persistentReceiptStateClass).size)
-        assertEquals(0, task.destinationNodeDatabase.getNarrowDb().readEntities(persistentReceiptStateClass).size)
+        val persistentReceiptStateClass = cordappsRepository.getCordappLoader().appClassLoader.loadClass("com.r3.corda.lib.contracts.contractsdk.testapp.contracts.ReceiptSchemaV1\$PersistentReceiptState") as Class<PersistentState>
+        assertEquals(1, task.sourceNodeDatabase.getNumberOfPersistentStates(persistentReceiptStateClass))
+        assertEquals(0, task.destinationNodeDatabase.getNumberOfPersistentStates(persistentReceiptStateClass))
         migration.run()
-        assertEquals(1, task.sourceNodeDatabase.getNarrowDb().readEntities(persistentReceiptStateClass).size)
-        assertEquals(1, task.destinationNodeDatabase.getNarrowDb().readEntities(persistentReceiptStateClass).size)
+        assertEquals(1, task.sourceNodeDatabase.getNumberOfPersistentStates(persistentReceiptStateClass))
+        assertEquals(1, task.destinationNodeDatabase.getNumberOfPersistentStates(persistentReceiptStateClass))
+    }
+
+    fun NodeDatabase.getNumberOfPersistentStates(type : Class<PersistentState>) : Int {
+        return readMigrationData(listOf(type)).entities[type]?.size ?: throw FailedAssumptionException("Assumed to find entry for class $type")
     }
 
 }

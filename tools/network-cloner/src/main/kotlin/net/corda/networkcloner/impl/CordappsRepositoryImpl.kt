@@ -1,6 +1,6 @@
 package net.corda.networkcloner.impl
 
-import net.corda.core.cloning.AdditionalMigration
+import net.corda.core.cloning.EntityMigration
 import net.corda.core.cloning.TxEditor
 import net.corda.networkcloner.FailedAssumptionException
 import net.corda.networkcloner.api.CordappsRepository
@@ -13,18 +13,18 @@ import java.net.URLClassLoader
 import java.nio.file.Paths
 import java.util.jar.JarFile
 
-class CordappsRepositoryImpl(private val pathToCordapps : File, private val expectedNumberOfTxEditors : Int, private val expectedNumberOfAdditionalMigrations : Int) : CordappsRepository {
+class CordappsRepositoryImpl(private val pathToCordapps : File, private val expectedNumberOfTxEditors : Int, private val expectedNumberOfPersistentStateMigrations : Int) : CordappsRepository {
 
     private val _cordappLoader : CordappLoader
     private val _txEditors : List<TxEditor>
-    private val _additionalMigrations : List<AdditionalMigration>
+    private val _entityMigrations : List<EntityMigration<*>>
     private val _jarUrls : List<URL>
 
     init {
         verifyPathToCordapps()
         _cordappLoader = createCordappLoader(pathToCordapps)
         _txEditors = loadTxEditors()
-        _additionalMigrations = loadAdditionalMigrations()
+        _entityMigrations = loadPersistentStateMigrations()
         _jarUrls = getJarFiles().map { it.toURI().toURL() }
     }
 
@@ -40,8 +40,8 @@ class CordappsRepositoryImpl(private val pathToCordapps : File, private val expe
         return _txEditors
     }
 
-    override fun getAdditionalMigrations(): List<AdditionalMigration> {
-        return _additionalMigrations
+    override fun getPersistentStateMigrations(): List<EntityMigration<*>> {
+        return _entityMigrations
     }
 
     override fun getCordappsURLs(): List<URL> {
@@ -74,18 +74,18 @@ class CordappsRepositoryImpl(private val pathToCordapps : File, private val expe
         }
     }
 
-    private fun loadAdditionalMigrations() : List<AdditionalMigration> {
+    private fun loadPersistentStateMigrations() : List<EntityMigration<*>> {
         val allClassesFromTempClassLoader = getAllClassesViaTemporaryClassLoader()
 
-        val additionalMigrationClassesFromTempClassLoader = allClassesFromTempClassLoader.filter { AdditionalMigration::class.java.isAssignableFrom(it) }
+        val persistentStateMigrationClassesFromTempClassLoader = allClassesFromTempClassLoader.filter { EntityMigration::class.java.isAssignableFrom(it) }
 
-        val additionalMigrationClasses = additionalMigrationClassesFromTempClassLoader.map {
+        val persistentStateMigrationClasses = persistentStateMigrationClassesFromTempClassLoader.map {
             _cordappLoader.appClassLoader.loadClass(it.name)
         }
 
-        return additionalMigrationClasses.map { it.newInstance() as AdditionalMigration }.also {
-            if (it.size != expectedNumberOfAdditionalMigrations) {
-                throw FailedAssumptionException("Expected to find $expectedNumberOfAdditionalMigrations additional migrations in the cordapps, found ${it.size}")
+        return persistentStateMigrationClasses.map { it.newInstance() as EntityMigration<*> }.also {
+            if (it.size != expectedNumberOfPersistentStateMigrations) {
+                throw FailedAssumptionException("Expected to find $expectedNumberOfPersistentStateMigrations persistent state migrations in the cordapps, found ${it.size}")
             }
         }
     }

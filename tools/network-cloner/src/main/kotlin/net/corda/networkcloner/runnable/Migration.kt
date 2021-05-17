@@ -1,8 +1,8 @@
 package net.corda.networkcloner.runnable
 
-import net.corda.core.cloning.AdditionalMigration
 import net.corda.core.cloning.IdentitySpace
 import net.corda.core.cloning.MigrationContext
+import net.corda.core.cloning.EntityMigration
 import net.corda.core.cloning.TxEditor
 import net.corda.core.contracts.LinearState
 import net.corda.core.contracts.StateRef
@@ -16,6 +16,7 @@ import net.corda.networkcloner.FailedAssumptionException
 import net.corda.networkcloner.NoDestinationTransactionFoundException
 import net.corda.networkcloner.api.Serializer
 import net.corda.networkcloner.api.Signer
+import net.corda.networkcloner.entity.MigrationData
 import net.corda.networkcloner.entity.MigrationTask
 import net.corda.networkcloner.util.toTransactionComponents
 import net.corda.node.services.persistence.DBTransactionStorage
@@ -25,8 +26,8 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
 
     override fun run() {
         println("Executing migration task $migrationTask")
-        val sourceMigrationData = migrationTask.sourceNodeDatabase.readCoreCordaData()
-        val sourceTransactions = sourceMigrationData.transactions.map {
+        val (sourceCoreCordaData, sourceEntities) = migrationTask.sourceNodeDatabase.readMigrationData(getEntityClassesToMigrate())
+        val sourceTransactions = sourceCoreCordaData.transactions.map {
             val signedTransaction = serializer.deserializeDbBlobIntoTransaction(it.transaction)
             SourceTransaction(it, signedTransaction)
         }
@@ -36,24 +37,25 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
         val destinationDbTransactions = destinationTransactions.map { it.dbTransaction }
         val destinationStatePartyMapping = getDestinationStatePartyMapping(destinationWireTransactions)
         val destinationVaultLinearStates = getDestinationVaultLinearStates(destinationWireTransactions)
-        val destinationVaultStates = getDestinationVaultStates(sourceMigrationData.vaultStates, destinationTransactions, migrationTask.migrationContext.identitySpace)
+        val destinationVaultStates = getDestinationVaultStates(sourceCoreCordaData.vaultStates, destinationTransactions, migrationTask.migrationContext.identitySpace)
 
-        val destMigrationData = sourceMigrationData.copy(transactions = destinationDbTransactions,
+        val destCoreCordaData = sourceCoreCordaData.copy(transactions = destinationDbTransactions,
                 persistentParties = destinationStatePartyMapping,
                 vaultLinearStates = destinationVaultLinearStates,
                 vaultStates = destinationVaultStates)
 
+        val destEntities = sourceEntities
+
         if (dryRun) {
-            println("This is a dry run for ${migrationTask.identity.sourceParty}, not writing migration data to destination database or calling any additional migration tasks")
+            println("This is a dry run for ${migrationTask.identity.sourceParty}, not writing migration data to destination database")
         } else {
             println("Writing migrated data to database of party ${migrationTask.identity.sourceParty}")
-            migrationTask.destinationNodeDatabase.writeCoreCordaData(destMigrationData)
-            migrationTask.additionalMigrations.forEach { additionalMigration ->
-                val sourceDb = migrationTask.sourceNodeDatabase.getNarrowDb()
-                val destinationDb = migrationTask.destinationNodeDatabase.getNarrowDb()
-                additionalMigration.migrate(sourceDb, destinationDb, migrationTask.migrationContext)
-            }
+            migrationTask.destinationNodeDatabase.writeMigrationData(MigrationData(destCoreCordaData, destEntities))
         }
+    }
+
+    private fun getEntityClassesToMigrate() : List<Class<out Any>> {
+        return getEntityMigrations().map { it.getEntityClass() }
     }
 
     private fun getDestinationVaultLinearStates(destinationTransactions: Collection<WireTransaction>): List<VaultSchemaV1.VaultLinearStates> {
@@ -161,7 +163,7 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
     }
 
     abstract fun getTxEditors(): List<TxEditor>
-    abstract fun getAdditionalMigrations(): List<AdditionalMigration>
+    abstract fun getEntityMigrations(): List<EntityMigration<*>>
 
     private data class SourceTransaction(val dbTransaction: DBTransactionStorage.DBTransaction, val signedTransaction: SignedTransaction)
     private data class DestinationTransaction(val wireTransaction: WireTransaction, val dbTransaction: DBTransactionStorage.DBTransaction, val sourceTransactionId: String)

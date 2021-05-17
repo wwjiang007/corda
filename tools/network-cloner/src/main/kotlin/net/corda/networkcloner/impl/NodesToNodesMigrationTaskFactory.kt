@@ -19,8 +19,7 @@ class NodesToNodesMigrationTaskFactory(val source : File, val destination : File
         val destinationPartiesRepo = NodesDirPartyRepository(destination)
         val identitySpace = IdentitySpaceImpl(sourcePartiesRepo, destinationPartiesRepo)
         val identities = identitySpace.getIdentities()
-        val additionalMigrations = cordappsRepository.getAdditionalMigrations()
-        val additionalManagedClasses = additionalMigrations.flatMap { it.getManagedClasses() }
+        val additionalManagedClasses = cordappsRepository.getPersistentStateMigrations().map { it.getEntityClass() }
         val cordappsUrls = cordappsRepository.getCordappsURLs()
         val classloader = cordappsRepository.getCordappLoader().appClassLoader
 
@@ -33,7 +32,7 @@ class NodesToNodesMigrationTaskFactory(val source : File, val destination : File
         return identities.map { identity ->
             val sourceTransactionsStore = sourceTransactionStores[identity.sourceParty.name] ?: throw RuntimeException("Expected to find source transactions store for identity $identity")
             val destinationTransactionsStore = destinationTransactionStores[identity.destinationPartyAndPrivateKey.party.name] ?: throw RuntimeException("Expected to find destination transactions store for identity $identity")
-            MigrationTask(identity, sourceTransactionsStore, destinationTransactionsStore, additionalMigrations, MigrationContext(identitySpace, sourceNetworkParametersHash, destinationNetworkParametershash, emptyMap()))
+            MigrationTask(identity, sourceTransactionsStore, destinationTransactionsStore, MigrationContext(identitySpace, sourceNetworkParametersHash, destinationNetworkParametershash, emptyMap()))
         }
     }
 
