@@ -10,7 +10,6 @@ import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.entity.MigrationTask
 import java.io.File
 import java.lang.RuntimeException
-import java.net.URL
 
 class NodesToNodesMigrationTaskFactory(val source : File, val destination : File, val cordappsRepository: CordappsRepository) : MigrationTaskFactory {
 

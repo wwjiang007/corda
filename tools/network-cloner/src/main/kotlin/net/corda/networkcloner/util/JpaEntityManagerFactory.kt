@@ -9,7 +9,6 @@ import net.corda.node.services.persistence.NodeAttachmentService
 import net.corda.node.services.vault.VaultSchemaV1
 import org.h2.jdbcx.JdbcDataSource
 import org.hibernate.cfg.AvailableSettings
-import org.hibernate.cfg.Configuration
 import org.hibernate.jpa.HibernatePersistenceProvider
 import org.hibernate.jpa.boot.internal.EntityManagerFactoryBuilderImpl
 import org.hibernate.jpa.boot.internal.PersistenceUnitInfoDescriptor
@@ -23,7 +22,6 @@ import javax.persistence.spi.ClassTransformer
 import javax.persistence.spi.PersistenceUnitInfo
 import javax.persistence.spi.PersistenceUnitTransactionType
 import javax.sql.DataSource
-import kotlin.collections.HashMap
 
 class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbPassword: String, private val wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, private val wellKnownPartyFromAnonymous: (AbstractParty) -> Party?, val additionalManagedClasses : List<Class<*>>, private val additionalClassLoaders: List<ClassLoader>) {
     val entityManager: EntityManager

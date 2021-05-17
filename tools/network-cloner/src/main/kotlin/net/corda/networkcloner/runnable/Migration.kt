@@ -23,7 +23,6 @@ import net.corda.networkcloner.util.toTransactionComponents
 import net.corda.node.services.persistence.DBTransactionStorage
 import net.corda.node.services.vault.VaultSchemaV1
 import java.util.concurrent.Callable
-import kotlin.reflect.full.cast
 
 abstract class Migration(val migrationTask: MigrationTask, val serializer: Serializer, val signer: Signer, val dryRun: Boolean) : Callable<MigrationReport> {
 

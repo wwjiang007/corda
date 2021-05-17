@@ -13,7 +13,6 @@ import net.corda.node.internal.DBNetworkParametersStorage
 import net.corda.node.services.persistence.DBTransactionStorage
 import net.corda.node.services.persistence.NodeAttachmentService
 import net.corda.node.services.vault.VaultSchemaV1
-import java.net.URL
 import javax.persistence.EntityManager
 
 class NodeDatabaseImpl(url : String, username: String, password: String, wellKnownPartyFromX500Name: (CordaX500Name) -> Party?, wellKnownPartyFromAnonymous: (AbstractParty) -> Party?, additionalManagedClasses : List<Class<*>>, additionalClassLoaders: List<ClassLoader>) : NodeDatabase {
