@@ -13,7 +13,7 @@ import java.net.URLClassLoader
 import java.nio.file.Paths
 import java.util.jar.JarFile
 
-class CordappsRepositoryImpl(private val pathToCordapps : File, private val expectedNumberOfTxEditors : Int, private val expectedNumberOfPersistentStateMigrations : Int) : CordappsRepository {
+class CordappsRepositoryImpl(private val pathToCordapps : File, private val expectedNumberOfTxEditors : Int, private val expectedNumberOfEntityMigrations : Int) : CordappsRepository {
 
     private val _cordappLoader : CordappLoader
     private val _txEditors : List<TxEditor>
@@ -78,8 +78,8 @@ class CordappsRepositoryImpl(private val pathToCordapps : File, private val expe
         }
 
         return persistentStateMigrationClasses.map { it.newInstance() as EntityMigration<*> }.also {
-            if (it.size != expectedNumberOfPersistentStateMigrations) {
-                throw FailedAssumptionException("Expected to find $expectedNumberOfPersistentStateMigrations persistent state migrations in the cordapps, found ${it.size}")
+            if (it.size != expectedNumberOfEntityMigrations) {
+                throw FailedAssumptionException("Expected to find $expectedNumberOfEntityMigrations entity migrations in the cordapps, found ${it.size}")
             }
         }
     }
