@@ -23,12 +23,14 @@ import net.corda.networkcloner.util.toTransactionComponents
 import net.corda.node.services.persistence.DBTransactionStorage
 import net.corda.node.services.vault.VaultSchemaV1
 import java.util.concurrent.Callable
+import kotlin.reflect.full.cast
 
 abstract class Migration(val migrationTask: MigrationTask, val serializer: Serializer, val signer: Signer, val dryRun: Boolean) : Callable<MigrationReport> {
 
     override fun call() : MigrationReport {
         println("Executing migration task $migrationTask")
-        val (sourceCoreCordaData, sourceEntities) = migrationTask.sourceNodeDatabase.readMigrationData(getEntityClassesToMigrate())
+        val entityMigrations = getEntityClassesToMigrate()
+        val (sourceCoreCordaData, sourceEntities) = migrationTask.sourceNodeDatabase.readMigrationData(entityMigrations.keys.toList())
         val sourceTransactions = sourceCoreCordaData.transactions.map {
             val signedTransaction = serializer.deserializeDbBlobIntoTransaction(it.transaction)
             SourceTransaction(it, signedTransaction)
@@ -47,7 +49,10 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
                 vaultLinearStates = destinationVaultLinearStates,
                 vaultStates = destinationVaultStates)
 
-        val destEntities = sourceEntities
+        val destEntities = sourceEntities.map { (sourceEntityClass, sourceEntities) ->
+            val entityMigration = entityMigrations[sourceEntityClass] ?: throw FailedAssumptionException("Expected to find entity migration for class ${sourceEntityClass}")
+            sourceEntityClass to sourceEntities.map { entityMigration.migrate(it, migrationTask.migrationContext.copy(sourceTxIdToDestTxId = sourceToDestTxId)) }
+        }.toMap()
 
         if (dryRun) {
             println("This is a dry run for ${migrationTask.identity.sourceParty}, not writing migration data to destination database")
@@ -59,8 +64,8 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
         return MigrationReport(sourceToDestTxId)
     }
 
-    private fun getEntityClassesToMigrate() : List<Class<out Any>> {
-        return getEntityMigrations().map { it.getEntityClass() }
+    private fun getEntityClassesToMigrate() : Map<Class<out Any>, EntityMigration<out Any>> {
+        return getEntityMigrations().map { it.getEntityClass() to it }.toMap()
     }
 
     private fun getDestinationVaultLinearStates(destinationTransactions: Collection<WireTransaction>): List<VaultSchemaV1.VaultLinearStates> {
