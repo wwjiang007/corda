@@ -20,6 +20,6 @@ open class DefaultMigration(migrationTask: MigrationTask, serializer: Serializer
     }
 
     override fun getEntityMigrations(): List<EntityMigration<*>> {
-        return cordappsRepository.getPersistentStateMigrations()
+        return cordappsRepository.getEntityMigrations()
     }
 }

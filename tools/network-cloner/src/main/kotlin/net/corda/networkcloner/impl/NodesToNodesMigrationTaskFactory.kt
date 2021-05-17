@@ -19,7 +19,7 @@ class NodesToNodesMigrationTaskFactory(val source : File, val destination : File
         val destinationPartiesRepo = NodesDirPartyRepository(destination)
         val identitySpace = IdentitySpaceImpl(sourcePartiesRepo, destinationPartiesRepo)
         val identities = identitySpace.getIdentities()
-        val additionalManagedClasses = cordappsRepository.getPersistentStateMigrations().map { it.getEntityClass() }
+        val additionalManagedClasses = cordappsRepository.getEntityMigrations().map { it.getEntityClass() }
         val cordappsUrls = cordappsRepository.getCordappsURLs()
         val classloader = cordappsRepository.getCordappLoader().appClassLoader
 

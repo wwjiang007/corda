@@ -8,7 +8,7 @@ import java.net.URL
 interface CordappsRepository {
 
     fun getTxEditors() : List<TxEditor>
-    fun getPersistentStateMigrations() : List<EntityMigration<*>>
+    fun getEntityMigrations() : List<EntityMigration<*>>
     fun getCordappLoader() : CordappLoader
     fun getCordappsURLs() : List<URL>
 

@@ -40,7 +40,7 @@ class CordappsRepositoryImpl(private val pathToCordapps : File, private val expe
         return _txEditors
     }
 
-    override fun getPersistentStateMigrations(): List<EntityMigration<*>> {
+    override fun getEntityMigrations(): List<EntityMigration<*>> {
         return _entityMigrations
     }
 
