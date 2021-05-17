@@ -17,14 +17,16 @@ import net.corda.networkcloner.NoDestinationTransactionFoundException
 import net.corda.networkcloner.api.Serializer
 import net.corda.networkcloner.api.Signer
 import net.corda.networkcloner.entity.MigrationData
+import net.corda.networkcloner.entity.MigrationReport
 import net.corda.networkcloner.entity.MigrationTask
 import net.corda.networkcloner.util.toTransactionComponents
 import net.corda.node.services.persistence.DBTransactionStorage
 import net.corda.node.services.vault.VaultSchemaV1
+import java.util.concurrent.Callable
 
-abstract class Migration(val migrationTask: MigrationTask, val serializer: Serializer, val signer: Signer, val dryRun: Boolean) : Runnable {
+abstract class Migration(val migrationTask: MigrationTask, val serializer: Serializer, val signer: Signer, val dryRun: Boolean) : Callable<MigrationReport> {
 
-    override fun run() {
+    override fun call() : MigrationReport {
         println("Executing migration task $migrationTask")
         val (sourceCoreCordaData, sourceEntities) = migrationTask.sourceNodeDatabase.readMigrationData(getEntityClassesToMigrate())
         val sourceTransactions = sourceCoreCordaData.transactions.map {
@@ -32,7 +34,8 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
             SourceTransaction(it, signedTransaction)
         }
 
-        val destinationTransactions = getDestinationTransactions(sourceTransactions, mutableMapOf())
+        val sourceToDestTxId = mutableMapOf<SecureHash, SecureHash>()
+        val destinationTransactions = getDestinationTransactions(sourceTransactions, sourceToDestTxId)
         val destinationWireTransactions = destinationTransactions.map { it.wireTransaction }
         val destinationDbTransactions = destinationTransactions.map { it.dbTransaction }
         val destinationStatePartyMapping = getDestinationStatePartyMapping(destinationWireTransactions)
@@ -52,6 +55,8 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
             println("Writing migrated data to database of party ${migrationTask.identity.sourceParty}")
             migrationTask.destinationNodeDatabase.writeMigrationData(MigrationData(destCoreCordaData, destEntities))
         }
+
+        return MigrationReport(sourceToDestTxId)
     }
 
     private fun getEntityClassesToMigrate() : List<Class<out Any>> {

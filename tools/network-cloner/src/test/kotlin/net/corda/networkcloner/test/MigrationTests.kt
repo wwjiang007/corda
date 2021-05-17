@@ -3,6 +3,7 @@ package net.corda.networkcloner.test
 import net.corda.core.cloning.MigrationContext
 import net.corda.core.cloning.EntityMigration
 import net.corda.core.cloning.TxEditor
+import net.corda.core.crypto.SecureHash
 import net.corda.core.schemas.PersistentState
 import net.corda.networkcloner.FailedAssumptionException
 import net.corda.networkcloner.api.NodeDatabase
@@ -13,6 +14,8 @@ import net.corda.networkcloner.runnable.Migration
 import org.junit.Test
 import java.io.File
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class MigrationTests : TestSupport() {
 
@@ -31,7 +34,7 @@ class MigrationTests : TestSupport() {
             override fun getTxEditors(): List<TxEditor> = emptyList()
             override fun getEntityMigrations(): List<EntityMigration<*>> = emptyList()
         }
-        noOpMigration.run()
+        noOpMigration.call()
         val sourceMigrationData = task.sourceNodeDatabase.readCoreCordaData()
         val destinationMigrationData = task.destinationNodeDatabase.readCoreCordaData()
         assertEquals(1, sourceMigrationData.transactions.size)
@@ -66,7 +69,7 @@ class MigrationTests : TestSupport() {
             override fun getEntityMigrations(): List<EntityMigration<*>> {
                 return emptyList()
             }
-        }.run()
+        }.call()
         val sourceMigrationData = task.sourceNodeDatabase.readCoreCordaData()
         val sourceNetworkParametersHash = task.sourceNodeDatabase.readNetworkParametersHash()
         val destinationMigrationData = task.destinationNodeDatabase.readCoreCordaData()
@@ -98,7 +101,7 @@ class MigrationTests : TestSupport() {
             override fun getEntityMigrations(): List<EntityMigration<*>> {
                 return emptyList()
             }
-        }.run()
+        }.call()
         val sourceMigrationData = task.sourceNodeDatabase.readCoreCordaData()
         val sourceNetworkParametersHash = task.sourceNodeDatabase.readNetworkParametersHash()
         val destinationMigrationData = task.destinationNodeDatabase.readCoreCordaData()
@@ -123,7 +126,7 @@ class MigrationTests : TestSupport() {
             override fun getTxEditors(): List<TxEditor> = emptyList()
             override fun getEntityMigrations(): List<EntityMigration<*>> = emptyList()
         }
-        noOpMigration.run()
+        noOpMigration.call()
         val sourceMigrationData = task.sourceNodeDatabase.readCoreCordaData()
         val destinationMigrationData = task.destinationNodeDatabase.readCoreCordaData()
         assertEquals(3, sourceMigrationData.dbAttachments.size)
@@ -137,7 +140,7 @@ class MigrationTests : TestSupport() {
     }
 
     @Test
-    fun `Additional migrations copy from source to destination database`() {
+    fun `Entity migrations copy from source to destination database`() {
         val snapshotDirectory = copyAndGetSnapshotDirectory("s5-mapped-schema-table").second
         val sourceNodesDirectory = File(snapshotDirectory, "source")
         val destinationNodesDirectory = File(snapshotDirectory, "destination")
@@ -147,16 +150,33 @@ class MigrationTests : TestSupport() {
         val task = factory.getMigrationTasks().filter { it.identity.sourceParty.name.toString().contains("client", true) }.single()
 
         val migration = DefaultMigration(task, getSerializer(), getSigner(), getCordappsRepository(), false)
+        @Suppress("UNCHECKED_CAST")
         val persistentReceiptStateClass = cordappsRepository.getCordappLoader().appClassLoader.loadClass("com.r3.corda.lib.contracts.contractsdk.testapp.contracts.ReceiptSchemaV1\$PersistentReceiptState") as Class<PersistentState>
-        assertEquals(1, task.sourceNodeDatabase.getNumberOfPersistentStates(persistentReceiptStateClass))
-        assertEquals(0, task.destinationNodeDatabase.getNumberOfPersistentStates(persistentReceiptStateClass))
-        migration.run()
-        assertEquals(1, task.sourceNodeDatabase.getNumberOfPersistentStates(persistentReceiptStateClass))
-        assertEquals(1, task.destinationNodeDatabase.getNumberOfPersistentStates(persistentReceiptStateClass))
+
+        @Suppress("UNCHECKED_CAST")
+        val sourceEntitiesBefore = task.sourceNodeDatabase.getEntities(persistentReceiptStateClass) as List<PersistentState>
+        @Suppress("UNCHECKED_CAST")
+        val destEntitiesBefore = task.destinationNodeDatabase.getEntities(persistentReceiptStateClass) as List<PersistentState>
+        assertEquals(1, sourceEntitiesBefore.size)
+        assertEquals(0, destEntitiesBefore.size)
+        val migrationReport = migration.call()
+        @Suppress("UNCHECKED_CAST")
+        val sourceEntitiesAfter = task.sourceNodeDatabase.getEntities(persistentReceiptStateClass) as List<PersistentState>
+        @Suppress("UNCHECKED_CAST")
+        val destEntitiesAfter = task.destinationNodeDatabase.getEntities(persistentReceiptStateClass) as List<PersistentState>
+        assertEquals(1, sourceEntitiesAfter.size)
+        assertEquals(1, destEntitiesAfter.size)
+
+        sourceEntitiesBefore.forEach { sourceEntity ->
+            val sourceTxId = sourceEntity.stateRef?.txId ?: throw FailedAssumptionException("Expected to find stateRef on the source entity")
+            val expectedDestTxId = migrationReport.sourceToDestTxId[SecureHash.parse(sourceTxId)] ?: throw FailedAssumptionException("Expected to find dest tx id for source tx id $sourceTxId")
+            assertNotNull(destEntitiesAfter.find { it.stateRef?.txId == expectedDestTxId.toString() }, "Expected to find destination entity with txId $expectedDestTxId")
+        }
+
     }
 
-    fun NodeDatabase.getNumberOfPersistentStates(type : Class<PersistentState>) : Int {
-        return readMigrationData(listOf(type)).entities[type]?.size ?: throw FailedAssumptionException("Assumed to find entry for class $type")
+    fun NodeDatabase.getEntities(type : Class<out Any>) : List<Any> {
+        return readMigrationData(listOf(type)).entities[type] ?: throw FailedAssumptionException("Assumed to find entry for class $type")
     }
 
 }
