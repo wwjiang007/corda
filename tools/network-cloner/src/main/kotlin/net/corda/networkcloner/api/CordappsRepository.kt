@@ -10,6 +10,5 @@ interface CordappsRepository {
     fun getTxEditors() : List<TxEditor>
     fun getEntityMigrations() : List<EntityMigration<*>>
     fun getCordappLoader() : CordappLoader
-    fun getCordappsURLs() : List<URL>
 
 }

@@ -18,14 +18,12 @@ class CordappsRepositoryImpl(private val pathToCordapps : File, private val expe
     private val _cordappLoader : CordappLoader
     private val _txEditors : List<TxEditor>
     private val _entityMigrations : List<EntityMigration<*>>
-    private val _jarUrls : List<URL>
 
     init {
         verifyPathToCordapps()
         _cordappLoader = createCordappLoader(pathToCordapps)
         _txEditors = loadTxEditors()
         _entityMigrations = loadPersistentStateMigrations()
-        _jarUrls = getJarFiles().map { it.toURI().toURL() }
     }
 
     private fun verifyPathToCordapps() {
@@ -42,10 +40,6 @@ class CordappsRepositoryImpl(private val pathToCordapps : File, private val expe
 
     override fun getEntityMigrations(): List<EntityMigration<*>> {
         return _entityMigrations
-    }
-
-    override fun getCordappsURLs(): List<URL> {
-        return _jarUrls
     }
 
     private fun createCordappLoader(directory: File) : CordappLoader {
