@@ -34,18 +34,18 @@ class MigrationTests : TestSupport() {
             override fun getEntityMigrations(): List<EntityMigration<*>> = emptyList()
         }
         noOpMigration.call()
-        val sourceMigrationData = task.sourceNodeDatabase.readCoreCordaData()
-        val destinationMigrationData = task.destinationNodeDatabase.readCoreCordaData()
-        assertEquals(1, sourceMigrationData.transactions.size)
-        assertEquals(1, destinationMigrationData.transactions.size, "The transaction should have been copied from source to destination")
-        assertEquals(2, sourceMigrationData.persistentParties.size)
-        assertEquals(2, destinationMigrationData.persistentParties.size, "The persistent parties should have been copied from source to destination")
-        assertEquals(1, sourceMigrationData.vaultLinearStates.size)
-        assertEquals(1, destinationMigrationData.vaultLinearStates.size, "The vault linear states should have been copied from source to destination")
-        assertEquals(1, sourceMigrationData.vaultStates.size)
-        assertEquals(1, destinationMigrationData.vaultStates.size, "The vault states should have been copied from source to destination")
-        assertEquals(1, sourceMigrationData.dbAttachments.size)
-        assertEquals(1, destinationMigrationData.dbAttachments.size, "The identical attachment shouldn't have resulted in any change")
+        val sourceCoreCordaData = task.sourceNodeDatabase.readCoreCordaData()
+        val destinationCoreCordaData = task.destinationNodeDatabase.readCoreCordaData()
+        assertEquals(1, sourceCoreCordaData.transactions.size)
+        assertEquals(1, destinationCoreCordaData.transactions.size, "The transaction should have been copied from source to destination")
+        assertEquals(2, sourceCoreCordaData.persistentParties.size)
+        assertEquals(2, destinationCoreCordaData.persistentParties.size, "The persistent parties should have been copied from source to destination")
+        assertEquals(1, sourceCoreCordaData.vaultLinearStates.size)
+        assertEquals(1, destinationCoreCordaData.vaultLinearStates.size, "The vault linear states should have been copied from source to destination")
+        assertEquals(1, sourceCoreCordaData.vaultStates.size)
+        assertEquals(1, destinationCoreCordaData.vaultStates.size, "The vault states should have been copied from source to destination")
+        assertEquals(1, sourceCoreCordaData.dbAttachments.size)
+        assertEquals(1, destinationCoreCordaData.dbAttachments.size, "The identical attachment shouldn't have resulted in any change")
     }
 
     @Test
@@ -69,13 +69,13 @@ class MigrationTests : TestSupport() {
                 return emptyList()
             }
         }.call()
-        val sourceMigrationData = task.sourceNodeDatabase.readCoreCordaData()
+        val sourceCoreCordaData = task.sourceNodeDatabase.readCoreCordaData()
         val sourceNetworkParametersHash = task.sourceNodeDatabase.readNetworkParametersHash()
-        val destinationMigrationData = task.destinationNodeDatabase.readCoreCordaData()
+        val destinationCoreCordaData = task.destinationNodeDatabase.readCoreCordaData()
         val destinationNetworkParametersHash = task.destinationNodeDatabase.readNetworkParametersHash()
-        assertEquals(1, sourceMigrationData.transactions.size)
-        assertEquals(1, destinationMigrationData.transactions.size, "The transaction should have been copied from source to destination")
-        verifyMigration(serializer, sourceMigrationData, destinationMigrationData, MigrationContext(identitySpace, sourceNetworkParametersHash, destinationNetworkParametersHash, emptyMap()))
+        assertEquals(1, sourceCoreCordaData.transactions.size)
+        assertEquals(1, destinationCoreCordaData.transactions.size, "The transaction should have been copied from source to destination")
+        verifyMigration(serializer, sourceCoreCordaData, destinationCoreCordaData, MigrationContext(identitySpace, sourceNetworkParametersHash, destinationNetworkParametersHash, emptyMap()))
     }
 
     @Test
@@ -101,13 +101,13 @@ class MigrationTests : TestSupport() {
                 return emptyList()
             }
         }.call()
-        val sourceMigrationData = task.sourceNodeDatabase.readCoreCordaData()
+        val sourceCoreCordaData = task.sourceNodeDatabase.readCoreCordaData()
         val sourceNetworkParametersHash = task.sourceNodeDatabase.readNetworkParametersHash()
-        val destinationMigrationData = task.destinationNodeDatabase.readCoreCordaData()
+        val destinationCoreCordaData = task.destinationNodeDatabase.readCoreCordaData()
         val destinationNetworkParametersHash = task.destinationNodeDatabase.readNetworkParametersHash()
-        assertEquals(3, sourceMigrationData.transactions.size)
-        assertEquals(3, destinationMigrationData.transactions.size, "The transaction should have been copied from source to destination")
-        verifyMigration(serializer, sourceMigrationData, destinationMigrationData, MigrationContext(identitySpace, sourceNetworkParametersHash, destinationNetworkParametersHash, emptyMap()))
+        assertEquals(3, sourceCoreCordaData.transactions.size)
+        assertEquals(3, destinationCoreCordaData.transactions.size, "The transaction should have been copied from source to destination")
+        verifyMigration(serializer, sourceCoreCordaData, destinationCoreCordaData, MigrationContext(identitySpace, sourceNetworkParametersHash, destinationNetworkParametersHash, emptyMap()))
     }
 
     @Test
@@ -126,12 +126,12 @@ class MigrationTests : TestSupport() {
             override fun getEntityMigrations(): List<EntityMigration<*>> = emptyList()
         }
         noOpMigration.call()
-        val sourceMigrationData = task.sourceNodeDatabase.readCoreCordaData()
-        val destinationMigrationData = task.destinationNodeDatabase.readCoreCordaData()
-        assertEquals(3, sourceMigrationData.dbAttachments.size)
-        assertEquals(3, destinationMigrationData.dbAttachments.size, "The attachments should have been copied from source to destination")
-        sourceMigrationData.dbAttachments.forEach { sourceAttachment ->
-            val destinationAttachment = destinationMigrationData.dbAttachments.find { it.attId == sourceAttachment.attId } ?: throw FailedAssumptionException("Expected to find attachment in destination database for source attachment id ${sourceAttachment.attId}")
+        val sourceCoreCordaData = task.sourceNodeDatabase.readCoreCordaData()
+        val destinationCoreCordaData = task.destinationNodeDatabase.readCoreCordaData()
+        assertEquals(3, sourceCoreCordaData.dbAttachments.size)
+        assertEquals(3, destinationCoreCordaData.dbAttachments.size, "The attachments should have been copied from source to destination")
+        sourceCoreCordaData.dbAttachments.forEach { sourceAttachment ->
+            val destinationAttachment = destinationCoreCordaData.dbAttachments.find { it.attId == sourceAttachment.attId } ?: throw FailedAssumptionException("Expected to find attachment in destination database for source attachment id ${sourceAttachment.attId}")
             assertEquals(3, destinationAttachment.contractClassNames?.size)
             assertEquals(1, destinationAttachment.signers?.size)
 
