@@ -31,7 +31,8 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
         val vaultLinearStates = getVaultLinearStates()
         val vaultStates = getVaultStates()
         val dbAttachments = getDbAttachments()
-        return CoreCordaData(transactions, persistentParties, vaultLinearStates, vaultStates, dbAttachments)
+        val vaultFungibleStates = getVaultFungibleStates()
+        return CoreCordaData(transactions, persistentParties, vaultLinearStates, vaultStates, dbAttachments, vaultFungibleStates)
     }
 
     override fun writeMigrationData(migrationData: MigrationData) {
@@ -48,6 +49,12 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
     override fun readNetworkParametersHash(): SecureHash {
         val query = entityManager.createQuery("SELECT e FROM DBNetworkParametersStorage\$PersistentNetworkParameters e")
         return SecureHash.parse((query.resultList.single() as DBNetworkParametersStorage.PersistentNetworkParameters).hash)
+    }
+
+    private fun getVaultFungibleStates() : List<VaultSchemaV1.VaultFungibleStates> {
+        val query = entityManager.createQuery("SELECT e FROM VaultSchemaV1\$VaultFungibleStates e")
+        @Suppress("UNCHECKED_CAST")
+        return (query.resultList as List<VaultSchemaV1.VaultFungibleStates>)
     }
 
     private fun getDbAttachments(): List<NodeAttachmentService.DBAttachment> {

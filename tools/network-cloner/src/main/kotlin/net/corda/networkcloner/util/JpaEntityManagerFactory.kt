@@ -59,7 +59,8 @@ class JpaEntityManagerFactory(val dbUrl: String, val dbUserName: String, val dbP
                       VaultSchemaV1.PersistentParty::class.java,
                       VaultSchemaV1.VaultLinearStates::class.java,
                       VaultSchemaV1.VaultStates::class.java,
-                      NodeAttachmentService.DBAttachment::class.java) + additionalManagedClasses
+                      NodeAttachmentService.DBAttachment::class.java,
+                      VaultSchemaV1.VaultFungibleStates::class.java) + additionalManagedClasses
     }
 
     private fun getDataSource(): DataSource {

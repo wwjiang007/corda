@@ -8,4 +8,5 @@ data class CoreCordaData(val transactions : List<DBTransactionStorage.DBTransact
                          val persistentParties: List<VaultSchemaV1.PersistentParty>,
                          val vaultLinearStates: List<VaultSchemaV1.VaultLinearStates>,
                          val vaultStates: List<VaultSchemaV1.VaultStates>,
-                         val dbAttachments: List<NodeAttachmentService.DBAttachment>)
+                         val dbAttachments: List<NodeAttachmentService.DBAttachment>,
+                         val vaultFungibleStates: List<VaultSchemaV1.VaultFungibleStates>)
