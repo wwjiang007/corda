@@ -23,7 +23,7 @@ class CordappsRepositoryImpl(private val pathToCordapps : File, private val expe
         verifyPathToCordapps()
         _cordappLoader = createCordappLoader(pathToCordapps)
         _txEditors = loadTxEditors()
-        _entityMigrations = loadPersistentStateMigrations()
+        _entityMigrations = loadEntityMigrations()
     }
 
     private fun verifyPathToCordapps() {
@@ -68,16 +68,16 @@ class CordappsRepositoryImpl(private val pathToCordapps : File, private val expe
         }
     }
 
-    private fun loadPersistentStateMigrations() : List<EntityMigration<*>> {
+    private fun loadEntityMigrations() : List<EntityMigration<*>> {
         val allClassesFromTempClassLoader = getAllClassesViaTemporaryClassLoader()
 
-        val persistentStateMigrationClassesFromTempClassLoader = allClassesFromTempClassLoader.filter { EntityMigration::class.java.isAssignableFrom(it) }
+        val entityMigrationClassesFromTempClassLoader = allClassesFromTempClassLoader.filter { EntityMigration::class.java.isAssignableFrom(it) }
 
-        val persistentStateMigrationClasses = persistentStateMigrationClassesFromTempClassLoader.map {
+        val entityMigrationClasses = entityMigrationClassesFromTempClassLoader.map {
             _cordappLoader.appClassLoader.loadClass(it.name)
         }
 
-        return persistentStateMigrationClasses.map { it.newInstance() as EntityMigration<*> }.also {
+        return entityMigrationClasses.map { it.newInstance() as EntityMigration<*> }.also {
             if (it.size != expectedNumberOfEntityMigrations) {
                 throw FailedAssumptionException("Expected to find $expectedNumberOfEntityMigrations entity migrations in the cordapps, found ${it.size}")
             }
