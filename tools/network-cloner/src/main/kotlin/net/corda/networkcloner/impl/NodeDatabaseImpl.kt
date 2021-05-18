@@ -116,6 +116,9 @@ class NodeDatabaseImpl(url : String, username: String, password: String, wellKno
             println("${it.contractClassNames}")
             entityManager.merge(it)
         }
+        coreCordaData.vaultFungibleStates.forEach {
+            entityManager.persist(it)
+        }
     }
 
 }

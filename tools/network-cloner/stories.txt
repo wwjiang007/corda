@@ -24,4 +24,3 @@ Todo
 
 1) Notary database
 2) Confidential identities
-3) what about persisted map schema tables and other custom off ledger tables

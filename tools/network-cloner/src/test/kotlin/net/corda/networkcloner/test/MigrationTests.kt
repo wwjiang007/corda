@@ -3,8 +3,10 @@ package net.corda.networkcloner.test
 import net.corda.core.cloning.MigrationContext
 import net.corda.core.cloning.EntityMigration
 import net.corda.core.cloning.TxEditor
+import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.schemas.PersistentState
+import net.corda.core.schemas.PersistentStateRef
 import net.corda.networkcloner.FailedAssumptionException
 import net.corda.networkcloner.api.NodeDatabase
 import net.corda.networkcloner.impl.IdentitySpaceImpl
@@ -172,6 +174,31 @@ class MigrationTests : TestSupport() {
             assertNotNull(destEntitiesAfter.find { it.stateRef?.txId == expectedDestTxId.toString() }, "Expected to find destination entity with txId $expectedDestTxId")
         }
 
+    }
+
+    @Test
+    fun `Vault fungible states copy from source to destination database`() {
+        val snapshotDirectory = copyAndGetSnapshotDirectory("s6-fungible-vault-fungible-states").second
+        val sourceNodesDirectory = File(snapshotDirectory, "source")
+        val destinationNodesDirectory = File(snapshotDirectory, "destination")
+
+        val cordappsRepository = getCordappsRepository()
+        val factory = NodesToNodesMigrationTaskFactory(sourceNodesDirectory, destinationNodesDirectory, cordappsRepository)
+        val task = factory.getMigrationTasks().filter { it.identity.sourceParty.name.toString().contains("client", true) }.single()
+
+        val migration = DefaultMigration(task, getSerializer(), getSigner(), getCordappsRepository(), false)
+
+        assertEquals(1, task.sourceNodeDatabase.readMigrationData(emptyList()).coreCordaData.vaultFungibleStates.size)
+        assertEquals(0, task.destinationNodeDatabase.readMigrationData(emptyList()).coreCordaData.vaultFungibleStates.size)
+        val migrationReport = migration.call()
+        assertEquals(1, task.sourceNodeDatabase.readMigrationData(emptyList()).coreCordaData.vaultFungibleStates.size)
+        assertEquals(1, task.destinationNodeDatabase.readMigrationData(emptyList()).coreCordaData.vaultFungibleStates.size)
+        val sourceStateRef = task.sourceNodeDatabase.readMigrationData(emptyList()).coreCordaData.vaultFungibleStates.single().stateRef
+        val destStateRef = task.destinationNodeDatabase.readMigrationData(emptyList()).coreCordaData.vaultFungibleStates.single().stateRef
+        assertNotNull(sourceStateRef)
+        assertNotNull(destStateRef)
+        val expectedDestStateRef = PersistentStateRef(StateRef(migrationReport.sourceToDestTxId[SecureHash.parse(sourceStateRef!!.txId)]!!, sourceStateRef.index))
+        assertEquals(expectedDestStateRef, destStateRef)
     }
 
     fun NodeDatabase.getEntities(type : Class<out Any>) : List<Any> {

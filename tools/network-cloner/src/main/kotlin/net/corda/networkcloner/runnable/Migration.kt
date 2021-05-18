@@ -42,11 +42,13 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
         val destinationStatePartyMapping = getDestinationStatePartyMapping(destinationWireTransactions)
         val destinationVaultLinearStates = getDestinationVaultLinearStates(destinationWireTransactions)
         val destinationVaultStates = getDestinationVaultStates(sourceCoreCordaData.vaultStates, destinationTransactions, migrationTask.migrationContext.identitySpace)
+        val destinationVaultFungibleStates = getDestinationVaultFungibleStates(sourceCoreCordaData.vaultFungibleStates, migrationTask.migrationContext.identitySpace, sourceToDestTxId)
 
         val destCoreCordaData = sourceCoreCordaData.copy(transactions = destinationDbTransactions,
                 persistentParties = destinationStatePartyMapping,
                 vaultLinearStates = destinationVaultLinearStates,
-                vaultStates = destinationVaultStates)
+                vaultStates = destinationVaultStates,
+                vaultFungibleStates = destinationVaultFungibleStates)
 
         val destEntities = sourceEntities.map { (sourceEntityClass, sourceEntities) ->
             val entityMigration = entityMigrations[sourceEntityClass] ?: throw FailedAssumptionException("Expected to find entity migration for class ${sourceEntityClass}")
@@ -132,6 +134,20 @@ abstract class Migration(val migrationTask: MigrationTask, val serializer: Seria
             DBTransactionStorage.DBTransaction(destWireTransaction.id.toString(), stateMachineRunId, destTxByteArray, status, timestamp)
         }
         return DestinationTransaction(destWireTransaction, dbTransaction, sourceDbTransaction.txId)
+    }
+
+    private fun getDestinationVaultFungibleStates(sourceVaultFungibleStates: List<VaultSchemaV1.VaultFungibleStates>, identitySpace: IdentitySpace, sourceToDestTxId : Map<SecureHash, SecureHash>) : List<VaultSchemaV1.VaultFungibleStates> {
+        return sourceVaultFungibleStates.map { sourceVaultFungibleState ->
+            val sourceOwner = sourceVaultFungibleState.owner
+            val sourceIssuer = sourceVaultFungibleState.issuer
+            val destinationOwner = sourceOwner?.let { identitySpace.findDestinationForSourceParty(sourceOwner) }
+            val destinationIssuer = sourceIssuer?.let { identitySpace.findDestinationForSourceParty(sourceIssuer) }
+            val destintionVaultFungibleState = VaultSchemaV1.VaultFungibleStates(destinationOwner, sourceVaultFungibleState.quantity, destinationIssuer, sourceVaultFungibleState.issuerRef)
+            val sourceStateRef = sourceVaultFungibleState.stateRef ?: throw FailedAssumptionException("Expected fungible state to have a state ref")
+            val destTxId = sourceToDestTxId[SecureHash.parse(sourceStateRef.txId)] ?: throw FailedAssumptionException("Expected to find dest tx id for source tx id ${sourceStateRef.txId}")
+            destintionVaultFungibleState.stateRef = PersistentStateRef(StateRef(destTxId, sourceStateRef.index))
+            destintionVaultFungibleState
+        }
     }
 
     private fun getDestinationVaultStates(sourceVaultStates: List<VaultSchemaV1.VaultStates>, destinationTransactions: List<DestinationTransaction>, identitySpace: IdentitySpace): List<VaultSchemaV1.VaultStates> {
