@@ -6,14 +6,23 @@ import net.corda.core.contracts.TimeWindow
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.TransactionSignature
 import net.corda.core.crypto.toStringShort
-import net.corda.core.flows.*
+import net.corda.core.flows.FlowException
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.FlowSession
+import net.corda.core.flows.NotarisationPayload
+import net.corda.core.flows.NotarisationRequest
+import net.corda.core.flows.NotarisationRequestSignature
+import net.corda.core.flows.NotarisationResponse
+import net.corda.core.flows.NotaryError
+import net.corda.core.flows.NotaryException
+import net.corda.core.flows.NotaryFlow
+import net.corda.core.flows.WaitTimeUpdate
 import net.corda.core.identity.Party
 import net.corda.core.internal.IdempotentFlow
 import net.corda.core.internal.PlatformVersionSwitches
 import net.corda.core.internal.checkParameterHash
 import net.corda.core.utilities.seconds
 import net.corda.core.utilities.unwrap
-import java.lang.IllegalStateException
 import java.time.Duration
 
 /**
@@ -65,6 +74,8 @@ abstract class NotaryServiceFlow(
             val eta = service.getEstimatedWaitTime(tx.inputs.size + tx.references.size)
             if (eta > etaThreshold && counterpartyCanHandleBackPressure()) {
                 otherSideSession.send(WaitTimeUpdate(eta))
+            } else if (counterpartyCanHandleBackPressure() && stateMachine.ourSenderUUID == null) {
+                sleep(Duration.ZERO)
             }
 
             service.commitInputStates(
