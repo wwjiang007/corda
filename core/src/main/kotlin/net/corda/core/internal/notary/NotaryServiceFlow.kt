@@ -163,7 +163,8 @@ abstract class NotaryServiceFlow(
             val timeWindow: TimeWindow?,
             val notary: Party?,
             val references: List<StateRef> = emptyList(),
-            val networkParametersHash: SecureHash?
+            val networkParametersHash: SecureHash?,
+            val signatures: List<TransactionSignature> = emptyList()
     )
 
     private fun logError(error: NotaryError) {

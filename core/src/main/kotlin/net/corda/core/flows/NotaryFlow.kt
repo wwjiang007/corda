@@ -3,6 +3,8 @@ package net.corda.core.flows
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.CordaInternal
 import net.corda.core.DoNotImplement
+import net.corda.core.contracts.Command
+import net.corda.core.contracts.ComponentGroupEnum
 import net.corda.core.contracts.StateRef
 import net.corda.core.contracts.TimeWindow
 import net.corda.core.crypto.SecureHash
@@ -11,9 +13,11 @@ import net.corda.core.identity.Party
 import net.corda.core.internal.BackpressureAwareTimedFlow
 import net.corda.core.internal.FetchDataFlow
 import net.corda.core.internal.NetworkParametersStorage
+import net.corda.core.internal.deserialiseComponentGroup
 import net.corda.core.internal.notary.generateSignature
 import net.corda.core.internal.notary.validateSignatures
 import net.corda.core.internal.pushToLoggingContext
+import net.corda.core.internal.uncheckedCast
 import net.corda.core.transactions.*
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.UntrustworthyData
@@ -47,7 +51,7 @@ class NotaryFlow {
     ) : BackpressureAwareTimedFlow<List<TransactionSignature>>() {
         @JvmOverloads
         constructor(stx: SignedTransaction, skipVerification: Boolean = false) : this(stx, tracker(), skipVerification)
-        constructor(stx: SignedTransaction, progressTracker: ProgressTracker): this(stx, progressTracker, false)
+        constructor(stx: SignedTransaction, progressTracker: ProgressTracker) : this(stx, progressTracker, false)
 
         companion object {
             object REQUESTING : ProgressTracker.Step("Requesting signature by Notary service")
@@ -136,14 +140,27 @@ class NotaryFlow {
             return receiveResultOrTiming(session)
         }
 
+        fun notarisationFilter(notaryParty: Party): Predicate<Any> {
+            fun filter(elem: Any): Boolean {
+                return when (elem) {
+                    is StateRef -> true
+                    is ReferenceStateRef -> true
+                    is TimeWindow -> true
+                    is NetworkParametersHash -> true
+                    is Party -> elem == notaryParty
+                    is Command<*> -> true //elem.signers.isNotEmpty()
+                    else -> false
+                }
+            }
+            return Predicate(::filter)
+        }
+
         @Suspendable
         private fun sendAndReceiveNonValidating(notaryParty: Party, session: FlowSession, signature: NotarisationRequestSignature): UntrustworthyData<NotarisationResponse> {
             val ctx = stx.coreTransaction
             val tx = when (ctx) {
                 is ContractUpgradeWireTransaction -> ctx.buildFilteredTransaction()
-                is WireTransaction -> ctx.buildFilteredTransaction(Predicate {
-                    it is StateRef || it is ReferenceStateRef || it is TimeWindow || it == notaryParty || it is NetworkParametersHash
-                })
+                is WireTransaction -> FilteredTransactionWithSignatures.buildFilteredTransaction(stx, notaryParty)
                 else -> ctx
             }
             session.send(NotarisationPayload(tx, signature))

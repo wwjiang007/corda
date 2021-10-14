@@ -14,6 +14,7 @@ import net.corda.core.node.NetworkParameters
 import net.corda.core.transactions.ContractUpgradeFilteredTransaction
 import net.corda.core.transactions.CoreTransaction
 import net.corda.core.transactions.FilteredTransaction
+import net.corda.core.transactions.FilteredTransactionWithSignatures
 import net.corda.core.transactions.NotaryChangeWireTransaction
 import java.time.Duration
 
@@ -31,6 +32,7 @@ class NonValidatingNotaryFlow(otherSideSession: FlowSession, service: SinglePart
     override fun extractParts(requestPayload: NotarisationPayload): TransactionParts {
         val tx = requestPayload.coreTransaction
         return when (tx) {
+            is FilteredTransactionWithSignatures -> TransactionParts(tx.id, tx.inputs, tx.timeWindow, tx.notary, tx.references, networkParametersHash = tx.networkParametersHash, signatures = tx.sigs)
             is FilteredTransaction -> TransactionParts(tx.id, tx.inputs, tx.timeWindow, tx.notary, tx.references, networkParametersHash = tx.networkParametersHash)
             is ContractUpgradeFilteredTransaction,
             is NotaryChangeWireTransaction -> TransactionParts(tx.id, tx.inputs, null, tx.notary, networkParametersHash = tx.networkParametersHash)
@@ -42,6 +44,18 @@ class NonValidatingNotaryFlow(otherSideSession: FlowSession, service: SinglePart
         val tx = requestPayload.coreTransaction
         try {
             when (tx) {
+                is FilteredTransactionWithSignatures -> {
+                    tx.apply {
+                        verify()
+                        verifySignaturesExcept(notary!!.owningKey)
+                        checkAllComponentsVisible(ComponentGroupEnum.INPUTS_GROUP)
+                        checkAllComponentsVisible(ComponentGroupEnum.TIMEWINDOW_GROUP)
+                        checkAllComponentsVisible(ComponentGroupEnum.REFERENCES_GROUP)
+                        if (minPlatformVersion >= PlatformVersionSwitches.NETWORK_PARAMETERS_COMPONENT_GROUP) checkAllComponentsVisible(ComponentGroupEnum.PARAMETERS_GROUP)
+                    }
+                    val notary = tx.notary ?: throw IllegalArgumentException("Transaction does not specify a notary.")
+                    checkNotaryWhitelisted(notary, tx.networkParametersHash)
+                }
                 is FilteredTransaction -> {
                     tx.apply {
                         verify()

@@ -8,12 +8,18 @@ import net.corda.core.crypto.*
 import net.corda.core.identity.Party
 import net.corda.core.internal.deserialiseCommands
 import net.corda.core.internal.deserialiseComponentGroup
+import net.corda.core.internal.uncheckedCast
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.serialization.DeprecatedConstructorForDeserialization
 import net.corda.core.serialization.SerializedBytes
 import net.corda.core.serialization.deserialize
+import net.corda.core.transactions.SignedTransaction.SignaturesMissingException
 import net.corda.core.utilities.OpaqueBytes
+import net.corda.core.utilities.toNonEmptySet
+import java.security.InvalidKeyException
 import java.security.PublicKey
+import java.security.SignatureException
+import java.util.*
 import java.util.function.Predicate
 
 /**
@@ -92,10 +98,10 @@ abstract class TraversableTransaction(open val componentGroups: List<ComponentGr
  */
 @KeepForDJVM
 @CordaSerializable
-class FilteredTransaction internal constructor(
+open class FilteredTransaction internal constructor(
         override val id: SecureHash,
-        val filteredComponentGroups: List<FilteredComponentGroup>,
-        val groupHashes: List<SecureHash>,
+        open val filteredComponentGroups: List<FilteredComponentGroup>,
+        open val groupHashes: List<SecureHash>,
         digestService: DigestService
 ) : TraversableTransaction(filteredComponentGroups, digestService) {
 
@@ -338,6 +344,218 @@ class FilteredTransaction internal constructor(
         if (!value) {
             val message = lazyMessage()
             throw ComponentVisibilityException(id, message.toString())
+        }
+    }
+}
+
+@KeepForDJVM
+@CordaSerializable
+class FilteredTransactionWithSignatures internal constructor(
+        override val id: SecureHash,
+        val sigs: List<TransactionSignature>,
+        override val filteredComponentGroups: List<FilteredComponentGroup>,
+        override val groupHashes: List<SecureHash>,
+        digestService: DigestService
+) : FilteredTransaction(id, filteredComponentGroups, groupHashes, digestService) {
+
+    companion object {
+        /**
+         * Construction of filtered transaction with partial Merkle tree.
+         * @param wtx WireTransaction to be filtered.
+         * @param filtering filtering over the whole WireTransaction.
+         */
+        @JvmStatic
+        fun buildFilteredTransaction(stx: SignedTransaction, notaryParty: Party): FilteredTransactionWithSignatures {
+            val filteredComponentGroups = filterWithFun(stx.tx, notarisationFilter(notaryParty))
+            return FilteredTransactionWithSignatures(
+                    stx.tx.id,
+                    stx.sigs,
+                    filteredComponentGroups,
+                    stx.tx.groupHashes,
+                    stx.tx.digestService
+            )
+        }
+
+        private fun notarisationFilter(notaryParty: Party): Predicate<Any> {
+            fun filter(elem: Any): Boolean {
+                return when (elem) {
+                    is StateRef -> true
+                    is ReferenceStateRef -> true
+                    is TimeWindow -> true
+                    is NetworkParametersHash -> true
+                    is Party -> elem == notaryParty
+                    is Command<*> -> true
+                    else -> false
+                }
+            }
+            return Predicate(::filter)
+        }
+
+        /**
+         * Construction of partial transaction from [WireTransaction] based on filtering.
+         * Note that list of nonces to be sent is updated on the fly, based on the index of the filtered tx component.
+         * @param filtering filtering over the whole WireTransaction.
+         * @return a list of [FilteredComponentGroup] used in PartialMerkleTree calculation and verification.
+         */
+        private fun filterWithFun(wtx: WireTransaction, filtering: Predicate<Any>): List<FilteredComponentGroup> {
+            val filteredSerialisedComponents: MutableMap<Int, MutableList<OpaqueBytes>> = hashMapOf()
+            val filteredComponentNonces: MutableMap<Int, MutableList<SecureHash>> = hashMapOf()
+            val filteredComponentHashes: MutableMap<Int, MutableList<SecureHash>> = hashMapOf() // Required for partial Merkle tree generation.
+            var signersIncluded = false
+
+            fun <T : Any> filter(t: T, componentGroupIndex: Int, internalIndex: Int) {
+                if (!filtering.test(t)) return
+
+                val group = filteredSerialisedComponents[componentGroupIndex]
+                // Because the filter passed, we know there is a match. We also use first Vs single as the init function
+                // of WireTransaction ensures there are no duplicated groups.
+                val serialisedComponent = wtx.componentGroups.first { it.groupIndex == componentGroupIndex }.components[internalIndex]
+                if (group == null) {
+                    // As all of the helper Map structures, like availableComponentNonces, availableComponentHashes
+                    // and groupsMerkleRoots, are computed lazily via componentGroups.forEach, there should always be
+                    // a match on Map.get ensuring it will never return null.
+                    filteredSerialisedComponents[componentGroupIndex] = mutableListOf(serialisedComponent)
+                    filteredComponentNonces[componentGroupIndex] = mutableListOf(wtx.availableComponentNonces[componentGroupIndex]!![internalIndex])
+                    filteredComponentHashes[componentGroupIndex] = mutableListOf(wtx.availableComponentHashes[componentGroupIndex]!![internalIndex])
+                } else {
+                    group.add(serialisedComponent)
+                    // If the group[componentGroupIndex] existed, then we guarantee that
+                    // filteredComponentNonces[componentGroupIndex] and filteredComponentHashes[componentGroupIndex] are not null.
+                    filteredComponentNonces[componentGroupIndex]!!.add(wtx.availableComponentNonces[componentGroupIndex]!![internalIndex])
+                    filteredComponentHashes[componentGroupIndex]!!.add(wtx.availableComponentHashes[componentGroupIndex]!![internalIndex])
+                }
+                // If at least one command is visible, then all command-signers should be visible as well.
+                // This is required for visibility purposes, see FilteredTransaction.checkAllCommandsVisible() for more details.
+                if (!signersIncluded) {
+                    signersIncluded = true
+                    val signersGroupIndex = SIGNERS_GROUP.ordinal
+                    // There exist commands, thus the signers group is not empty.
+                    val signersGroupComponents = wtx.componentGroups.first { it.groupIndex == signersGroupIndex }
+                    filteredSerialisedComponents[signersGroupIndex] = signersGroupComponents.components.toMutableList()
+                    filteredComponentNonces[signersGroupIndex] = wtx.availableComponentNonces[signersGroupIndex]!!.toMutableList()
+                    filteredComponentHashes[signersGroupIndex] = wtx.availableComponentHashes[signersGroupIndex]!!.toMutableList()
+                }
+            }
+
+            fun updateFilteredComponents() {
+                wtx.inputs.forEachIndexed { internalIndex, it -> filter(it, INPUTS_GROUP.ordinal, internalIndex) }
+                wtx.outputs.forEachIndexed { internalIndex, it -> filter(it, OUTPUTS_GROUP.ordinal, internalIndex) }
+                wtx.commands.forEachIndexed { internalIndex, it -> filter(it, COMMANDS_GROUP.ordinal, internalIndex) }
+                wtx.attachments.forEachIndexed { internalIndex, it -> filter(it, ATTACHMENTS_GROUP.ordinal, internalIndex) }
+                if (wtx.notary != null) filter(wtx.notary, NOTARY_GROUP.ordinal, 0)
+                if (wtx.timeWindow != null) filter(wtx.timeWindow, TIMEWINDOW_GROUP.ordinal, 0)
+                // Note that because [inputs] and [references] share the same type [StateRef], we use a wrapper for references [ReferenceStateRef],
+                // when filtering. Thus, to filter-in all [references] based on type, one should use the wrapper type [ReferenceStateRef] and not [StateRef].
+                // Similar situation is for network parameters hash and attachments, one should use wrapper [NetworkParametersHash] and not [SecureHash].
+                wtx.references.forEachIndexed { internalIndex, it -> filter(ReferenceStateRef(it), REFERENCES_GROUP.ordinal, internalIndex) }
+                wtx.networkParametersHash?.let { filter(NetworkParametersHash(it), PARAMETERS_GROUP.ordinal, 0) }
+                // It is highlighted that because there is no a signers property in TraversableTransaction,
+                // one cannot specifically filter them in or out.
+                // The above is very important to ensure someone won't filter out the signers component group if at least one
+                // command is included in a FilteredTransaction.
+
+                // It's sometimes possible that when we receive a WireTransaction for which there is a new or more unknown component groups,
+                // we decide to filter and attach this field to a FilteredTransaction.
+                // An example would be to redact certain contract state types, but otherwise leave a transaction alone,
+                // including the unknown new components.
+                wtx.componentGroups
+                        .filter { it.groupIndex >= values().size }
+                        .forEach { componentGroup -> componentGroup.components.forEachIndexed { internalIndex, component -> filter(component, componentGroup.groupIndex, internalIndex) } }
+            }
+
+            fun createPartialMerkleTree(componentGroupIndex: Int): PartialMerkleTree {
+                return PartialMerkleTree.build(
+                        MerkleTree.getMerkleTree(wtx.availableComponentHashes[componentGroupIndex]!!, wtx.digestService),
+                        filteredComponentHashes[componentGroupIndex]!!
+                )
+            }
+
+            fun createFilteredComponentGroups(): List<FilteredComponentGroup> {
+                updateFilteredComponents()
+                val filteredComponentGroups: MutableList<FilteredComponentGroup> = mutableListOf()
+                filteredSerialisedComponents.forEach { (groupIndex, value) ->
+                    filteredComponentGroups.add(FilteredComponentGroup(groupIndex, value, filteredComponentNonces[groupIndex]!!, createPartialMerkleTree(groupIndex)))
+                }
+                return filteredComponentGroups
+            }
+
+            return createFilteredComponentGroups()
+        }
+    }
+
+    private val requiredSigningKeys by lazy {
+        val keys: List<List<PublicKey>> = uncheckedCast(deserialiseComponentGroup(componentGroups, List::class, SIGNERS_GROUP))
+        keys.flatten().toSet()
+    }
+
+    /**
+     * Get a human readable description of where signatures are required from, and are missing, to assist in debugging
+     * the underlying cause.
+     *
+     * Note that the results should not be serialised, parsed or expected to remain stable between Corda versions.
+     */
+    fun getKeyDescriptions(keys: Set<PublicKey>) = emptyList<String>() // TODO
+
+    /**
+     * Return the [PublicKey]s for which we still need signatures.
+     */
+    private fun getMissingSigners(): Set<PublicKey> {
+        val sigKeys = sigs.map { it.by }.toSet()
+        // TODO Problem is that we can get single PublicKey wrapped as CompositeKey in allowedToBeMissing/mustSign
+        //  equals on CompositeKey won't catch this case (do we want to single PublicKey be equal to the same key wrapped in CompositeKey with threshold 1?)
+        return requiredSigningKeys.filter { !it.isFulfilledBy(sigKeys) }.toSet()
+    }
+
+    /**
+     * Verifies the signatures on this transaction and throws if any are missing which aren't passed as parameters.
+     * In this context, "verifying" means checking they are valid signatures and that their public keys are in
+     * the [requiredSigningKeys] set.
+     *
+     * Normally you would not provide any keys to this function, but if you're in the process of building a partial
+     * transaction and you want to access the contents before you've signed it, you can specify your own keys here
+     * to bypass that check.
+     *
+     * @throws SignatureException if any signatures are invalid or unrecognised.
+     * @throws SignaturesMissingException if any signatures should have been present but were not.
+     */
+    @Throws(SignatureException::class)
+    fun verifySignaturesExcept(vararg allowedToBeMissing: PublicKey) {
+        verifySignaturesExcept(listOf(*allowedToBeMissing))
+    }
+
+    /**
+     * Verifies the signatures on this transaction and throws if any are missing which aren't passed as parameters.
+     * In this context, "verifying" means checking they are valid signatures and that their public keys are in
+     * the [requiredSigningKeys] set.
+     *
+     * Normally you would not provide any keys to this function, but if you're in the process of building a partial
+     * transaction and you want to access the contents before you've signed it, you can specify your own keys here
+     * to bypass that check.
+     *
+     * @throws SignatureException if any signatures are invalid or unrecognised.
+     * @throws SignaturesMissingException if any signatures should have been present but were not.
+     */
+    @Throws(SignatureException::class)
+    private fun verifySignaturesExcept(allowedToBeMissing: Collection<PublicKey>) {
+        val needed = getMissingSigners() - allowedToBeMissing
+        if (needed.isNotEmpty())
+            throw SignaturesMissingException(needed.toNonEmptySet(), getKeyDescriptions(needed), id)
+        checkSignaturesAreValid()
+    }
+
+    /**
+     * Mathematically validates the signatures that are present on this transaction. This does not imply that
+     * the signatures are by the right keys, or that there are sufficient signatures, just that they aren't
+     * corrupt. If you use this function directly you'll need to do the other checks yourself. Probably you
+     * want [verifyRequiredSignatures] instead.
+     *
+     * @throws InvalidKeyException if the key on a signature is invalid.
+     * @throws SignatureException if a signature fails to verify.
+     */
+    @Throws(InvalidKeyException::class, SignatureException::class)
+    private fun checkSignaturesAreValid() {
+        for (sig in sigs) {
+            sig.verify(id)
         }
     }
 }
