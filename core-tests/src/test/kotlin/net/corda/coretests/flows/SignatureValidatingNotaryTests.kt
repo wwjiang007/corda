@@ -168,6 +168,7 @@ class CheatingNotarisationFlow(private val cis: List<PartyAndCertificate>) : Flo
 
         val ourKey = cis.single { it.name == ourIdentity.name }.owningKey
         val signedByUsTx = serviceHub.signInitialTransaction(txBuilder, ourKey)
+        // TODO: IEE - no signature collection from other parties
 //        val sessions = cis.filter { it.name != ourIdentity.name }.map { initiateFlow(AnonymousParty(it.owningKey)) }
 //        val sstx = subFlow(CollectSignaturesFlow(signedByUsTx, sessions, myOptionalKeys = listOf(ourKey)))
         val fstx = subFlow(FinalityFlow(signedByUsTx, listOf()))
@@ -180,19 +181,21 @@ class CheatingNotarisationFlow(private val cis: List<PartyAndCertificate>) : Flo
 class CheatingNotarisationFlowResponder(private val otherSideSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        val signFlow = object : SignTransactionFlow(otherSideSession) {
-            @Suspendable
-            override fun checkTransaction(stx: SignedTransaction) = requireThat {
-                val tx = stx.tx
-                //val ltx = tx.toLedgerTransaction(serviceHub)
-                "There should only be one output state" using (tx.outputs.size == 1)
-                "There should only be one output state" using (tx.inputs.isEmpty())
-                //val magicNumberState = ltx.outputsOfType<DummyContract.MultiOwnerState>().single()
-                //"Must be $MAGIC_NUMBER or greater" using (magicNumberState.magicNumber >= MAGIC_NUMBER)
-            }
-        }
-        val stx = subFlow(signFlow)
-        subFlow(ReceiveFinalityFlow(otherSideSession, expectedTxId = stx.id))
+        // TODO: IEE - other parties never receive any message
+        throw NotImplementedError("Should not be called!")
+//        val signFlow = object : SignTransactionFlow(otherSideSession) {
+//            @Suspendable
+//            override fun checkTransaction(stx: SignedTransaction) = requireThat {
+//                val tx = stx.tx
+//                //val ltx = tx.toLedgerTransaction(serviceHub)
+//                "There should only be one output state" using (tx.outputs.size == 1)
+//                "There should only be one output state" using (tx.inputs.isEmpty())
+//                //val magicNumberState = ltx.outputsOfType<DummyContract.MultiOwnerState>().single()
+//                //"Must be $MAGIC_NUMBER or greater" using (magicNumberState.magicNumber >= MAGIC_NUMBER)
+//            }
+//        }
+//        val stx = subFlow(signFlow)
+//        subFlow(ReceiveFinalityFlow(otherSideSession, expectedTxId = stx.id))
     }
 }
 

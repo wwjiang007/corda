@@ -135,9 +135,10 @@ fun deserialiseCommands(
     } else {
         // It is a WireTransaction
         // or a FilteredTransaction with no Commands (in which case group is null).
-        check(commandDataList.size == signersList.size) {
-            "Invalid Transaction. Sizes of CommandData (${commandDataList.size}) and Signers (${signersList.size}) do not match"
-        }
+        // TODO: IEE - removed commandDataList.size vs signersList.size dependency
+//        check(commandDataList.size == signersList.size) {
+//            "Invalid Transaction. Sizes of CommandData (${commandDataList.size}) and Signers (${signersList.size}) do not match"
+//        }
         commandDataList.lazyMapped { commandData, index -> Command(commandData, signersList[index]) }
     }
 }
