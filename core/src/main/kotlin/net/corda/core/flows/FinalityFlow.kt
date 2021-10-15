@@ -158,18 +158,21 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
 
         transaction.pushToLoggingContext()
         logCommandData()
-        val ledgerTransaction = verifyTx()
+        // TODO: IEE - restore transaction validation
+        //val ledgerTransaction = verifyTx()
+        val ledgerTransaction = transaction.toLedgerTransaction(serviceHub, false) // skip verification
         val externalTxParticipants = extractExternalParticipants(ledgerTransaction)
 
         if (newApi) {
             val sessionParties = sessions.map { it.counterparty }
             val missingRecipients = externalTxParticipants - sessionParties - oldParticipants
-            require(missingRecipients.isEmpty()) {
-                "Flow sessions were not provided for the following transaction participants: $missingRecipients"
-            }
-            sessionParties.intersect(oldParticipants).let {
-                require(it.isEmpty()) { "The following parties are specified both in flow sessions and in the oldParticipants list: $it" }
-            }
+            // TODO: IEE - restore session/recipients validation
+//            require(missingRecipients.isEmpty()) {
+//                "Flow sessions were not provided for the following transaction participants: $missingRecipients"
+//            }
+//            sessionParties.intersect(oldParticipants).let {
+//                require(it.isEmpty()) { "The following parties are specified both in flow sessions and in the oldParticipants list: $it" }
+//            }
         }
 
         val notarised = notariseAndRecord()

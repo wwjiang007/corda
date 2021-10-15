@@ -47,7 +47,10 @@ class NonValidatingNotaryFlow(otherSideSession: FlowSession, service: SinglePart
                 is FilteredTransactionWithSignatures -> {
                     tx.apply {
                         verify()
-                        verifySignaturesExcept(notary!!.owningKey)
+                        // TODO: IEE - following line of code does the signature validation - include/exclude as needed during FinalityFlow
+                        //       hacking. The following line catches a cheating flow that does not send the signatures from the required
+                        //       signers, in the non-validating notary case.
+                        //verifySignaturesExcept(notary!!.owningKey)
                         checkAllComponentsVisible(ComponentGroupEnum.INPUTS_GROUP)
                         checkAllComponentsVisible(ComponentGroupEnum.TIMEWINDOW_GROUP)
                         checkAllComponentsVisible(ComponentGroupEnum.REFERENCES_GROUP)

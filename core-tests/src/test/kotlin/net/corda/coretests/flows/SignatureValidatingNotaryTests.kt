@@ -66,7 +66,7 @@ class SignatureValidatinNotaryTest : WithContracts {
     private val charlie = charlieNode.info.singleIdentity()
 
     @Test(timeout=300_000)
-	fun `successfully collects signatures when sessions are initiated with AnonymousParty`() {
+	fun `exploratory test`() {
         val aConfidentialIdentity1 = aliceNode.createConfidentialIdentity(alice)
         val bConfidentialIdentity1 = bobNode.createConfidentialIdentity(bob)
         val bConfidentialIdentity2 = bobNode.createConfidentialIdentity(bob)
@@ -94,50 +94,6 @@ class SignatureValidatinNotaryTest : WithContracts {
 
         val stx = aliceNode.startFlow(CheatingNotarisationFlow(owners)).also { mockNet.runNetwork() }.resultFuture.get()
     }
-
-//    @Test(timeout=300_000)
-//    fun `test filters`() {
-//        val aConfidentialIdentity1 = aliceNode.createConfidentialIdentity(alice)
-//        val bConfidentialIdentity1 = bobNode.createConfidentialIdentity(bob)
-//        val bConfidentialIdentity2 = bobNode.createConfidentialIdentity(bob)
-//        val cConfidentialIdentity1 = charlieNode.createConfidentialIdentity(charlie)
-//        val owners = listOf(aConfidentialIdentity1, bConfidentialIdentity1, bConfidentialIdentity2, cConfidentialIdentity1)
-//
-//        val wtx = aliceNode.startFlow(DummyTestFlow(owners)).also { mockNet.runNetwork() }.resultFuture.get()
-//
-//        fun commands(elem: Any): Boolean {
-//            return when (elem) {
-//                is Command<*> -> true
-//                else -> false
-//            }
-//        }
-//
-//        fun pubkeys(elem: Any): Boolean {
-//            return when (elem) {
-//                is PublicKey -> true
-//                else -> false
-//            }
-//        }
-//
-//
-//
-//        val ftxCommands = wtx.buildFilteredTransaction(Predicate(::commands))
-//
-//
-//        ftxCommands.checkAllComponentsVisible(ComponentGroupEnum.SIGNERS_GROUP)
-//        ftxCommands.checkAllComponentsVisible(ComponentGroupEnum.COMMANDS_GROUP)
-//        ftxCommands.checkCommandVisibility(owners[0].owningKey)
-//
-//        fun singleSigner(elem: Any) = elem is Command<*> && elem.signers.size == 1
-//        val ftxCommand = wtx.buildFilteredTransaction(Predicate(::singleSigner))
-//        ftxCommand.checkAllComponentsVisible(ComponentGroupEnum.SIGNERS_GROUP)
-//        ftxCommand.checkAllComponentsVisible(ComponentGroupEnum.COMMANDS_GROUP) // Throws!
-//        ftxCommand.checkCommandVisibility(owners[0].owningKey)  // Throws!
-//
-//        val ftxPubKeys = wtx.buildFilteredTransaction(Predicate(::pubkeys))
-//
-//    }
-
 }
 
 @InitiatingFlow
