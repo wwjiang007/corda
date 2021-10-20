@@ -1,8 +1,6 @@
 package net.corda.coretests.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import net.corda.core.contracts.Command
-import net.corda.core.contracts.ComponentGroupEnum
 import net.corda.core.contracts.TimeWindow
 import net.corda.core.contracts.requireThat
 import net.corda.core.flows.CollectSignaturesFlow

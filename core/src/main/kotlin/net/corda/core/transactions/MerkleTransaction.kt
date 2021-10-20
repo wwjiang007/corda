@@ -384,7 +384,6 @@ class FilteredTransactionWithSignatures internal constructor(
                     is TimeWindow -> true
                     is NetworkParametersHash -> true
                     is Party -> elem == notaryParty
-                    //is Command<*> -> true
                     else -> false
                 }
             }
