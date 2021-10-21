@@ -1,0 +1,10 @@
+FROM amazoncorretto:8u302
+RUN yum install -y \
+        ca-certificates \
+        curl \
+        git \
+        gnupg2 \
+        shadow-utils \
+        wget
+ARG USER="jenkins"
+RUN useradd -m ${USER}
