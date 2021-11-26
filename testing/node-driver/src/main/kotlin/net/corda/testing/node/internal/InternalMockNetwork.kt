@@ -167,11 +167,20 @@ open class InternalMockNetwork(cordappPackages: List<String> = emptyList(),
                                cordappsForAllNodes: Collection<TestCordappInternal> = emptySet(),
                                val autoVisibleNodes: Boolean = true) : AutoCloseable {
     companion object {
+
+        private val cachedClassLoaders = mutableListOf<URLClassLoader>()
         fun createCordappClassLoader(cordapps: Collection<TestCordappInternal>?): URLClassLoader? {
             if (cordapps == null || cordapps.isEmpty()) {
                 return null
             }
-            return URLClassLoader(cordapps.map { it.jarFile.toUri().toURL() }.toTypedArray())
+
+            return cachedClassLoaders.firstOrNull { classLoader ->
+                classLoader.urLs.toList().containsAll(cordapps.map { it.jarFile.toUri().toURL() })
+            } ?: run {
+                val classLoader = URLClassLoader(cordapps.map { it.jarFile.toUri().toURL() }.toTypedArray())
+                    cachedClassLoaders.add(classLoader)
+                    classLoader
+            }
         }
     }
 
