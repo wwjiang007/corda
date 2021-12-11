@@ -137,6 +137,7 @@ import net.corda.node.services.statemachine.FlowOperator
 import net.corda.node.services.statemachine.FlowStateMachineImpl
 import net.corda.node.services.statemachine.SingleThreadedStateMachineManager
 import net.corda.node.services.statemachine.StateMachineManager
+import net.corda.node.services.telemetry.OpenTelemetryService
 import net.corda.node.services.transactions.BasicVerifierFactoryService
 import net.corda.node.services.transactions.DeterministicVerifierFactoryService
 import net.corda.node.services.transactions.InMemoryTransactionVerifierService
@@ -220,6 +221,7 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
     val metricRegistry = MetricRegistry()
     protected val cacheFactory = cacheFactoryPrototype.bindWithConfig(configuration).bindWithMetrics(metricRegistry).tokenize()
     val monitoringService = MonitoringService(metricRegistry).tokenize()
+    val telemetryService = OpenTelemetryService().tokenize()
 
     protected val runOnStop = ArrayList<() -> Any?>()
 
@@ -1112,7 +1114,7 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
         override val rpcFlows = ArrayList<Class<out FlowLogic<*>>>()
         override val stateMachineRecordedTransactionMapping = DBTransactionMappingStorage(database)
         override val identityService: IdentityService get() = this@AbstractNode.identityService
-        override val telemetryService: TelemetryService get() = TODO("Not yet implemented")
+        override val telemetryService: TelemetryService get() = this@AbstractNode.telemetryService
         override val keyManagementService: KeyManagementService get() = this@AbstractNode.keyManagementService
         override val schemaService: SchemaService get() = this@AbstractNode.schemaService
         override val validatedTransactions: WritableTransactionStorage get() = this@AbstractNode.transactionStorage

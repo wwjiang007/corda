@@ -245,6 +245,14 @@ dependencies {
     integrationTestCompile(project(":testing:cordapps:missingmigration"))
 
     testCompile project(':testing:cordapps:dbfailure:dbfworkflows')
+
+    compile group: 'io.opentelemetry', name: 'opentelemetry-api', version: '1.9.1'
+    compile group: 'io.opentelemetry', name: 'opentelemetry-sdk', version: '1.9.1'
+    compile group: 'io.opentelemetry', name: 'opentelemetry-exporter-otlp-trace', version: '1.9.1'
+    compile group: 'io.opentelemetry', name: 'opentelemetry-semconv', version: '1.9.1-alpha'
+
+    compile group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.42.1'
+    compile group: 'io.grpc', name: 'grpc-stub', version: '1.42.1'
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -304,7 +312,8 @@ quasar {
             "org.w3c.**",
             "org.xml**",
             "org.yaml**",
-            "rx**")
+            "rx**",
+            "io.opentelemetry.**")
 }
 
 jar {
