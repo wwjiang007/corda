@@ -117,6 +117,9 @@ enum class StatesToRecord {
  */
 @DeleteForDJVM
 interface ServiceHub : ServicesForResolution {
+
+    val telemetryService: TelemetryService
+
     // NOTE: Any services exposed to flows (public view) need to implement [SerializeAsToken] or similar to avoid
     // their internal state from being serialized in checkpoints.
 

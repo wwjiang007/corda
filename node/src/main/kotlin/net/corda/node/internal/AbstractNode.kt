@@ -55,6 +55,7 @@ import net.corda.core.node.services.ContractUpgradeService
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.IdentityService
 import net.corda.core.node.services.KeyManagementService
+import net.corda.core.node.services.TelemetryService
 import net.corda.core.node.services.TransactionVerifierService
 import net.corda.core.node.services.diagnostics.DiagnosticsService
 import net.corda.core.schemas.MappedSchema
@@ -1111,6 +1112,7 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
         override val rpcFlows = ArrayList<Class<out FlowLogic<*>>>()
         override val stateMachineRecordedTransactionMapping = DBTransactionMappingStorage(database)
         override val identityService: IdentityService get() = this@AbstractNode.identityService
+        override val telemetryService: TelemetryService get() = TODO("Not yet implemented")
         override val keyManagementService: KeyManagementService get() = this@AbstractNode.keyManagementService
         override val schemaService: SchemaService get() = this@AbstractNode.schemaService
         override val validatedTransactions: WritableTransactionStorage get() = this@AbstractNode.transactionStorage

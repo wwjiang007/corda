@@ -437,6 +437,7 @@ open class MockServices private constructor(
     final override val attachments = MockAttachmentStorage()
     override val vaultService: VaultService get() = throw UnsupportedOperationException()
     override val contractUpgradeService: ContractUpgradeService get() = throw UnsupportedOperationException()
+    override val telemetryService: TelemetryService get() = throw java.lang.UnsupportedOperationException()
     override val networkMapCache: NetworkMapCache get() = throw UnsupportedOperationException()
     override val clock: TestClock get() = TestClock(Clock.systemUTC())
     override val myInfo: NodeInfo
