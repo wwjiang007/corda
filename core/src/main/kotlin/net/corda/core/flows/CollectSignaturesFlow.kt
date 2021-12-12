@@ -14,6 +14,7 @@ import net.corda.core.transactions.WireTransaction
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.unwrap
 import java.security.PublicKey
+import java.util.*
 
 /**
  * The [CollectSignaturesFlow] is used to automate the collection of counterparty signatures for a given transaction.
@@ -67,13 +68,16 @@ import java.security.PublicKey
 class CollectSignaturesFlow @JvmOverloads constructor(val partiallySignedTx: SignedTransaction,
                                                       val sessionsToCollectFrom: Collection<FlowSession>,
                                                       val myOptionalKeys: Iterable<PublicKey>?,
-                                                      override val progressTracker: ProgressTracker = CollectSignaturesFlow.tracker()) : FlowLogic<SignedTransaction>() {
+                                                      override val progressTracker: ProgressTracker = CollectSignaturesFlow.tracker(),
+                                                      parentSpanId: UUID? = null
+) : FlowLogic<SignedTransaction>(parentSpanId) {
     @JvmOverloads
     constructor(
             partiallySignedTx: SignedTransaction,
             sessionsToCollectFrom: Collection<FlowSession>,
-            progressTracker: ProgressTracker = CollectSignaturesFlow.tracker()
-    ) : this(partiallySignedTx, sessionsToCollectFrom, null, progressTracker)
+            progressTracker: ProgressTracker = CollectSignaturesFlow.tracker(),
+            parentSpanId: UUID? = null
+    ) : this(partiallySignedTx, sessionsToCollectFrom, null, progressTracker, parentSpanId)
 
     companion object {
         object COLLECTING : ProgressTracker.Step("Collecting signatures from counterparties.")
@@ -87,6 +91,7 @@ class CollectSignaturesFlow @JvmOverloads constructor(val partiallySignedTx: Sig
 
     @Suspendable
     override fun call(): SignedTransaction {
+        val spanId = serviceHub.telemetryService.startSpan("CollectSignatures", parentSpanId = parentSpanId)
         // Check the signatures which have already been provided and that the transaction is valid.
         // Usually just the Initiator and possibly an oracle would have signed at this point.
         val myKeys: Iterable<PublicKey> = myOptionalKeys ?: listOf(ourIdentity.owningKey)
@@ -169,12 +174,12 @@ class CollectSignaturesFlow @JvmOverloads constructor(val partiallySignedTx: Sig
 
         val sigsFromNotWellKnownSessions = anonymousSessions.flatMap { flowSession ->
             //anonymous sessions will only ever sign for their own key
-            subFlow(CollectSignatureFlow(partiallySignedTx, flowSession, (flowSession.destination as AbstractParty).owningKey))
+            subFlow(CollectSignatureFlow(partiallySignedTx, flowSession, (flowSession.destination as AbstractParty).owningKey, parentSpanId = spanId))
         }
 
         val sigsFromWellKnownSessions = wellKnownSessions.flatMap { flowSession ->
             val keysToAskThisSessionFor = groupedByPartyKeys[flowSession.counterparty] ?: emptyList()
-            subFlow(CollectSignatureFlow(partiallySignedTx, flowSession, keysToAskThisSessionFor))
+            subFlow(CollectSignatureFlow(partiallySignedTx, flowSession, keysToAskThisSessionFor, parentSpanId))
         }
 
         val stx = partiallySignedTx + (sigsFromNotWellKnownSessions + sigsFromWellKnownSessions).toSet()
@@ -183,7 +188,7 @@ class CollectSignaturesFlow @JvmOverloads constructor(val partiallySignedTx: Sig
         progressTracker.currentStep = VERIFYING
         if (notaryKey != null) stx.verifySignaturesExcept(notaryKey) else stx.verifyRequiredSignatures()
 
-        return stx
+        return stx.also { serviceHub.telemetryService.endSpan(spanId) }
     }
 }
 
@@ -196,12 +201,13 @@ class CollectSignaturesFlow @JvmOverloads constructor(val partiallySignedTx: Sig
  * @param signingKeys the list of keys the party should use to sign the transaction.
  */
 @Suspendable
-class CollectSignatureFlow(val partiallySignedTx: SignedTransaction, val session: FlowSession, val signingKeys: List<PublicKey>) : FlowLogic<List<TransactionSignature>>() {
-    constructor(partiallySignedTx: SignedTransaction, session: FlowSession, vararg signingKeys: PublicKey) :
-            this(partiallySignedTx, session, listOf(*signingKeys))
+class CollectSignatureFlow(val partiallySignedTx: SignedTransaction, val session: FlowSession, val signingKeys: List<PublicKey>, parentSpanId: UUID? = null) : FlowLogic<List<TransactionSignature>>(parentSpanId) {
+    constructor(partiallySignedTx: SignedTransaction, session: FlowSession, vararg signingKeys: PublicKey, parentSpanId: UUID? = null) :
+            this(partiallySignedTx, session, listOf(*signingKeys), parentSpanId)
 
     @Suspendable
     override fun call(): List<TransactionSignature> {
+        val spanId = serviceHub.telemetryService.startSpan("CollectSignature", parentSpanId = parentSpanId)
         // SendTransactionFlow allows counterparty to access our data to resolve the transaction.
         subFlow(SendTransactionFlow(session, partiallySignedTx))
         // Send the key we expect the counterparty to sign with - this is important where they may have several
@@ -214,7 +220,7 @@ class CollectSignatureFlow(val partiallySignedTx: SignedTransaction, val session
                 require(signingKeys[index].isFulfilledBy(signature.by)) { "Not signed by the required signing key." }
             }
             signatures
-        }
+        }.also { serviceHub.telemetryService.endSpan(spanId) }
     }
 }
 // DOCEND 1
