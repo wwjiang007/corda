@@ -19,7 +19,7 @@ import java.util.*
 
 class OpenTelemetryService() : SingletonSerializeAsToken(), TelemetryService {
 
-    private val OTLP_HOST_SUPPLIER = "https://otlp.nr-data.net:4317"
+    private val OTLP_HOST_SUPPLIER = "http://localhost:4317"
     private val NEW_RELIC_API_KEY_SUPPLIER = ""
 
     init {
