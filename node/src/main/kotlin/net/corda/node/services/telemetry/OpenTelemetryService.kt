@@ -1,8 +1,10 @@
 package net.corda.node.services.telemetry
 
 import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
+import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.exporter.otlp.internal.RetryPolicy
 import io.opentelemetry.exporter.otlp.internal.grpc.DefaultGrpcExporterBuilder
@@ -21,18 +23,30 @@ class OpenTelemetryService() : SingletonSerializeAsToken(), TelemetryService {
 
     private val OTLP_HOST_SUPPLIER = "http://localhost:4317"
     private val NEW_RELIC_API_KEY_SUPPLIER = ""
+    private val spans = mutableMapOf<UUID, Span>()
 
     init {
         configureOpenTelemetry()
     }
 
-    override fun startSpan(): Span {
+    override fun startSpan(name: String, attributes : Map<String,String>, parentSpanId : UUID?) : UUID {
+        val attributesMap = attributes.toList().fold(Attributes.builder()) { builder, attribute -> builder.put(attribute.first, attribute.second) }.build()
         val tracerProvider = GlobalOpenTelemetry.getTracerProvider().get(OpenTelemetryService::class.java.name)
-        return tracerProvider.spanBuilder("Initiator").setAttribute("someKey", "someValue").startSpan()
+        val spanBuilder = tracerProvider.spanBuilder(name).setAllAttributes(attributesMap)
+        val span = if (parentSpanId == null) {
+            spanBuilder
+        } else {
+            val parentSpan = spans[parentSpanId] ?: throw IllegalArgumentException("Couldn't find a span for id ${parentSpanId}")
+            spanBuilder.setParent(Context.current().with(parentSpan))
+        }.startSpan()
+
+        val spanId = UUID.randomUUID()
+        spans[spanId] = span
+        return spanId
     }
 
-    override fun endSpan(span: Span) {
-        span.end()
+    override fun endSpan(spanId : UUID) {
+        spans[spanId]?.end()
     }
 
     private fun configureOpenTelemetry() {

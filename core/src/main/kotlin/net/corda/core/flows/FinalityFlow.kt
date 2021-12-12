@@ -14,6 +14,7 @@ import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.debug
+import java.util.*
 
 /**
  * Verifies the given transaction, then sends it to the named notary. If the notary agrees that the transaction
@@ -45,7 +46,8 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
                                        override val progressTracker: ProgressTracker,
                                        private val sessions: Collection<FlowSession>,
                                        private val newApi: Boolean,
-                                       private val statesToRecord: StatesToRecord = ONLY_RELEVANT) : FlowLogic<SignedTransaction>() {
+                                       private val statesToRecord: StatesToRecord = ONLY_RELEVANT,
+                                       parentSpanId : UUID? = null) : FlowLogic<SignedTransaction>(parentSpanId) {
 
     @CordaInternal
     data class ExtraConstructorArgs(val oldParticipants: Collection<Party>, val sessions: Collection<FlowSession>, val newApi: Boolean, val statesToRecord: StatesToRecord)
@@ -85,8 +87,9 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
     constructor(
             transaction: SignedTransaction,
             sessions: Collection<FlowSession>,
-            progressTracker: ProgressTracker = tracker()
-    ) : this(transaction, emptyList(), progressTracker, sessions, true)
+            progressTracker: ProgressTracker = tracker(),
+            parentSpanId: UUID? = null
+    ) : this(transaction, emptyList(), progressTracker, sessions, true, parentSpanId = parentSpanId)
 
     /**
      * Notarise the given transaction and broadcast it to all the participants.
@@ -141,6 +144,8 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
     @Suspendable
     @Throws(NotaryException::class)
     override fun call(): SignedTransaction {
+        val spanId = serviceHub.telemetryService.startSpan("FinalityFlow",parentSpanId = parentSpanId)
+
         if (!newApi) {
             logger.warnOnce("The current usage of FinalityFlow is unsafe. Please consider upgrading your CorDapp to use " +
                     "FinalityFlow with FlowSessions. (${serviceHub.getAppContext().cordapp.info})")
@@ -172,10 +177,11 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
             }
         }
 
-        val notarised = notariseAndRecord()
+        val notarised = notariseAndRecord(spanId)
 
         progressTracker.currentStep = BROADCASTING
 
+        val broadcastSpanId = serviceHub.telemetryService.startSpan("Broadcast", parentSpanId = spanId)
         if (newApi) {
             oldV3Broadcast(notarised, oldParticipants.toSet())
             for (session in sessions) {
@@ -194,10 +200,11 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
         } else {
             oldV3Broadcast(notarised, (externalTxParticipants + oldParticipants).toSet())
         }
+        serviceHub.telemetryService.endSpan(broadcastSpanId)
 
         logger.info("All parties received the transaction successfully.")
 
-        return notarised
+        return notarised.also { serviceHub.telemetryService.endSpan(spanId) }
     }
 
     @Suspendable
@@ -220,19 +227,22 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
     }
 
     @Suspendable
-    private fun notariseAndRecord(): SignedTransaction {
+    private fun notariseAndRecord(parentSpanId: UUID): SignedTransaction {
+        val spanId = serviceHub.telemetryService.startSpan("notariseAndRecord", parentSpanId = parentSpanId)
         val notarised = if (needsNotarySignature(transaction)) {
             progressTracker.currentStep = NOTARISING
-            val notarySignatures = subFlow(NotaryFlow.Client(transaction, skipVerification = true))
+            val notarySignatures = subFlow(NotaryFlow.Client(transaction, skipVerification = true, parentSpanId = spanId))
             transaction + notarySignatures
         } else {
             logger.info("No need to notarise this transaction.")
             transaction
         }
         logger.info("Recording transaction locally.")
+        val subSpanId = serviceHub.telemetryService.startSpan("Record", parentSpanId = spanId)
         serviceHub.recordTransactions(statesToRecord, listOf(notarised))
+        serviceHub.telemetryService.endSpan(subSpanId)
         logger.info("Recorded transaction locally successfully.")
-        return notarised
+        return notarised.also { serviceHub.telemetryService.endSpan(spanId) }
     }
 
     private fun needsNotarySignature(stx: SignedTransaction): Boolean {

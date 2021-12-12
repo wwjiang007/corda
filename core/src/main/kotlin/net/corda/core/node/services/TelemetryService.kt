@@ -1,11 +1,10 @@
 package net.corda.core.node.services
 
-import io.opentelemetry.api.trace.Span
+import java.util.*
 
 interface TelemetryService {
 
-    fun startSpan() : Span
-    fun endSpan(span: Span)
-
+    fun startSpan(name: String, attributes : Map<String,String> = emptyMap(), parentSpanId : UUID? = null) : UUID
+    fun endSpan(spanId: UUID)
 
 }

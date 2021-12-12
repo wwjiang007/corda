@@ -18,6 +18,7 @@ import net.corda.core.transactions.*
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.UntrustworthyData
 import net.corda.core.utilities.unwrap
+import java.util.*
 import java.util.function.Predicate
 
 class NotaryFlow {
@@ -43,10 +44,11 @@ class NotaryFlow {
              * Set to *true* if the [stx] has already been verified for signature and contract validity,
              * to prevent re-verification.
              */
-            private val skipVerification: Boolean = false
-    ) : BackpressureAwareTimedFlow<List<TransactionSignature>>() {
+            private val skipVerification: Boolean = false,
+            parentSpanId : UUID? = null
+    ) : BackpressureAwareTimedFlow<List<TransactionSignature>>(parentSpanId) {
         @JvmOverloads
-        constructor(stx: SignedTransaction, skipVerification: Boolean = false) : this(stx, tracker(), skipVerification)
+        constructor(stx: SignedTransaction, skipVerification: Boolean = false, parentSpanId: UUID? = null) : this(stx, tracker(), skipVerification, parentSpanId)
         constructor(stx: SignedTransaction, progressTracker: ProgressTracker): this(stx, progressTracker, false)
 
         companion object {
@@ -66,6 +68,7 @@ class NotaryFlow {
         @Suspendable
         @Throws(NotaryException::class)
         override fun call(): List<TransactionSignature> {
+            val spanId = serviceHub.telemetryService.startSpan("Notarisation", parentSpanId = parentSpanId)
             stx.pushToLoggingContext()
             val notaryParty = checkTransaction()
             logger.info("Sending transaction to notary: ${notaryParty.name}.")
@@ -73,7 +76,7 @@ class NotaryFlow {
             val response = notarise(notaryParty)
             logger.info("Notary responded (${notaryParty.name}).")
             progressTracker.currentStep = VALIDATING
-            return validateResponse(response, notaryParty)
+            return validateResponse(response, notaryParty).also { serviceHub.telemetryService.endSpan(spanId) }
         }
 
         /**

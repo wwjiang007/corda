@@ -29,8 +29,7 @@ import net.corda.core.utilities.debug
 import net.corda.core.utilities.toNonEmptySet
 import org.slf4j.Logger
 import java.time.Duration
-import java.util.HashMap
-import java.util.LinkedHashMap
+import java.util.*
 
 /**
  * A sub-class of [FlowLogic<T>] implements a flow using direct, straight line blocking code. Thus you
@@ -66,7 +65,7 @@ import java.util.LinkedHashMap
  */
 @Suppress("DEPRECATION", "DeprecatedCallableAddReplaceWith")
 @DeleteForDJVM
-abstract class FlowLogic<out T> {
+abstract class FlowLogic<out T>(val parentSpanId : UUID? = null) {
     /** This is where you should log things to. */
     val logger: Logger get() = stateMachine.logger
 
