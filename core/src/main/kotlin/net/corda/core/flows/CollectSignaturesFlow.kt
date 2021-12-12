@@ -179,7 +179,7 @@ class CollectSignaturesFlow @JvmOverloads constructor(val partiallySignedTx: Sig
 
         val sigsFromWellKnownSessions = wellKnownSessions.flatMap { flowSession ->
             val keysToAskThisSessionFor = groupedByPartyKeys[flowSession.counterparty] ?: emptyList()
-            subFlow(CollectSignatureFlow(partiallySignedTx, flowSession, keysToAskThisSessionFor, parentSpanId))
+            subFlow(CollectSignatureFlow(partiallySignedTx, flowSession, keysToAskThisSessionFor, parentSpanId = spanId))
         }
 
         val stx = partiallySignedTx + (sigsFromNotWellKnownSessions + sigsFromWellKnownSessions).toSet()
