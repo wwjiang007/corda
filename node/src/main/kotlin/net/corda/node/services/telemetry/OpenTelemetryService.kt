@@ -1,5 +1,7 @@
 package net.corda.node.services.telemetry
 
+import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.exporter.otlp.internal.RetryPolicy
@@ -22,6 +24,15 @@ class OpenTelemetryService() : SingletonSerializeAsToken(), TelemetryService {
 
     init {
         configureOpenTelemetry()
+    }
+
+    override fun startSpan(): Span {
+        val tracerProvider = GlobalOpenTelemetry.getTracerProvider().get(OpenTelemetryService::class.java.name)
+        return tracerProvider.spanBuilder("Initiator").setAttribute("someKey", "someValue").startSpan()
+    }
+
+    override fun endSpan(span: Span) {
+        span.end()
     }
 
     private fun configureOpenTelemetry() {
