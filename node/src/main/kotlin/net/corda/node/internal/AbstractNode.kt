@@ -221,7 +221,7 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
     val metricRegistry = MetricRegistry()
     protected val cacheFactory = cacheFactoryPrototype.bindWithConfig(configuration).bindWithMetrics(metricRegistry).tokenize()
     val monitoringService = MonitoringService(metricRegistry).tokenize()
-    val telemetryService = OpenTelemetryService().tokenize()
+    val telemetryService = OpenTelemetryService(configuration.myLegalName.toString()).tokenize()
 
     protected val runOnStop = ArrayList<() -> Any?>()
 
