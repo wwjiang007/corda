@@ -19,12 +19,12 @@ import net.corda.core.node.services.SerializableSpanContext
 import net.corda.core.node.services.TelemetryService
 import net.corda.core.serialization.SingletonSerializeAsToken
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), TelemetryService {
 
     private val OTLP_HOST_SUPPLIER = "http://localhost:4317"
-    private val NEW_RELIC_API_KEY_SUPPLIER = ""
-    private val spans = mutableMapOf<UUID, Span>()
+    private val spans = ConcurrentHashMap<UUID, Span>()
 
     init {
         configureOpenTelemetry(serviceName)
@@ -41,9 +41,7 @@ class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), 
             spanBuilder.setParent(Context.current().with(parentSpan))
         }.startSpan()
 
-        val spanId = UUID.randomUUID()
-        spans[spanId] = span
-        return spanId
+        return addSpan(span)
     }
 
     override fun endSpan(spanId : UUID) {
@@ -53,6 +51,18 @@ class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), 
     override fun getSpanContext(spanId: UUID): SerializableSpanContext {
         val spanContext = spans[spanId]?.spanContext ?: throw IllegalArgumentException("Couldn't find a span for id ${spanId}")
         return SerializableSpanContext(spanContext)
+    }
+
+    override fun addRemoteSpan(serializableSpanContext: SerializableSpanContext): UUID {
+        val spanContext = serializableSpanContext.createRemoteSpanContext()
+        val span = Span.wrap(spanContext)
+        return addSpan(span)
+    }
+
+    private fun addSpan(span : Span) : UUID {
+        val spanId = UUID.randomUUID()
+        spans[spanId] = span
+        return spanId
     }
 
     private fun configureOpenTelemetry(serviceName : String) {
@@ -65,7 +75,6 @@ class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), 
         // Configure traces
         val spanExporterBuilder = OtlpGrpcSpanExporter.builder()
                 .setEndpoint(OTLP_HOST_SUPPLIER)
-                .addHeader("api-key", newRelicApiOrLicenseKey())
 
         // Enable retry policy via unstable API
         DefaultGrpcExporterBuilder.getDelegateBuilder(
@@ -92,10 +101,6 @@ class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), 
                                 .put(ResourceAttributes.SERVICE_INSTANCE_ID, UUID.randomUUID().toString())
                                 .build()
                 )
-    }
-
-    private fun newRelicApiOrLicenseKey(): String {
-        return NEW_RELIC_API_KEY_SUPPLIER
     }
 
 }
