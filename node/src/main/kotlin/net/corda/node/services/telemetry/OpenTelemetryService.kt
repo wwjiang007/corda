@@ -15,6 +15,7 @@ import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes
+import net.corda.core.node.services.SerializableSpanContext
 import net.corda.core.node.services.TelemetryService
 import net.corda.core.serialization.SingletonSerializeAsToken
 import java.util.*
@@ -47,6 +48,11 @@ class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), 
 
     override fun endSpan(spanId : UUID) {
         spans[spanId]?.end()
+    }
+
+    override fun getContext(spanId: UUID): SerializableSpanContext {
+        val spanContext = spans[spanId]?.spanContext ?: throw IllegalArgumentException("Couldn't find a span for id ${spanId}")
+        return SerializableSpanContext(spanContext)
     }
 
     private fun configureOpenTelemetry(serviceName : String) {
