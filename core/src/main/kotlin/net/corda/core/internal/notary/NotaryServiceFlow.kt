@@ -80,13 +80,14 @@ abstract class NotaryServiceFlow(
                 }
             }
 
+            val commitInputStatesSpanId = serviceHub.telemetryService.startSpan("Commit input states", parentSpanId = spanId)
             service.commitInputStates(
                     tx.inputs,
                     tx.id,
                     otherSideSession.counterparty,
                     requestPayload.requestSignature,
                     tx.timeWindow,
-                    tx.references)
+                    tx.references).also { serviceHub.telemetryService.endSpan(commitInputStatesSpanId) }
         } catch (e: NotaryInternalException) {
             logError(e.error)
             // Any exception that's not a NotaryInternalException is assumed to be an unexpected internal error

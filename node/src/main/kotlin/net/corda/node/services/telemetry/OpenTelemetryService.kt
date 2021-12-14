@@ -21,6 +21,13 @@ import net.corda.core.serialization.SingletonSerializeAsToken
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
+//@todo
+//1. auto instrumentation to reveal db
+//2. signing
+//3. rpc client
+//4. try on enterprise
+//5. allow disabling it
+//6. take configuration from config file
 class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), TelemetryService {
 
     private val OTLP_HOST_SUPPLIER = "http://localhost:4317"
