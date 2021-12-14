@@ -45,7 +45,7 @@ class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), 
     }
 
     override fun endSpan(spanId : UUID) {
-        spans[spanId]?.end()
+        spans.remove(spanId)?.end()
     }
 
     override fun getSpanContext(spanId: UUID): SerializableSpanContext {
@@ -57,6 +57,11 @@ class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), 
         val spanContext = serializableSpanContext.createRemoteSpanContext()
         val span = Span.wrap(spanContext)
         return addSpan(span)
+    }
+
+    override fun addRemoteSpanAndStartChildSpan(serializableSpanContext: SerializableSpanContext, name: String, attributes: Map<String, String>): UUID {
+        val remoteSpanId = addRemoteSpan(serializableSpanContext)
+        return startSpan(name, attributes, remoteSpanId)
     }
 
     private fun addSpan(span : Span) : UUID {

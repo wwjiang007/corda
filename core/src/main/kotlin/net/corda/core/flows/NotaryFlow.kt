@@ -68,12 +68,12 @@ class NotaryFlow {
         @Suspendable
         @Throws(NotaryException::class)
         override fun call(): List<TransactionSignature> {
-            val spanId = serviceHub.telemetryService.startSpan("Notarisation", parentSpanId = parentSpanId)
+            val spanId = serviceHub.telemetryService.startSpan("NotaryFlow", parentSpanId = parentSpanId)
             stx.pushToLoggingContext()
             val notaryParty = checkTransaction()
             logger.info("Sending transaction to notary: ${notaryParty.name}.")
             progressTracker.currentStep = REQUESTING
-            val response = notarise(notaryParty)
+            val response = notarise(notaryParty, spanId)
             logger.info("Notary responded (${notaryParty.name}).")
             progressTracker.currentStep = VALIDATING
             return validateResponse(response, notaryParty).also { serviceHub.telemetryService.endSpan(spanId) }
@@ -105,8 +105,9 @@ class NotaryFlow {
         /** Notarises the transaction with the [notaryParty], obtains the notary's signature(s). */
         @Throws(NotaryException::class)
         @Suspendable
-        protected fun notarise(notaryParty: Party): UntrustworthyData<NotarisationResponse> {
+        protected fun notarise(notaryParty: Party, spanId: UUID): UntrustworthyData<NotarisationResponse> {
             val session = initiateFlow(notaryParty)
+            session.send(serviceHub.telemetryService.getSpanContext(spanId))
             val requestSignature = generateRequestSignature()
             return if (isValidating(notaryParty)) {
                 sendAndReceiveValidating(session, requestSignature)

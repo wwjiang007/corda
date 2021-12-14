@@ -26,5 +26,6 @@ interface TelemetryService {
     fun endSpan(spanId: UUID)
     fun getSpanContext(spanId: UUID) : SerializableSpanContext
     fun addRemoteSpan(serializableSpanContext: SerializableSpanContext) : UUID
+    fun addRemoteSpanAndStartChildSpan(serializableSpanContext: SerializableSpanContext, name: String, attributes : Map<String,String> = emptyMap()) : UUID
 
 }
