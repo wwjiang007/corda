@@ -50,7 +50,7 @@ class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), 
         spans[spanId]?.end()
     }
 
-    override fun getContext(spanId: UUID): SerializableSpanContext {
+    override fun getSpanContext(spanId: UUID): SerializableSpanContext {
         val spanContext = spans[spanId]?.spanContext ?: throw IllegalArgumentException("Couldn't find a span for id ${spanId}")
         return SerializableSpanContext(spanContext)
     }
