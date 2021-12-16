@@ -3,8 +3,10 @@ package net.corda.node.services.telemetry
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanBuilder
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.Context
+import io.opentelemetry.context.Scope
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.exporter.otlp.internal.RetryPolicy
 import io.opentelemetry.exporter.otlp.internal.grpc.DefaultGrpcExporterBuilder
@@ -30,14 +32,12 @@ import java.util.concurrent.ConcurrentHashMap
 //6. take configuration from config file
 //7. the span should start only after it was added to the map
 //8. dev mode false
+
+data class SpanInfo(val span : Span, val scope: Scope)
+
 class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), TelemetryService {
 
-    private val OTLP_HOST_SUPPLIER = "http://localhost:4317"
-    private val spans = ConcurrentHashMap<UUID, Span>()
-
-    init {
-        configureOpenTelemetry(serviceName)
-    }
+    private val spans = ConcurrentHashMap<UUID, SpanInfo>()
 
     override fun startSpan(name: String, attributes : Map<String,String>, parentSpanId : UUID?) : UUID {
         val attributesMap = attributes.toList().fold(Attributes.builder()) { builder, attribute -> builder.put(attribute.first, attribute.second) }.build()
@@ -46,7 +46,7 @@ class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), 
         val span = if (parentSpanId == null) {
             spanBuilder.setNoParent()
         } else {
-            val parentSpan = spans[parentSpanId] ?: throw IllegalArgumentException("Couldn't find a span for id ${parentSpanId}")
+            val parentSpan = spans[parentSpanId]?.span ?: throw IllegalArgumentException("Couldn't find a span for id ${parentSpanId}")
             spanBuilder.setParent(Context.current().with(parentSpan))
         }.startSpan()
 
@@ -54,11 +54,14 @@ class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), 
     }
 
     override fun endSpan(spanId : UUID) {
-        spans.remove(spanId)?.end()
+        spans.remove(spanId)?.let {
+            it.span.end()
+            it.scope.close()
+        }
     }
 
     override fun getSpanContext(spanId: UUID): SerializableSpanContext {
-        val spanContext = spans[spanId]?.spanContext ?: throw IllegalArgumentException("Couldn't find a span for id ${spanId}")
+        val spanContext = spans[spanId]?.span?.spanContext ?: throw IllegalArgumentException("Couldn't find a span for id ${spanId}")
         return SerializableSpanContext(spanContext)
     }
 
@@ -75,46 +78,7 @@ class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), 
 
     private fun addSpan(span : Span) : UUID {
         val spanId = UUID.randomUUID()
-        spans[spanId] = span
+        spans[spanId] = SpanInfo(span, span.makeCurrent())
         return spanId
     }
-
-    private fun configureOpenTelemetry(serviceName : String) {
-        configureGlobal(serviceName)
-    }
-
-    private fun configureGlobal(serviceName: String) {
-        val resource = configureResource(serviceName)
-
-        // Configure traces
-        val spanExporterBuilder = OtlpGrpcSpanExporter.builder()
-                .setEndpoint(OTLP_HOST_SUPPLIER)
-
-        // Enable retry policy via unstable API
-        DefaultGrpcExporterBuilder.getDelegateBuilder(
-                OtlpGrpcSpanExporterBuilder::class.java, spanExporterBuilder
-        )
-                .addRetryPolicy(RetryPolicy.getDefault())
-        val sdkTracerProviderBuilder = SdkTracerProvider.builder()
-                .setResource(resource)
-                .addSpanProcessor(BatchSpanProcessor.builder(spanExporterBuilder.build()).build())
-        OpenTelemetrySdk.builder()
-                .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
-                .setTracerProvider(sdkTracerProviderBuilder.build())
-                .buildAndRegisterGlobal()
-    }
-
-    private fun configureResource(serviceName: String): Resource {
-        return Resource.getDefault()
-                .merge(
-                        Resource.builder()
-                                .put(
-                                        ResourceAttributes.SERVICE_NAME,
-                                        serviceName
-                                )
-                                .put(ResourceAttributes.SERVICE_INSTANCE_ID, UUID.randomUUID().toString())
-                                .build()
-                )
-    }
-
 }
