@@ -22,8 +22,9 @@ data class SerializableSpanContext(val traceIdHex : String, val spanIdHex : Stri
 
 interface TelemetryService {
 
-    fun startSpan(name: String, attributes : Map<String,String> = emptyMap(), parentSpanId : UUID? = null) : UUID
+    fun startSpan(name: String, attributes : Map<String,String> = emptyMap()) : UUID
     fun endSpan(spanId: UUID)
+    fun getCurrentSpanContext() : SerializableSpanContext
     fun getSpanContext(spanId: UUID) : SerializableSpanContext
     fun addRemoteSpan(serializableSpanContext: SerializableSpanContext) : UUID
     fun addRemoteSpanAndStartChildSpan(serializableSpanContext: SerializableSpanContext, name: String, attributes : Map<String,String> = emptyMap()) : UUID

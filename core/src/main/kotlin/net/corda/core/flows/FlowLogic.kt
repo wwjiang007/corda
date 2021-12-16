@@ -65,7 +65,7 @@ import java.util.*
  */
 @Suppress("DEPRECATION", "DeprecatedCallableAddReplaceWith")
 @DeleteForDJVM
-abstract class FlowLogic<out T>(val parentSpanId : UUID? = null) {
+abstract class FlowLogic<out T> {
     /** This is where you should log things to. */
     val logger: Logger get() = stateMachine.logger
 

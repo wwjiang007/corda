@@ -658,7 +658,6 @@ class NodeVaultService(
         }
         log.debug { "Vault Query for contract type: $contractStateType, criteria: $criteria, pagination: $paging, sorting: $sorting" }
         return database.transaction {
-            log.info("AK: in db transaction in thread ${Thread.currentThread()}")
             // calculate total results where a page specification has been defined
             var totalStates = -1L
             if (!skipPagingChecks && !paging.isDefault) {

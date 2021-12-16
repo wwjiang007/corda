@@ -6,7 +6,6 @@ import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.flows.WaitTimeUpdate
 import net.corda.core.utilities.UntrustworthyData
-import java.util.*
 
 /**
  * Implementation of TimedFlow that can handle WaitTimeUpdate messages. Any flow talking to the notary should implement this and use
@@ -16,7 +15,7 @@ import java.util.*
  * want to stop retries overwhelming that internal queue. As the TimedFlow mechanism and the notary service back-pressure are very specific
  * to this use case at the moment, this implementation is internal and not for general use.
  */
-abstract class BackpressureAwareTimedFlow<ResultType>(parentSpanId : UUID? = null) : FlowLogic<ResultType>(parentSpanId), TimedFlow {
+abstract class BackpressureAwareTimedFlow<ResultType> : FlowLogic<ResultType>(), TimedFlow {
     @CordaInternal
     @Suspendable
     inline fun <reified ReceiveType> receiveResultOrTiming(session: FlowSession): UntrustworthyData<ReceiveType> {

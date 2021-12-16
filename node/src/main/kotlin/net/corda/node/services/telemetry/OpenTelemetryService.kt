@@ -3,20 +3,7 @@ package net.corda.node.services.telemetry
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.Span
-import io.opentelemetry.api.trace.SpanBuilder
-import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.context.Context
 import io.opentelemetry.context.Scope
-import io.opentelemetry.context.propagation.ContextPropagators
-import io.opentelemetry.exporter.otlp.internal.RetryPolicy
-import io.opentelemetry.exporter.otlp.internal.grpc.DefaultGrpcExporterBuilder
-import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter
-import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporterBuilder
-import io.opentelemetry.sdk.OpenTelemetrySdk
-import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.sdk.trace.export.BatchSpanProcessor
-import io.opentelemetry.semconv.resource.attributes.ResourceAttributes
 import net.corda.core.node.services.SerializableSpanContext
 import net.corda.core.node.services.TelemetryService
 import net.corda.core.serialization.SingletonSerializeAsToken
@@ -39,17 +26,11 @@ class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), 
 
     private val spans = ConcurrentHashMap<UUID, SpanInfo>()
 
-    override fun startSpan(name: String, attributes : Map<String,String>, parentSpanId : UUID?) : UUID {
+    override fun startSpan(name: String, attributes : Map<String,String>) : UUID {
         val attributesMap = attributes.toList().fold(Attributes.builder()) { builder, attribute -> builder.put(attribute.first, attribute.second) }.build()
         val tracer = GlobalOpenTelemetry.getTracerProvider().get(OpenTelemetryService::class.java.name)
         val spanBuilder = tracer.spanBuilder(name).setAllAttributes(attributesMap)
-        val span = if (parentSpanId == null) {
-            spanBuilder.setNoParent()
-        } else {
-            val parentSpan = spans[parentSpanId]?.span ?: throw IllegalArgumentException("Couldn't find a span for id ${parentSpanId}")
-            spanBuilder.setParent(Context.current().with(parentSpan))
-        }.startSpan()
-
+        val span = spanBuilder.startSpan()
         return addSpan(span)
     }
 
@@ -58,6 +39,10 @@ class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), 
             it.span.end()
             it.scope.close()
         }
+    }
+
+    override fun getCurrentSpanContext(): SerializableSpanContext {
+        return SerializableSpanContext(Span.current().spanContext)
     }
 
     override fun getSpanContext(spanId: UUID): SerializableSpanContext {
@@ -72,8 +57,8 @@ class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), 
     }
 
     override fun addRemoteSpanAndStartChildSpan(serializableSpanContext: SerializableSpanContext, name: String, attributes: Map<String, String>): UUID {
-        val remoteSpanId = addRemoteSpan(serializableSpanContext)
-        return startSpan(name, attributes, remoteSpanId)
+        addRemoteSpan(serializableSpanContext)
+        return startSpan(name, attributes)
     }
 
     private fun addSpan(span : Span) : UUID {

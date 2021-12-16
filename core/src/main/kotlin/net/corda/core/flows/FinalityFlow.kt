@@ -46,8 +46,7 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
                                        override val progressTracker: ProgressTracker,
                                        private val sessions: Collection<FlowSession>,
                                        private val newApi: Boolean,
-                                       private val statesToRecord: StatesToRecord = ONLY_RELEVANT,
-                                       parentSpanId : UUID? = null) : FlowLogic<SignedTransaction>(parentSpanId) {
+                                       private val statesToRecord: StatesToRecord = ONLY_RELEVANT) : FlowLogic<SignedTransaction>() {
 
     @CordaInternal
     data class ExtraConstructorArgs(val oldParticipants: Collection<Party>, val sessions: Collection<FlowSession>, val newApi: Boolean, val statesToRecord: StatesToRecord)
@@ -87,9 +86,8 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
     constructor(
             transaction: SignedTransaction,
             sessions: Collection<FlowSession>,
-            progressTracker: ProgressTracker = tracker(),
-            parentSpanId: UUID? = null
-    ) : this(transaction, emptyList(), progressTracker, sessions, true, parentSpanId = parentSpanId)
+            progressTracker: ProgressTracker = tracker()
+    ) : this(transaction, emptyList(), progressTracker, sessions, true)
 
     /**
      * Notarise the given transaction and broadcast it to all the participants.
@@ -144,7 +142,7 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
     @Suspendable
     @Throws(NotaryException::class)
     override fun call(): SignedTransaction {
-        val spanId = serviceHub.telemetryService.startSpan("FinalityFlow",parentSpanId = parentSpanId)
+        val spanId = serviceHub.telemetryService.startSpan("FinalityFlow")
 
         if (!newApi) {
             logger.warnOnce("The current usage of FinalityFlow is unsafe. Please consider upgrading your CorDapp to use " +
@@ -177,11 +175,11 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
             }
         }
 
-        val notarised = notariseAndRecord(spanId)
+        val notarised = notariseAndRecord()
 
         progressTracker.currentStep = BROADCASTING
 
-        val broadcastSpanId = serviceHub.telemetryService.startSpan("Broadcast", parentSpanId = spanId)
+        val broadcastSpanId = serviceHub.telemetryService.startSpan("Broadcast")
         if (newApi) {
             oldV3Broadcast(notarised, oldParticipants.toSet())
             for (session in sessions) {
@@ -227,18 +225,18 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
     }
 
     @Suspendable
-    private fun notariseAndRecord(parentSpanId: UUID): SignedTransaction {
-        val spanId = serviceHub.telemetryService.startSpan("notariseAndRecord", parentSpanId = parentSpanId)
+    private fun notariseAndRecord(): SignedTransaction {
+        val spanId = serviceHub.telemetryService.startSpan("notariseAndRecord")
         val notarised = if (needsNotarySignature(transaction)) {
             progressTracker.currentStep = NOTARISING
-            val notarySignatures = subFlow(NotaryFlow.Client(transaction, skipVerification = true, parentSpanId = spanId))
+            val notarySignatures = subFlow(NotaryFlow.Client(transaction, skipVerification = true))
             transaction + notarySignatures
         } else {
             logger.info("No need to notarise this transaction.")
             transaction
         }
         logger.info("Recording transaction locally.")
-        val subSpanId = serviceHub.telemetryService.startSpan("Record", parentSpanId = spanId)
+        val subSpanId = serviceHub.telemetryService.startSpan("Record")
         serviceHub.recordTransactions(statesToRecord, listOf(notarised))
         serviceHub.telemetryService.endSpan(subSpanId)
         logger.info("Recorded transaction locally successfully.")
