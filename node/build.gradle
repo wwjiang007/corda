@@ -251,6 +251,9 @@ dependencies {
     compile group: 'io.opentelemetry', name: 'opentelemetry-exporter-otlp-trace', version: '1.9.1'
     compile group: 'io.opentelemetry', name: 'opentelemetry-semconv', version: '1.9.1-alpha'
 
+    // And add the open telemetry agent
+    compile name: 'opentelemetry-javaagent'
+
     compile group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.42.1'
     compile group: 'io.grpc', name: 'grpc-stub', version: '1.42.1'
 }

@@ -423,6 +423,9 @@ allprojects {
             mavenCentral()
             jcenter()
         }
+        flatDir {
+            dirs "${rootProject.projectDir}/lib"
+        }
     }
 
     configurations {
