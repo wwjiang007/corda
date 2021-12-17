@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 data class SpanInfo(val span : Span, val scope: Scope)
 
-class OpenTelemetryService(serviceName : String) : SingletonSerializeAsToken(), TelemetryService {
+class OpenTelemetryService() : SingletonSerializeAsToken(), TelemetryService {
 
     private val spans = ConcurrentHashMap<UUID, SpanInfo>()
 
