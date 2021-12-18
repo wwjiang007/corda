@@ -346,7 +346,9 @@ class FlowStateMachineImpl<R>(override val id: StateMachineRunId,
             // Needed because in previous versions of the finance app we used Thread.contextClassLoader to resolve services defined in cordapps.
             Thread.currentThread().contextClassLoader = (serviceHub.cordappProvider as CordappProviderImpl).cordappLoader.appClassLoader
 
+            val spanId = serviceHub.telemetryService.startSpan(logic.javaClass.name)
             val result = logic.call()
+            serviceHub.telemetryService.endSpan(spanId)
             suspend(FlowIORequest.WaitForSessionConfirmations(), maySkipCheckpoint = true)
             Try.Success(result)
         } catch (t: Throwable) {
@@ -416,9 +418,11 @@ class FlowStateMachineImpl<R>(override val id: StateMachineRunId,
                 isDbTransactionOpenOnEntry = true,
                 isDbTransactionOpenOnExit = true
         )
+        val spanId = serviceHub.telemetryService.startSpan(subFlow.javaClass.name)
         return try {
             subFlow.call()
         } finally {
+            serviceHub.telemetryService.endSpan(spanId)
             processEventImmediately(
                     Event.LeaveSubFlow,
                     isDbTransactionOpenOnEntry = true,
