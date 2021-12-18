@@ -213,7 +213,8 @@ open class MockServices private constructor(
                     TestingNamedCacheFactory(),
                     identityService,
                     persistence,
-                    MockCryptoService(aliasKeyMap)
+                    MockCryptoService(aliasKeyMap),
+                    NoopTelemetryService()
             )
             persistence.transaction { keyManagementService.start(aliasedMoreKeys + aliasedIdentityKey) }
 

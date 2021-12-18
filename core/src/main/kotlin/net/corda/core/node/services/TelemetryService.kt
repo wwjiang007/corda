@@ -30,3 +30,29 @@ interface TelemetryService {
     fun addRemoteSpanAndStartChildSpan(serializableSpanContext: SerializableSpanContext, name: String, attributes : Map<String,String> = emptyMap()) : UUID
 
 }
+
+class NoopTelemetryService : TelemetryService {
+    override fun startSpan(name: String, attributes: Map<String, String>): UUID {
+        return UUID.randomUUID()
+    }
+
+    override fun endSpan(spanId: UUID) {
+
+    }
+
+    override fun getCurrentSpanContext(): SerializableSpanContext {
+        throw UnsupportedOperationException()
+    }
+
+    override fun getSpanContext(spanId: UUID): SerializableSpanContext {
+        throw UnsupportedOperationException()
+    }
+
+    override fun addRemoteSpan(serializableSpanContext: SerializableSpanContext): UUID {
+        return UUID.randomUUID()
+    }
+
+    override fun addRemoteSpanAndStartChildSpan(serializableSpanContext: SerializableSpanContext, name: String, attributes: Map<String, String>): UUID {
+        return UUID.randomUUID()
+    }
+}

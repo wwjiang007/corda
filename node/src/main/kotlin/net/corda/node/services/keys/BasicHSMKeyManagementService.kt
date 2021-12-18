@@ -2,6 +2,7 @@ package net.corda.node.services.keys
 
 import net.corda.core.crypto.*
 import net.corda.core.internal.NamedCacheFactory
+import net.corda.core.node.services.TelemetryService
 import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.core.serialization.serialize
 import net.corda.core.utilities.MAX_HASH_HEX_SIZE
@@ -31,7 +32,8 @@ class BasicHSMKeyManagementService(
         cacheFactory: NamedCacheFactory,
         override val identityService: PersistentIdentityService,
         private val database: CordaPersistence,
-        private val cryptoService: SignOnlyCryptoService
+        private val cryptoService: SignOnlyCryptoService,
+        private val telemetryService: TelemetryService
 ) : SingletonSerializeAsToken(), KeyManagementServiceInternal {
 
     @Entity
@@ -146,6 +148,7 @@ class BasicHSMKeyManagementService(
     // TODO: A full KeyManagementService implementation needs to record activity to the Audit Service and to limit
     //      signing to appropriately authorised contexts and initiating users.
     override fun sign(signableData: SignableData, publicKey: PublicKey): TransactionSignature {
+        val spanId = telemetryService.startSpan("BasicHSMKeyManagementService.sign")
         val signingPublicKey = getSigningPublicKey(publicKey)
         return if (signingPublicKey in originalKeysMap) {
             val sigKey: SignatureScheme = Crypto.findSignatureScheme(signingPublicKey)
@@ -158,6 +161,6 @@ class BasicHSMKeyManagementService(
         } else {
             val keyPair = getSigningKeyPair(signingPublicKey)
             keyPair.sign(signableData)
-        }
+        }.also { telemetryService.endSpan(spanId) }
     }
 }
