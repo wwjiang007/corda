@@ -12,7 +12,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 //@todo
-//1. auto instrumentation to reveal db
+//1. auto instrumentation to reveal db                               TICK
 //2. signing                                                         TICK
 //3. rpc client
 //4. try on enterprise
@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
 //6. take configuration from config file
 //7. the span should start only after it was added to the map        TICK
 //8. dev mode false
+// 9. @withSpan
 
 data class SpanInfo(var span : Span?, var scope: Scope?, var spanBuilder: SpanBuilder?) {
     fun buildAndStartSpan() {
