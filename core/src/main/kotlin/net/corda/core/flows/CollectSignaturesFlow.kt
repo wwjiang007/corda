@@ -88,7 +88,6 @@ class CollectSignaturesFlow @JvmOverloads constructor(val partiallySignedTx: Sig
 
     @Suspendable
     override fun call(): SignedTransaction {
-        val spanId = serviceHub.telemetryService.startSpan("CollectSignatures")
         // Check the signatures which have already been provided and that the transaction is valid.
         // Usually just the Initiator and possibly an oracle would have signed at this point.
         val myKeys: Iterable<PublicKey> = myOptionalKeys ?: listOf(ourIdentity.owningKey)
@@ -185,7 +184,7 @@ class CollectSignaturesFlow @JvmOverloads constructor(val partiallySignedTx: Sig
         progressTracker.currentStep = VERIFYING
         if (notaryKey != null) stx.verifySignaturesExcept(notaryKey) else stx.verifyRequiredSignatures()
 
-        return stx.also { serviceHub.telemetryService.endSpan(spanId) }
+        return stx
     }
 }
 
@@ -204,7 +203,6 @@ class CollectSignatureFlow(val partiallySignedTx: SignedTransaction, val session
 
     @Suspendable
     override fun call(): List<TransactionSignature> {
-        val spanId = serviceHub.telemetryService.startSpan("CollectSignature")
         // SendTransactionFlow allows counterparty to access our data to resolve the transaction.
         subFlow(SendTransactionFlow(session, partiallySignedTx))
         // Send the key we expect the counterparty to sign with - this is important where they may have several
@@ -217,7 +215,7 @@ class CollectSignatureFlow(val partiallySignedTx: SignedTransaction, val session
                 require(signingKeys[index].isFulfilledBy(signature.by)) { "Not signed by the required signing key." }
             }
             signatures
-        }.also { serviceHub.telemetryService.endSpan(spanId) }
+        }
     }
 }
 // DOCEND 1

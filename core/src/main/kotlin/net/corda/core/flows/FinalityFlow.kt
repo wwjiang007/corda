@@ -142,8 +142,6 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
     @Suspendable
     @Throws(NotaryException::class)
     override fun call(): SignedTransaction {
-        val spanId = serviceHub.telemetryService.startSpan("FinalityFlow")
-
         if (!newApi) {
             logger.warnOnce("The current usage of FinalityFlow is unsafe. Please consider upgrading your CorDapp to use " +
                     "FinalityFlow with FlowSessions. (${serviceHub.getAppContext().cordapp.info})")
@@ -179,7 +177,6 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
 
         progressTracker.currentStep = BROADCASTING
 
-        val broadcastSpanId = serviceHub.telemetryService.startSpan("Broadcast")
         if (newApi) {
             oldV3Broadcast(notarised, oldParticipants.toSet())
             for (session in sessions) {
@@ -198,11 +195,10 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
         } else {
             oldV3Broadcast(notarised, (externalTxParticipants + oldParticipants).toSet())
         }
-        serviceHub.telemetryService.endSpan(broadcastSpanId)
 
         logger.info("All parties received the transaction successfully.")
 
-        return notarised.also { serviceHub.telemetryService.endSpan(spanId) }
+        return notarised
     }
 
     @Suspendable

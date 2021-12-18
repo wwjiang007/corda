@@ -67,7 +67,6 @@ class NotaryFlow {
         @Suspendable
         @Throws(NotaryException::class)
         override fun call(): List<TransactionSignature> {
-            val spanId = serviceHub.telemetryService.startSpan("NotaryFlow")
             stx.pushToLoggingContext()
             val notaryParty = checkTransaction()
             logger.info("Sending transaction to notary: ${notaryParty.name}.")
@@ -75,7 +74,7 @@ class NotaryFlow {
             val response = notarise(notaryParty)
             logger.info("Notary responded (${notaryParty.name}).")
             progressTracker.currentStep = VALIDATING
-            return validateResponse(response, notaryParty).also { serviceHub.telemetryService.endSpan(spanId) }
+            return validateResponse(response, notaryParty)
         }
 
         /**
