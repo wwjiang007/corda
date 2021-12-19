@@ -72,7 +72,8 @@ class TransientReference<out A>(@Transient val value: A)
 class FlowStateMachineImpl<R>(override val id: StateMachineRunId,
                               override val logic: FlowLogic<R>,
                               scheduler: FiberScheduler,
-                              override val creationTime: Long = System.currentTimeMillis()
+                              override val creationTime: Long = System.currentTimeMillis(),
+                              val spanContext: SerializableSpanContext?
 ) : Fiber<Unit>(id.toString(), scheduler), FlowStateMachine<R>, FlowFiber {
     companion object {
         /**
