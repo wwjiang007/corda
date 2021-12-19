@@ -140,7 +140,7 @@ class StartedFlowTransition(
             sessionIdToSession[sessionId] = session
         }
         return builder {
-            sendToSessionsTransition(sessionIdToMessage)
+            sendToSessionsTransition(sessionIdToMessage, sessionIdToSession) //this could take session id to session
             if (isErrored()) {
                 FlowContinuation.ProcessEvents
             } else {
@@ -285,6 +285,7 @@ class StartedFlowTransition(
                 continue
             }
             val spanContext = sessionIdToSession[sourceSessionId]?.spanContext
+            logger.info("AK: and this one? StartedFlowTransition:288")
             val initialMessage = createInitialSessionMessage(sessionState.initiatingSubFlow, sourceSessionId, sessionState.additionalEntropy, null, spanContext)
             val newSessionState = SessionState.Initiating(
                     bufferedMessages = arrayListOf(),
@@ -303,7 +304,8 @@ class StartedFlowTransition(
             val sessionIdToMessage = flowIORequest.sessionToMessage.mapKeys {
                 sessionToSessionId(it.key)
             }
-            sendToSessionsTransition(sessionIdToMessage)
+            val sessionIdToSession = flowIORequest.sessionToMessage.map { sessionToSessionId(it.key) to it.key as FlowSessionImpl}.toMap()
+            sendToSessionsTransition(sessionIdToMessage, sessionIdToSession)
             if (isErrored()) {
                 FlowContinuation.ProcessEvents
             } else {
@@ -312,7 +314,7 @@ class StartedFlowTransition(
         }
     }
 
-    private fun TransitionBuilder.sendToSessionsTransition(sourceSessionIdToMessage: Map<SessionId, SerializedBytes<Any>>) {
+    private fun TransitionBuilder.sendToSessionsTransition(sourceSessionIdToMessage: Map<SessionId, SerializedBytes<Any>>, sourceSessionIdToSession : Map<SessionId, FlowSessionImpl>) {
         val checkpoint = startingState.checkpoint
         val newSessions = LinkedHashMap(checkpoint.checkpointState.sessions)
         var index = 0
@@ -325,6 +327,7 @@ class StartedFlowTransition(
             logger.info("AK: so where is this happening StartedFlowTransition:325")
             val uninitiatedSessionState = sessionState as SessionState.Uninitiated
             val deduplicationId = DeduplicationId.createForNormal(checkpoint, index++, sessionState)
+            val spanContext = sourceSessionIdToSession[sourceSessionId]?.spanContext
             val initialMessage = createInitialSessionMessage(uninitiatedSessionState.initiatingSubFlow, sourceSessionId, uninitiatedSessionState.additionalEntropy, message, spanContext)
             newSessions[sourceSessionId] = SessionState.Initiating(
                     bufferedMessages = arrayListOf(),

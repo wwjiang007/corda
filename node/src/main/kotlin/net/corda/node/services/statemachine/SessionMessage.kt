@@ -55,7 +55,8 @@ data class InitialSessionMessage(
             "initiationEntropy=$initiationEntropy, " +
             "initiatorFlowClassName=$initiatorFlowClassName, " +
             "appName=$appName, " +
-            "firstPayload=${firstPayload?.javaClass}" +
+            "firstPayload=${firstPayload?.javaClass}," +
+            "spanContext=${spanContext}" +
             ")"
 }
 
