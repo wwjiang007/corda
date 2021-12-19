@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
 //7. the span should start only after it was added to the map        TICK
 //8. dev mode false
 // 9. @withSpan
+// 10. initiator and initiated running on same node
 
 data class SpanInfo(var span : Span?, var scope: Scope?, var spanBuilder: SpanBuilder?) {
     fun buildAndStartSpan() {
