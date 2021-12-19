@@ -105,7 +105,6 @@ class NotaryFlow {
         @Suspendable
         protected fun notarise(notaryParty: Party): UntrustworthyData<NotarisationResponse> {
             val session = initiateFlow(notaryParty)
-            session.send(serviceHub.telemetryService.getCurrentSpanContext())
             val requestSignature = generateRequestSignature()
             return if (isValidating(notaryParty)) {
                 sendAndReceiveValidating(session, requestSignature)

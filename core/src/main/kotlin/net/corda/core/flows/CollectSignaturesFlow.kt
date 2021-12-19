@@ -14,7 +14,6 @@ import net.corda.core.transactions.WireTransaction
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.unwrap
 import java.security.PublicKey
-import java.util.*
 
 /**
  * The [CollectSignaturesFlow] is used to automate the collection of counterparty signatures for a given transaction.

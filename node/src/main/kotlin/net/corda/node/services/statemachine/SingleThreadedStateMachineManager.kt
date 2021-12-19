@@ -859,7 +859,6 @@ internal class SingleThreadedStateMachineManager(
         }
     }
 
-    //here
     private fun onSessionInit(sessionMessage: InitialSessionMessage, sender: Party, event: ExternalEvent.ExternalMessageEvent) {
         try {
             logger.info("AK: so what's initial session message ${sessionMessage}")
