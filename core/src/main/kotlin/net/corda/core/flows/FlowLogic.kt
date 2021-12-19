@@ -156,7 +156,7 @@ abstract class FlowLogic<out T> {
     fun initiateFlow(destination: Destination): FlowSession {
         require(destination is Party || destination is AnonymousParty) { "Unsupported destination type ${destination.javaClass.name}" }
         return stateMachine.initiateFlow(destination, serviceHub.identityService.wellKnownPartyFromAnonymous(destination as AbstractParty)
-            ?: throw IllegalArgumentException("Could not resolve destination: $destination"))
+            ?: throw IllegalArgumentException("Could not resolve destination: $destination"), serviceHub.telemetryService.getCurrentSpanContext())
     }
 
     /**
@@ -164,7 +164,7 @@ abstract class FlowLogic<out T> {
      * that this function does not communicate in itself, the counter-flow will be kicked off by the first send/receive.
      */
     @Suspendable
-    fun initiateFlow(party: Party): FlowSession = stateMachine.initiateFlow(party, party)
+    fun initiateFlow(party: Party): FlowSession = stateMachine.initiateFlow(party, party, serviceHub.telemetryService.getCurrentSpanContext())
 
     /**
      * Specifies the identity, with certificate, to use for this flow. This will be one of the multiple identities that
