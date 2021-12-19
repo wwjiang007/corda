@@ -36,6 +36,7 @@ import net.corda.core.internal.isRegularFile
 import net.corda.core.internal.location
 import net.corda.core.internal.toPath
 import net.corda.core.internal.uncheckedCast
+import net.corda.core.node.services.SerializableSpanContext
 import net.corda.core.serialization.SerializationDefaults
 import net.corda.core.serialization.SerializedBytes
 import net.corda.core.serialization.internal.CheckpointSerializationContext
@@ -179,6 +180,7 @@ class FlowStateMachineImpl<R>(override val id: StateMachineRunId,
             val stateMachine = transientValues.stateMachine
             val oldState = transientState
             val actionExecutor = transientValues.actionExecutor
+            //ak: lead here
             val transition = stateMachine.transition(event, oldState)
             val (continuation, newState) = transitionExecutor.executeTransition(
                 this,
@@ -461,10 +463,10 @@ class FlowStateMachineImpl<R>(override val id: StateMachineRunId,
     }
 
     @Suspendable
-    override fun initiateFlow(destination: Destination, wellKnownParty: Party): FlowSession {
+    override fun initiateFlow(destination: Destination, wellKnownParty: Party, spanContext: SerializableSpanContext?): FlowSession {
         require(destination is Party || destination is AnonymousParty) { "Unsupported destination type ${destination.javaClass.name}" }
         val resume = processEventImmediately(
-                Event.InitiateFlow(destination, wellKnownParty),
+                Event.InitiateFlow(destination, wellKnownParty, spanContext),
                 isDbTransactionOpenOnEntry = true,
                 isDbTransactionOpenOnExit = true
         ) as FlowContinuation.Resume

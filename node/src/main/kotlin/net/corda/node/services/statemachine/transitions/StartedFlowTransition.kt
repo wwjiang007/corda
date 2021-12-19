@@ -7,6 +7,7 @@ import net.corda.core.flows.UnexpectedFlowEndException
 import net.corda.core.identity.Party
 import net.corda.core.internal.DeclaredField
 import net.corda.core.internal.FlowIORequest
+import net.corda.core.node.services.SerializableSpanContext
 import net.corda.core.serialization.SerializedBytes
 import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.toNonEmptySet
@@ -73,7 +74,7 @@ class StartedFlowTransition(
         return builder {
             // Initialise uninitialised sessions in order to receive the associated FlowInfo. Some or all sessions may
             // not be initialised yet.
-            sendInitialSessionMessagesIfNeeded(sessionIdToSession.keys)
+            sendInitialSessionMessagesIfNeeded(sessionIdToSession)
             val flowInfoMap = getFlowInfoFromSessions(sessionIdToSession)
             if (flowInfoMap == null) {
                 FlowContinuation.ProcessEvents
@@ -201,7 +202,7 @@ class StartedFlowTransition(
                 sessionIdToSession[(session as FlowSessionImpl).sourceSessionId] = session
             }
             // send initialises to uninitialised sessions
-            sendInitialSessionMessagesIfNeeded(sessionIdToSession.keys)
+            sendInitialSessionMessagesIfNeeded(sessionIdToSession)
             try {
                 val receivedMap = receiveFromSessionsTransition(sessionIdToSession)
                 if (receivedMap == null) {
@@ -271,11 +272,11 @@ class StartedFlowTransition(
         }
     }
 
-    private fun TransitionBuilder.sendInitialSessionMessagesIfNeeded(sourceSessions: Set<SessionId>) {
+    private fun TransitionBuilder.sendInitialSessionMessagesIfNeeded(sessionIdToSession : Map<SessionId, FlowSessionImpl>) {
         val checkpoint = startingState.checkpoint
         val newSessions = LinkedHashMap<SessionId, SessionState>(checkpoint.checkpointState.sessions)
         var index = 0
-        for (sourceSessionId in sourceSessions) {
+        for (sourceSessionId in sessionIdToSession.keys) {
             val sessionState = checkpoint.checkpointState.sessions[sourceSessionId]
             if (sessionState == null) {
                 return freshErrorTransition(CannotFindSessionException(sourceSessionId))
@@ -283,7 +284,8 @@ class StartedFlowTransition(
             if (sessionState !is SessionState.Uninitiated) {
                 continue
             }
-            val initialMessage = createInitialSessionMessage(sessionState.initiatingSubFlow, sourceSessionId, sessionState.additionalEntropy, null)
+            val spanContext = sessionIdToSession[sourceSessionId]?.spanContext
+            val initialMessage = createInitialSessionMessage(sessionState.initiatingSubFlow, sourceSessionId, sessionState.additionalEntropy, null, spanContext)
             val newSessionState = SessionState.Initiating(
                     bufferedMessages = arrayListOf(),
                     rejectionError = null,
@@ -320,9 +322,10 @@ class StartedFlowTransition(
                 .groupBy { it.second::class }
 
         val sendInitialActions = messagesByType[SessionState.Uninitiated::class]?.map { (sourceSessionId, sessionState, message) ->
+            logger.info("AK: so where is this happening StartedFlowTransition:325")
             val uninitiatedSessionState = sessionState as SessionState.Uninitiated
             val deduplicationId = DeduplicationId.createForNormal(checkpoint, index++, sessionState)
-            val initialMessage = createInitialSessionMessage(uninitiatedSessionState.initiatingSubFlow, sourceSessionId, uninitiatedSessionState.additionalEntropy, message)
+            val initialMessage = createInitialSessionMessage(uninitiatedSessionState.initiatingSubFlow, sourceSessionId, uninitiatedSessionState.additionalEntropy, message, spanContext)
             newSessions[sourceSessionId] = SessionState.Initiating(
                     bufferedMessages = arrayListOf(),
                     rejectionError = null,
@@ -494,7 +497,8 @@ class StartedFlowTransition(
             initiatingSubFlow: SubFlow.Initiating,
             sourceSessionId: SessionId,
             additionalEntropy: Long,
-            payload: SerializedBytes<Any>?
+            payload: SerializedBytes<Any>?,
+            spanContext: SerializableSpanContext?
     ): InitialSessionMessage {
         return InitialSessionMessage(
                 initiatorSessionId = sourceSessionId,
@@ -503,7 +507,8 @@ class StartedFlowTransition(
                 initiatorFlowClassName = initiatingSubFlow.classToInitiateWith.name,
                 flowVersion = initiatingSubFlow.flowInfo.flowVersion,
                 appName = initiatingSubFlow.flowInfo.appName,
-                firstPayload = payload
+                firstPayload = payload,
+                spanContext = spanContext
         )
     }
 

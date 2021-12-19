@@ -859,11 +859,13 @@ internal class SingleThreadedStateMachineManager(
         }
     }
 
+    //here
     private fun onSessionInit(sessionMessage: InitialSessionMessage, sender: Party, event: ExternalEvent.ExternalMessageEvent) {
         try {
+            logger.info("AK: so what's initial session message ${sessionMessage}")
             val initiatedFlowFactory = getInitiatedFlowFactory(sessionMessage)
             val initiatedSessionId = SessionId.createRandom(secureRandom)
-            val senderSession = FlowSessionImpl(sender, sender, initiatedSessionId)
+            val senderSession = FlowSessionImpl(sender, sender, sessionMessage.spanContext, initiatedSessionId)
             val flowLogic = initiatedFlowFactory.createFlow(senderSession)
             val initiatedFlowInfo = when (initiatedFlowFactory) {
                 is InitiatedFlowFactory.Core -> FlowInfo(serviceHub.myInfo.platformVersion, "corda")
@@ -910,6 +912,7 @@ internal class SingleThreadedStateMachineManager(
     }
 
     @Suppress("LongParameterList")
+    //here
     private fun <A> startInitiatedFlow(
             flowId: StateMachineRunId,
             flowLogic: FlowLogic<A>,

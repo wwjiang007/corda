@@ -9,6 +9,7 @@ import net.corda.core.identity.Party
 import net.corda.core.internal.FlowIORequest
 import net.corda.core.internal.FlowStateMachine
 import net.corda.core.internal.checkPayloadIs
+import net.corda.core.node.services.SerializableSpanContext
 import net.corda.core.serialization.SerializationDefaults
 import net.corda.core.serialization.SerializedBytes
 import net.corda.core.serialization.serialize
@@ -18,6 +19,7 @@ import net.corda.core.utilities.UntrustworthyData
 class FlowSessionImpl(
         override val destination: Destination,
         private val wellKnownParty: Party,
+        val spanContext: SerializableSpanContext?,
         val sourceSessionId: SessionId
 ) : FlowSession() {
 
