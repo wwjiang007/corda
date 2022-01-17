@@ -91,6 +91,8 @@ data class TestTransactionDSLInterpreter private constructor(
     // Implementing [ServiceHubCoreInternal] allows better use in internal Corda tests
     val services: ServicesForResolution = object : ServiceHubCoreInternal, ServiceHub by ledgerInterpreter.services {
 
+        override val isDevMode: Boolean = true
+
         // [validatedTransactions.getTransaction] needs overriding as there are no calls to
         // [ServiceHub.recordTransactions] in the test dsl
         override val validatedTransactions: TransactionStorage =

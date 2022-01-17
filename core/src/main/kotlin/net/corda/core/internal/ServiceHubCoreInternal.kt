@@ -24,6 +24,8 @@ interface ServiceHubCoreInternal : ServiceHub {
     fun createTransactionsResolver(flow: ResolveTransactionsFlow): TransactionsResolver
 
     val attachmentsClassLoaderCache: AttachmentsClassLoaderCache
+
+    val isDevMode: Boolean
 }
 
 interface TransactionsResolver {

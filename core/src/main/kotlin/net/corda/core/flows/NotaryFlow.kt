@@ -132,8 +132,10 @@ class NotaryFlow {
         @Suspendable
         private fun sendAndReceiveValidating(session: FlowSession, signature: NotarisationRequestSignature): UntrustworthyData<NotarisationResponse> {
             val payload = NotarisationPayload(stx, signature)
-            subFlow(NotarySendTransactionFlow(session, payload))
-            return receiveResultOrTiming(session)
+            return hospitalizeNonNotaryExceptions {
+                subFlow(NotarySendTransactionFlow(session, payload))
+                receiveResultOrTiming(session)
+            }
         }
 
         @Suspendable
@@ -146,8 +148,10 @@ class NotaryFlow {
                 })
                 else -> ctx
             }
-            session.send(NotarisationPayload(tx, signature))
-            return receiveResultOrTiming(session)
+            return hospitalizeNonNotaryExceptions {
+                session.send(NotarisationPayload(tx, signature))
+                receiveResultOrTiming(session)
+            }
         }
 
         /** Checks that the notary's signature(s) is/are valid. */
@@ -177,6 +181,32 @@ class NotaryFlow {
             // TODO: This is not required any more once our AMQP serialization supports turning off object referencing.
             val notarisationRequest = NotarisationRequest(stx.inputs.map { it.copy(txhash = SecureHash.create(it.txhash.toString())) }, stx.id)
             return notarisationRequest.generateSignature(serviceHub)
+        }
+
+        /**
+         * Executes the [block] and handles the exceptions that are thrown by it.
+         *
+         * General unexpected exceptions in the notary are handled by the [NotaryDoctor] in [StaffedFlowHospital].
+         *
+         * All other notary exceptions are exceptions that should reach the calling flow and handled there or fail the flow completely.
+         *
+         * Any other error is unexpected and causes the flow to hospitalize itself.
+         *
+         * [block] can containing suspending methods because [hospitalizeNonNotaryExceptions] is an inline function.
+         */
+        private inline fun <T> hospitalizeNonNotaryExceptions(block: () -> T): T {
+            return try {
+                block()
+            } catch (e: Exception) {
+                if (e is NotaryException) {
+                    throw e
+                } else {
+                    throw HospitalizeFlowException(
+                        "Unexpected error while notarising transaction (txId = ${stx.id})",
+                        e
+                    )
+                }
+            }
         }
     }
 }

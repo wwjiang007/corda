@@ -1,6 +1,11 @@
 package net.corda.node.services.statemachine
 
+import net.corda.core.flows.DataVendingFlow
+import net.corda.core.flows.FinalityFlow
+import net.corda.core.flows.NotaryFlow
 import net.corda.core.flows.ReceiveFinalityFlow
+import net.corda.core.flows.SendTransactionFlow
+import net.corda.core.flows.UnexpectedFlowEndException
 import net.corda.core.internal.ResolveTransactionsFlow
 import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.OpaqueBytes
@@ -273,6 +278,147 @@ class StateMachineFinalityErrorHandlingTest : StateMachineErrorHandlingTest() {
                 discharged = 3,
                 observation = 1
             )
+            assertEquals(1, alice.rpc.stateMachinesSnapshot().size)
+            assertEquals(1, charlie.rpc.stateMachinesSnapshot().size)
+        }
+    }
+
+    @Test(timeout = 300_000)
+    fun `unexpected exception during SendTransactionFlow in FinalityFlow causes the flow to be kept for observation`() {
+        startDriver(notarySpec = NotarySpec(DUMMY_NOTARY_NAME, validating = false)) {
+            val (charlie, alice, port) = createNodeAndBytemanNode(CHARLIE_NAME, ALICE_NAME, FINANCE_CORDAPPS)
+
+            val rules = """
+                RULE Set flag when entering finality flow
+                CLASS ${NotaryFlow.Client::class.java.name}
+                METHOD call
+                AT EXIT
+                IF !flagged("finality_flag")
+                DO flag("finality_flag"); traceln("Setting finality flag")
+                ENDRULE
+                
+                RULE Throw exception when entering send transaction flow
+                CLASS ${DataVendingFlow::class.java.name}
+                METHOD call
+                AT ENTRY
+                IF flagged("finality_flag")
+                DO traceln("Throwing exception"); throw new java.lang.RuntimeException("die dammit die")
+                ENDRULE
+            """.trimIndent()
+
+            submitBytemanRules(rules, port)
+
+            assertFailsWith<TimeoutException> {
+                alice.rpc.startFlow(
+                    ::CashIssueAndPaymentFlow,
+                    500.DOLLARS,
+                    OpaqueBytes.of(0x01),
+                    charlie.nodeInfo.singleIdentity(),
+                    false,
+                    defaultNotaryIdentity
+                ).returnValue.getOrThrow(30.seconds)
+            }
+
+            alice.rpc.assertNumberOfCheckpoints(hospitalized = 1)
+            alice.rpc.assertHospitalCounts(
+                discharged = 0,
+                observation = 1
+            )
+            charlie.rpc.assertNumberOfCheckpoints(runnable = 1)
+            assertEquals(1, alice.rpc.stateMachinesSnapshot().size)
+            assertEquals(1, charlie.rpc.stateMachinesSnapshot().size)
+        }
+    }
+
+    @Test(timeout = 300_000)
+    fun `unexpected flow end exception during SendTransactionFlow in FinalityFlow causes the flow to fail`() {
+        startDriver(notarySpec = NotarySpec(DUMMY_NOTARY_NAME, validating = false)) {
+            val (charlie, alice, port) = createNodeAndBytemanNode(CHARLIE_NAME, ALICE_NAME, FINANCE_CORDAPPS)
+
+            val rules = """
+                RULE Set flag when entering finality flow
+                CLASS ${NotaryFlow.Client::class.java.name}
+                METHOD call
+                AT EXIT
+                IF !flagged("finality_flag")
+                DO flag("finality_flag"); traceln("Setting finality flag")
+                ENDRULE
+                
+                RULE Throw exception when entering send transaction flow
+                CLASS ${DataVendingFlow::class.java.name}
+                METHOD call
+                AT ENTRY
+                IF flagged("finality_flag")
+                DO traceln("Throwing exception"); throw new net.corda.core.flows.UnexpectedFlowEndException("die dammit die")
+                ENDRULE
+            """.trimIndent()
+
+            submitBytemanRules(rules, port)
+
+            assertFailsWith<UnexpectedFlowEndException> {
+                alice.rpc.startFlow(
+                    ::CashIssueAndPaymentFlow,
+                    500.DOLLARS,
+                    OpaqueBytes.of(0x01),
+                    charlie.nodeInfo.singleIdentity(),
+                    false,
+                    defaultNotaryIdentity
+                ).returnValue.getOrThrow(30.seconds)
+            }
+
+            alice.rpc.assertNumberOfCheckpoints()
+            alice.rpc.assertHospitalCounts(propagated = 1)
+            charlie.rpc.assertNumberOfCheckpoints()
+            assertEquals(0, alice.rpc.stateMachinesSnapshot().size)
+            assertEquals(0, charlie.rpc.stateMachinesSnapshot().size)
+        }
+    }
+
+    /**
+     * [SQLException]s are not explicitly tested because they require the public API method to declare that it throws a [SQLException].
+     */
+    @Test(timeout = 300_000)
+    fun `persistence exception during SendTransactionFlow in FinalityFlow causes the flow to be kept for observation`() {
+        startDriver(notarySpec = NotarySpec(DUMMY_NOTARY_NAME, validating = false)) {
+            val (charlie, alice, port) = createNodeAndBytemanNode(CHARLIE_NAME, ALICE_NAME, FINANCE_CORDAPPS)
+
+            val rules = """
+                RULE Set flag when entering finality flow
+                CLASS ${NotaryFlow.Client::class.java.name}
+                METHOD call
+                AT EXIT
+                IF !flagged("finality_flag")
+                DO flag("finality_flag"); traceln("Setting finality flag")
+                ENDRULE
+                
+                RULE Throw exception when entering send transaction flow
+                CLASS ${DataVendingFlow::class.java.name}
+                METHOD call
+                AT ENTRY
+                IF flagged("finality_flag")
+                DO traceln("Throwing exception"); throw new javax.persistence.PersistenceException("die dammit die")
+                ENDRULE
+            """.trimIndent()
+
+            submitBytemanRules(rules, port)
+
+            assertFailsWith<TimeoutException> {
+                alice.rpc.startFlow(
+                    ::CashIssueAndPaymentFlow,
+                    500.DOLLARS,
+                    OpaqueBytes.of(0x01),
+                    charlie.nodeInfo.singleIdentity(),
+                    false,
+                    defaultNotaryIdentity
+                ).returnValue.getOrThrow(30.seconds)
+            }
+
+            alice.rpc.assertNumberOfCheckpoints(hospitalized = 1)
+            alice.rpc.assertHospitalCounts(
+                discharged = 0,
+                observation = 1
+            )
+            charlie.rpc.assertNumberOfCheckpoints(runnable = 1)
             assertEquals(1, alice.rpc.stateMachinesSnapshot().size)
             assertEquals(1, charlie.rpc.stateMachinesSnapshot().size)
         }

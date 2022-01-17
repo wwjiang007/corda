@@ -306,6 +306,10 @@ abstract class StateMachineErrorHandlingTest {
         }
     }
 
+    internal val finalityFlowClassName: String by lazy {
+        Class.forName("net.corda.core.flows.FinalityFlow").name
+    }
+
     internal val actionExecutorClassName: String by lazy {
         Class.forName("net.corda.node.services.statemachine.ActionExecutorImpl").name
     }

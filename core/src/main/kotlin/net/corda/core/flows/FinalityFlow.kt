@@ -6,6 +6,7 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.isFulfilledBy
 import net.corda.core.identity.Party
 import net.corda.core.identity.groupAbstractPartyByWellKnownParty
+import net.corda.core.internal.ServiceHubCoreInternal
 import net.corda.core.internal.pushToLoggingContext
 import net.corda.core.internal.warnOnce
 import net.corda.core.node.StatesToRecord
@@ -14,6 +15,8 @@ import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.debug
+import java.sql.SQLException
+import javax.persistence.PersistenceException
 
 /**
  * Verifies the given transaction, then sends it to the named notary. If the notary agrees that the transaction
@@ -172,25 +175,15 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
             }
         }
 
-        val notarised = notariseAndRecord()
+        val notarised = notarise()
+
+        record(notarised)
 
         progressTracker.currentStep = BROADCASTING
 
         if (newApi) {
             oldV3Broadcast(notarised, oldParticipants.toSet())
-            for (session in sessions) {
-                try {
-                    subFlow(SendTransactionFlow(session, notarised))
-                    logger.info("Party ${session.counterparty} received the transaction.")
-                } catch (e: UnexpectedFlowEndException) {
-                    throw UnexpectedFlowEndException(
-                            "${session.counterparty} has finished prematurely and we're trying to send them the finalised transaction. " +
-                                    "Did they forget to call ReceiveFinalityFlow? (${e.message})",
-                            e.cause,
-                            e.originalErrorId
-                    )
-                }
-            }
+            broadcast(notarised)
         } else {
             oldV3Broadcast(notarised, (externalTxParticipants + oldParticipants).toSet())
         }
@@ -198,18 +191,6 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
         logger.info("All parties received the transaction successfully.")
 
         return notarised
-    }
-
-    @Suspendable
-    private fun oldV3Broadcast(notarised: SignedTransaction, recipients: Set<Party>) {
-        for (recipient in recipients) {
-            if (!serviceHub.myInfo.isLegalIdentity(recipient)) {
-                logger.debug { "Sending transaction to party $recipient." }
-                val session = initiateFlow(recipient)
-                subFlow(SendTransactionFlow(session, notarised))
-                logger.info("Party $recipient received the transaction.")
-            }
-        }
     }
 
     private fun logCommandData() {
@@ -220,8 +201,8 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
     }
 
     @Suspendable
-    private fun notariseAndRecord(): SignedTransaction {
-        val notarised = if (needsNotarySignature(transaction)) {
+    private fun notarise(): SignedTransaction {
+        return if (needsNotarySignature(transaction)) {
             progressTracker.currentStep = NOTARISING
             val notarySignatures = subFlow(NotaryFlow.Client(transaction, skipVerification = true))
             transaction + notarySignatures
@@ -229,10 +210,31 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
             logger.info("No need to notarise this transaction.")
             transaction
         }
+    }
+
+    private fun record(notarised: SignedTransaction) {
         logger.info("Recording transaction locally.")
-        serviceHub.recordTransactions(statesToRecord, listOf(notarised))
+        try {
+            serviceHub.recordTransactions(statesToRecord, listOf(notarised))
+        } catch (e: Exception) {
+            if (e is SQLException || e is PersistenceException) {
+                // This is unlikely to occur since the database commit occurs later on, however to prevent accidental trapping of database
+                // errors which are handled by the flow hospital, they are rethrown rather than turned into [HospitalizeFlowExceptions].
+                throw e
+            } else {
+                logger.error(
+                    "Unexpected error occurred while recording local transaction (txId = ${notarised.id}) in " +
+                            "${FinalityFlow::class.java.name}. This transaction has been notarised and must be recorded. This flow will " +
+                            "be kept in for overnight observation."
+                )
+                throw HospitalizeFlowException(
+                    "Unexpected error occurred while recording local transaction (txId = ${notarised.id}) in " +
+                            FinalityFlow::class.java.name,
+                    e
+                )
+            }
+        }
         logger.info("Recorded transaction locally successfully.")
-        return notarised
     }
 
     private fun needsNotarySignature(stx: SignedTransaction): Boolean {
@@ -260,6 +262,98 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
         val ltx = transaction.toLedgerTransaction(serviceHub, false)
         ltx.verify()
         return ltx
+    }
+
+    @Suspendable
+    private fun oldV3Broadcast(notarised: SignedTransaction, recipients: Set<Party>) {
+        for (recipient in recipients) {
+            if (!serviceHub.myInfo.isLegalIdentity(recipient)) {
+                logger.debug { "Sending transaction to party $recipient." }
+                val session = initiateFlow(recipient)
+                broadcast(notarised, session)
+            }
+        }
+    }
+
+    @Suspendable
+    private fun broadcast(notarised: SignedTransaction) {
+        for (session in sessions) {
+            broadcast(notarised, session)
+        }
+    }
+
+    /**
+     * Sends the notarised transaction to a session.
+     *
+     * This method handles errors that arise while sending the notarised transaction. These include:
+     *
+     * - [UnexpectedFlowEndException] - Unexpected errors that a peer throws. These errors cause the flow to be hospitalised as there is now
+     * an inconsistency in the ledger that needs to be debugged and possibly rectified. If the node is running in dev mode, then the error
+     * is thrown to make local development simpler.
+     *
+     * - [SQLException] and [PersistenceException] - Errors that occur when committing to the database. This can be caused by the
+     * committing of the transaction locally because [record] does not suspend itself, instead the first suspension after calling [record]
+     * will happen in this method. These errors are not handled because the flow hospital already has finer tuned handling for database
+     * errors.
+     *
+     * - Any other exceptions - These are unexpected errors that hospitalise the flow. These flows should be inspected and retried if
+     * possible to resume the flows execution.
+     */
+    @Suspendable
+    private fun broadcast(notarised: SignedTransaction, session: FlowSession) {
+        try {
+            subFlow(SendTransactionFlow(session, notarised))
+            logger.info("Party ${session.counterparty} received finalised transaction (txId = ${notarised.id}).")
+        } catch (e: Exception) {
+            when (e) {
+                is UnexpectedFlowEndException -> {
+                    // If the node is running in dev mode, then throw the error to fail the flow to assist developers in writing their flows
+                    if ((serviceHub as ServiceHubCoreInternal).isDevMode) {
+                        throw UnexpectedFlowEndException(
+                            "${session.counterparty} has finished prematurely and we're trying to send them a finalised transaction " +
+                                    "(txId = ${notarised.id}). Did they forget to call ReceiveFinalityFlow? (${e.message})",
+                            e.cause,
+                            e.originalErrorId
+                        )
+                    } else {
+                        logger.error(
+                            "${session.counterparty} has either experienced an unexpected error or finished prematurely while this flow " +
+                                    "is trying to send them a finalised transaction (txId = ${notarised.id}). Keeping this flow in for " +
+                                    "overnight observation to allow node operators to determine the root cause and providing extra " +
+                                    "information via the flow's checkpoint."
+                        )
+                        throw HospitalizeFlowException(
+                            "${session.counterparty} has either experienced an unexpected error or finished prematurely while this flow " +
+                                    "is trying to send them a finalised transaction (txId = ${notarised.id})",
+                            e
+                        )
+                    }
+                }
+                is SQLException, is PersistenceException -> {
+                    // Lets errors that likely originated from [ServiceHub.recordTransactions] that was called previously to be
+                    // filtered through the error handling here as the flow hospital has the appropriate handling for database
+                    // errors
+                    logger.warn(
+                        "Unexpected database error occurred while recording local transaction (txId = ${notarised.id}) in " +
+                                "${FinalityFlow::class.java.name}. This transaction has been notarised and must be recorded. The flow " +
+                                "hospital will determine whether to retry the flow or keep it for overnight observation."
+                    )
+                    throw e
+                }
+                else -> {
+                    logger.error(
+                        "Unexpected error while this flow is trying to send ${session.counterparty} a finalised transaction (txId = " +
+                                "${notarised.id}). Keeping this flow in for overnight observation to allow node operators to determine " +
+                                "the root cause and providing extra information via the flow's checkpoint."
+                    )
+                    throw HospitalizeFlowException(
+                        "Unexpected error while this this flow is trying to send ${session.counterparty} a finalised transaction (txId = " +
+                                "${notarised.id})",
+                        e
+                    )
+                }
+            }
+        }
     }
 }
 

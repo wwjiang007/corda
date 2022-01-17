@@ -1131,6 +1131,7 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
         private lateinit var _myInfo: NodeInfo
         override val myInfo: NodeInfo get() = _myInfo
 
+        override val isDevMode: Boolean = configuration.devMode
         override val attachmentsClassLoaderCache: AttachmentsClassLoaderCache get() = this@AbstractNode.attachmentsClassLoaderCache
 
         @Volatile
