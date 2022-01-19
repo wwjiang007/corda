@@ -1,10 +1,9 @@
 package net.corda.node.services.statemachine
 
 import net.corda.core.flows.DataVendingFlow
-import net.corda.core.flows.FinalityFlow
+import net.corda.core.flows.NotaryError
 import net.corda.core.flows.NotaryFlow
 import net.corda.core.flows.ReceiveFinalityFlow
-import net.corda.core.flows.SendTransactionFlow
 import net.corda.core.flows.UnexpectedFlowEndException
 import net.corda.core.internal.ResolveTransactionsFlow
 import net.corda.core.messaging.startFlow
@@ -12,6 +11,7 @@ import net.corda.core.utilities.OpaqueBytes
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.seconds
 import net.corda.finance.DOLLARS
+import net.corda.finance.flows.CashException
 import net.corda.finance.flows.CashIssueAndPaymentFlow
 import net.corda.node.services.api.ServiceHubInternal
 import net.corda.testing.core.ALICE_NAME
@@ -289,7 +289,7 @@ class StateMachineFinalityErrorHandlingTest : StateMachineErrorHandlingTest() {
             val (charlie, alice, port) = createNodeAndBytemanNode(CHARLIE_NAME, ALICE_NAME, FINANCE_CORDAPPS)
 
             val rules = """
-                RULE Set flag when entering finality flow
+                RULE Set flag when leaving notary client flow
                 CLASS ${NotaryFlow.Client::class.java.name}
                 METHOD call
                 AT EXIT
@@ -336,7 +336,7 @@ class StateMachineFinalityErrorHandlingTest : StateMachineErrorHandlingTest() {
             val (charlie, alice, port) = createNodeAndBytemanNode(CHARLIE_NAME, ALICE_NAME, FINANCE_CORDAPPS)
 
             val rules = """
-                RULE Set flag when entering finality flow
+                RULE Set flag when leaving notary client flow
                 CLASS ${NotaryFlow.Client::class.java.name}
                 METHOD call
                 AT EXIT
@@ -368,7 +368,6 @@ class StateMachineFinalityErrorHandlingTest : StateMachineErrorHandlingTest() {
 
             alice.rpc.assertNumberOfCheckpoints()
             alice.rpc.assertHospitalCounts(propagated = 1)
-            charlie.rpc.assertNumberOfCheckpoints()
             assertEquals(0, alice.rpc.stateMachinesSnapshot().size)
             assertEquals(0, charlie.rpc.stateMachinesSnapshot().size)
         }
@@ -383,7 +382,7 @@ class StateMachineFinalityErrorHandlingTest : StateMachineErrorHandlingTest() {
             val (charlie, alice, port) = createNodeAndBytemanNode(CHARLIE_NAME, ALICE_NAME, FINANCE_CORDAPPS)
 
             val rules = """
-                RULE Set flag when entering finality flow
+                RULE Set flag when leaving notary client flow
                 CLASS ${NotaryFlow.Client::class.java.name}
                 METHOD call
                 AT EXIT
@@ -396,6 +395,376 @@ class StateMachineFinalityErrorHandlingTest : StateMachineErrorHandlingTest() {
                 METHOD call
                 AT ENTRY
                 IF flagged("finality_flag")
+                DO traceln("Throwing exception"); throw new javax.persistence.PersistenceException("die dammit die")
+                ENDRULE
+            """.trimIndent()
+
+            submitBytemanRules(rules, port)
+
+            assertFailsWith<TimeoutException> {
+                alice.rpc.startFlow(
+                    ::CashIssueAndPaymentFlow,
+                    500.DOLLARS,
+                    OpaqueBytes.of(0x01),
+                    charlie.nodeInfo.singleIdentity(),
+                    false,
+                    defaultNotaryIdentity
+                ).returnValue.getOrThrow(30.seconds)
+            }
+
+            alice.rpc.assertNumberOfCheckpoints(hospitalized = 1)
+            alice.rpc.assertHospitalCounts(
+                discharged = 0,
+                observation = 1
+            )
+            charlie.rpc.assertNumberOfCheckpoints(runnable = 1)
+            assertEquals(1, alice.rpc.stateMachinesSnapshot().size)
+            assertEquals(1, charlie.rpc.stateMachinesSnapshot().size)
+        }
+    }
+
+    @Test(timeout = 300_000)
+    fun `unexpected exception when sending to non-validating notary in NotaryClientFlow causes the flow to be kept for observation`() {
+        startDriver(notarySpec = NotarySpec(DUMMY_NOTARY_NAME, validating = false)) {
+            val (charlie, alice, port) = createNodeAndBytemanNode(CHARLIE_NAME, ALICE_NAME, FINANCE_CORDAPPS)
+
+            val rules = """
+                RULE Set flag when leaving notary client flow
+                CLASS ${NotaryFlow.Client::class.java.name}
+                METHOD call
+                AT ENTRY
+                IF !flagged("notary_flag")
+                DO flag("notary_flag"); traceln("Setting notary flag")
+                ENDRULE
+                
+                RULE Throw exception when entering send transaction flow
+                CLASS ${FlowSessionImpl::class.java.name}
+                METHOD receive
+                AT ENTRY
+                IF flagged("notary_flag")
+                DO traceln("Throwing exception"); throw new java.lang.RuntimeException("die dammit die")
+                ENDRULE
+            """.trimIndent()
+
+            submitBytemanRules(rules, port)
+
+            assertFailsWith<TimeoutException> {
+                alice.rpc.startFlow(
+                    ::CashIssueAndPaymentFlow,
+                    500.DOLLARS,
+                    OpaqueBytes.of(0x01),
+                    charlie.nodeInfo.singleIdentity(),
+                    false,
+                    defaultNotaryIdentity
+                ).returnValue.getOrThrow(30.seconds)
+            }
+
+            alice.rpc.assertNumberOfCheckpoints(hospitalized = 1)
+            alice.rpc.assertHospitalCounts(
+                discharged = 0,
+                observation = 1
+            )
+            charlie.rpc.assertNumberOfCheckpoints(runnable = 1)
+            assertEquals(1, alice.rpc.stateMachinesSnapshot().size)
+            assertEquals(1, charlie.rpc.stateMachinesSnapshot().size)
+        }
+    }
+
+    @Test(timeout = 300_000)
+    fun `unexpected exception when sending to validating notary in NotaryClientFlow causes the flow to be kept for observation`() {
+        startDriver(notarySpec = NotarySpec(DUMMY_NOTARY_NAME, validating = true)) {
+            val (charlie, alice, port) = createNodeAndBytemanNode(CHARLIE_NAME, ALICE_NAME, FINANCE_CORDAPPS)
+
+            val rules = """
+                RULE Set flag when leaving notary client flow
+                CLASS ${NotaryFlow.Client::class.java.name}
+                METHOD call
+                AT ENTRY
+                IF !flagged("notary_flag")
+                DO flag("notary_flag"); traceln("Setting notary flag")
+                ENDRULE
+                
+                RULE Throw exception when entering send transaction flow
+                CLASS ${FlowSessionImpl::class.java.name}
+                METHOD receive
+                AT ENTRY
+                IF flagged("notary_flag")
+                DO traceln("Throwing exception"); throw new java.lang.RuntimeException("die dammit die")
+                ENDRULE
+            """.trimIndent()
+
+            submitBytemanRules(rules, port)
+
+            assertFailsWith<TimeoutException> {
+                alice.rpc.startFlow(
+                    ::CashIssueAndPaymentFlow,
+                    500.DOLLARS,
+                    OpaqueBytes.of(0x01),
+                    charlie.nodeInfo.singleIdentity(),
+                    false,
+                    defaultNotaryIdentity
+                ).returnValue.getOrThrow(30.seconds)
+            }
+
+            alice.rpc.assertNumberOfCheckpoints(hospitalized = 1)
+            alice.rpc.assertHospitalCounts(
+                discharged = 0,
+                observation = 1
+            )
+            charlie.rpc.assertNumberOfCheckpoints(runnable = 1)
+            assertEquals(1, alice.rpc.stateMachinesSnapshot().size)
+            assertEquals(1, charlie.rpc.stateMachinesSnapshot().size)
+        }
+    }
+
+    @Test(timeout = 300_000)
+    fun `notary general error exception when sending to non-validating notary in NotaryClientFlow is not kept for observation`() {
+        startDriver(notarySpec = NotarySpec(DUMMY_NOTARY_NAME, validating = false)) {
+            val (charlie, alice, port) = createNodeAndBytemanNode(CHARLIE_NAME, ALICE_NAME, FINANCE_CORDAPPS)
+
+            val rules = """
+                RULE Set flag when leaving notary client flow
+                CLASS ${NotaryFlow.Client::class.java.name}
+                METHOD call
+                AT ENTRY
+                IF !flagged("notary_flag")
+                DO flag("notary_flag"); traceln("Setting notary flag")
+                ENDRULE
+                
+                RULE Throw exception when entering send transaction flow
+                CLASS ${FlowSessionImpl::class.java.name}
+                METHOD receive
+                AT ENTRY
+                IF flagged("notary_flag")
+                DO traceln("Throwing exception"); throw new net.corda.core.flows.NotaryException(new ${NotaryError.General::class.java.name}(new java.lang.RuntimeException("die dammit die")), null) 
+                ENDRULE
+            """.trimIndent()
+
+            submitBytemanRules(rules, port)
+
+            // [CashIssueAndPaymentFlow] catches [NotaryException]s are rethrows them, seeing this error indicates that the error was
+            // filtered out of the error handling in [NotaryFlow.Client].
+            assertFailsWith<CashException> {
+                alice.rpc.startFlow(
+                    ::CashIssueAndPaymentFlow,
+                    500.DOLLARS,
+                    OpaqueBytes.of(0x01),
+                    charlie.nodeInfo.singleIdentity(),
+                    false,
+                    defaultNotaryIdentity
+                ).returnValue.getOrThrow(30.seconds)
+            }
+
+            alice.rpc.assertNumberOfCheckpoints()
+            alice.rpc.assertHospitalCounts(propagated = 1)
+            assertEquals(0, alice.rpc.stateMachinesSnapshot().size)
+        }
+    }
+
+    @Test(timeout = 300_000)
+    fun `notary general error exception when sending to validating notary in NotaryClientFlow causes the flow to be kept for observation`() {
+        startDriver(notarySpec = NotarySpec(DUMMY_NOTARY_NAME, validating = true)) {
+            val (charlie, alice, port) = createNodeAndBytemanNode(CHARLIE_NAME, ALICE_NAME, FINANCE_CORDAPPS)
+
+            val rules = """
+                RULE Set flag when leaving notary client flow
+                CLASS ${NotaryFlow.Client::class.java.name}
+                METHOD call
+                AT ENTRY
+                IF !flagged("notary_flag")
+                DO flag("notary_flag"); traceln("Setting notary flag")
+                ENDRULE
+                
+                RULE Throw exception when entering send transaction flow
+                CLASS ${FlowSessionImpl::class.java.name}
+                METHOD receive
+                AT ENTRY
+                IF flagged("notary_flag")
+                DO traceln("Throwing exception"); throw new net.corda.core.flows.NotaryException(new ${NotaryError.General::class.java.name}(new java.lang.RuntimeException("die dammit die")), null) 
+                ENDRULE
+            """.trimIndent()
+
+            submitBytemanRules(rules, port)
+
+            // [CashIssueAndPaymentFlow] catches [NotaryException]s are rethrows them, seeing this error indicates that the error was
+            // filtered out of the error handling in [NotaryFlow.Client].
+            assertFailsWith<CashException> {
+                alice.rpc.startFlow(
+                    ::CashIssueAndPaymentFlow,
+                    500.DOLLARS,
+                    OpaqueBytes.of(0x01),
+                    charlie.nodeInfo.singleIdentity(),
+                    false,
+                    defaultNotaryIdentity
+                ).returnValue.getOrThrow(30.seconds)
+            }
+
+            alice.rpc.assertNumberOfCheckpoints()
+            alice.rpc.assertHospitalCounts(propagated = 1)
+            assertEquals(0, alice.rpc.stateMachinesSnapshot().size)
+        }
+    }
+
+    @Test(timeout = 300_000)
+    fun `sql exception when sending to non-validating notary in NotaryClientFlow causes the flow to be kept for observation`() {
+        startDriver(notarySpec = NotarySpec(DUMMY_NOTARY_NAME, validating = false)) {
+            val (charlie, alice, port) = createNodeAndBytemanNode(CHARLIE_NAME, ALICE_NAME, FINANCE_CORDAPPS)
+
+            val rules = """
+                RULE Set flag when leaving notary client flow
+                CLASS ${NotaryFlow.Client::class.java.name}
+                METHOD call
+                AT ENTRY
+                IF !flagged("notary_flag")
+                DO flag("notary_flag"); traceln("Setting notary flag")
+                ENDRULE
+                
+                RULE Throw exception when entering send transaction flow
+                CLASS ${FlowSessionImpl::class.java.name}
+                METHOD receive
+                AT ENTRY
+                IF flagged("notary_flag")
+                DO traceln("Throwing exception"); throw new java.sql.SQLException("die dammit die", "1")
+                ENDRULE
+            """.trimIndent()
+
+            submitBytemanRules(rules, port)
+
+            assertFailsWith<TimeoutException> {
+                alice.rpc.startFlow(
+                    ::CashIssueAndPaymentFlow,
+                    500.DOLLARS,
+                    OpaqueBytes.of(0x01),
+                    charlie.nodeInfo.singleIdentity(),
+                    false,
+                    defaultNotaryIdentity
+                ).returnValue.getOrThrow(30.seconds)
+            }
+
+            alice.rpc.assertNumberOfCheckpoints(hospitalized = 1)
+            alice.rpc.assertHospitalCounts(
+                discharged = 0,
+                observation = 1
+            )
+            charlie.rpc.assertNumberOfCheckpoints(runnable = 1)
+            assertEquals(1, alice.rpc.stateMachinesSnapshot().size)
+            assertEquals(1, charlie.rpc.stateMachinesSnapshot().size)
+        }
+    }
+
+    @Test(timeout = 300_000)
+    fun `persistence exception when sending to non-validating notary in NotaryClientFlow causes the flow to be kept for observation`() {
+        startDriver(notarySpec = NotarySpec(DUMMY_NOTARY_NAME, validating = false)) {
+            val (charlie, alice, port) = createNodeAndBytemanNode(CHARLIE_NAME, ALICE_NAME, FINANCE_CORDAPPS)
+
+            val rules = """
+                RULE Set flag when leaving notary client flow
+                CLASS ${NotaryFlow.Client::class.java.name}
+                METHOD call
+                AT ENTRY
+                IF !flagged("notary_flag")
+                DO flag("notary_flag"); traceln("Setting notary flag")
+                ENDRULE
+                
+                RULE Throw exception when entering send transaction flow
+                CLASS ${FlowSessionImpl::class.java.name}
+                METHOD receive
+                AT ENTRY
+                IF flagged("notary_flag")
+                DO traceln("Throwing exception"); throw new javax.persistence.PersistenceException("die dammit die")
+                ENDRULE
+            """.trimIndent()
+
+            submitBytemanRules(rules, port)
+
+            assertFailsWith<TimeoutException> {
+                alice.rpc.startFlow(
+                    ::CashIssueAndPaymentFlow,
+                    500.DOLLARS,
+                    OpaqueBytes.of(0x01),
+                    charlie.nodeInfo.singleIdentity(),
+                    false,
+                    defaultNotaryIdentity
+                ).returnValue.getOrThrow(30.seconds)
+            }
+
+            alice.rpc.assertNumberOfCheckpoints(hospitalized = 1)
+            alice.rpc.assertHospitalCounts(
+                discharged = 0,
+                observation = 1
+            )
+            charlie.rpc.assertNumberOfCheckpoints(runnable = 1)
+            assertEquals(1, alice.rpc.stateMachinesSnapshot().size)
+            assertEquals(1, charlie.rpc.stateMachinesSnapshot().size)
+        }
+    }
+
+    @Test(timeout = 300_000)
+    fun `sql exception when sending to validating notary in NotaryClientFlow causes the flow to be kept for observation`() {
+        startDriver(notarySpec = NotarySpec(DUMMY_NOTARY_NAME, validating = true)) {
+            val (charlie, alice, port) = createNodeAndBytemanNode(CHARLIE_NAME, ALICE_NAME, FINANCE_CORDAPPS)
+
+            val rules = """
+                RULE Set flag when leaving notary client flow
+                CLASS ${NotaryFlow.Client::class.java.name}
+                METHOD call
+                AT ENTRY
+                IF !flagged("notary_flag")
+                DO flag("notary_flag"); traceln("Setting notary flag")
+                ENDRULE
+                
+                RULE Throw exception when entering send transaction flow
+                CLASS ${FlowSessionImpl::class.java.name}
+                METHOD receive
+                AT ENTRY
+                IF flagged("notary_flag")
+                DO traceln("Throwing exception"); throw new java.sql.SQLException("die dammit die", "1")
+                ENDRULE
+            """.trimIndent()
+
+            submitBytemanRules(rules, port)
+
+            assertFailsWith<TimeoutException> {
+                alice.rpc.startFlow(
+                    ::CashIssueAndPaymentFlow,
+                    500.DOLLARS,
+                    OpaqueBytes.of(0x01),
+                    charlie.nodeInfo.singleIdentity(),
+                    false,
+                    defaultNotaryIdentity
+                ).returnValue.getOrThrow(30.seconds)
+            }
+
+            alice.rpc.assertNumberOfCheckpoints(hospitalized = 1)
+            alice.rpc.assertHospitalCounts(
+                discharged = 0,
+                observation = 1
+            )
+            charlie.rpc.assertNumberOfCheckpoints(runnable = 1)
+            assertEquals(1, alice.rpc.stateMachinesSnapshot().size)
+            assertEquals(1, charlie.rpc.stateMachinesSnapshot().size)
+        }
+    }
+
+    @Test(timeout = 300_000)
+    fun `persistence exception when sending to validating notary in NotaryClientFlow causes the flow to be kept for observation`() {
+        startDriver(notarySpec = NotarySpec(DUMMY_NOTARY_NAME, validating = true)) {
+            val (charlie, alice, port) = createNodeAndBytemanNode(CHARLIE_NAME, ALICE_NAME, FINANCE_CORDAPPS)
+
+            val rules = """
+                RULE Set flag when leaving notary client flow
+                CLASS ${NotaryFlow.Client::class.java.name}
+                METHOD call
+                AT ENTRY
+                IF !flagged("notary_flag")
+                DO flag("notary_flag"); traceln("Setting notary flag")
+                ENDRULE
+                
+                RULE Throw exception when entering send transaction flow
+                CLASS ${FlowSessionImpl::class.java.name}
+                METHOD receive
+                AT ENTRY
+                IF flagged("notary_flag")
                 DO traceln("Throwing exception"); throw new javax.persistence.PersistenceException("die dammit die")
                 ENDRULE
             """.trimIndent()

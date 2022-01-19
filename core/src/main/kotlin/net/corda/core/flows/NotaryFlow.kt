@@ -18,7 +18,9 @@ import net.corda.core.transactions.*
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.UntrustworthyData
 import net.corda.core.utilities.unwrap
+import java.sql.SQLException
 import java.util.function.Predicate
+import javax.persistence.PersistenceException
 
 class NotaryFlow {
     /**
@@ -186,7 +188,10 @@ class NotaryFlow {
         /**
          * Executes the [block] and handles the exceptions that are thrown by it.
          *
-         * General unexpected exceptions in the notary are handled by the [NotaryDoctor] in [StaffedFlowHospital].
+         * General unexpected exceptions (which are indicated by [NotaryException]s) in the notary are handled the flow hospital.
+         *
+         * Database exceptions that could occur in user or platform level code are ignored as well as they can be handled by the flow
+         * hospital.
          *
          * All other notary exceptions are exceptions that should reach the calling flow and handled there or fail the flow completely.
          *
@@ -198,13 +203,17 @@ class NotaryFlow {
             return try {
                 block()
             } catch (e: Exception) {
-                if (e is NotaryException) {
-                    throw e
-                } else {
-                    throw HospitalizeFlowException(
-                        "Unexpected error while notarising transaction (txId = ${stx.id})",
-                        e
-                    )
+                when (e) {
+                    is NotaryException, is SQLException, is PersistenceException -> throw e
+                    else -> {
+                        logger.error(
+                            "Unexpected error while notarising transaction (txId = ${stx.id}). This transaction could have been " +
+                                    "notarised by the notary. Keeping this flow in for overnight observation to allow node operators to " +
+                                    "determine the root cause and providing extra information via the flow's checkpoint. If the notary " +
+                                    "has successfully notarised this transaction, then retrying the flow will allow it to recover."
+                        )
+                        throw HospitalizeFlowException("Unexpected error while notarising transaction (txId = ${stx.id})", e)
+                    }
                 }
             }
         }

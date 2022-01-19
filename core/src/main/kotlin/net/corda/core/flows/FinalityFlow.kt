@@ -332,7 +332,7 @@ class FinalityFlow private constructor(val transaction: SignedTransaction,
                 is SQLException, is PersistenceException -> {
                     // Lets errors that likely originated from [ServiceHub.recordTransactions] that was called previously to be
                     // filtered through the error handling here as the flow hospital has the appropriate handling for database
-                    // errors
+                    // errors.
                     logger.warn(
                         "Unexpected database error occurred while recording local transaction (txId = ${notarised.id}) in " +
                                 "${FinalityFlow::class.java.name}. This transaction has been notarised and must be recorded. The flow " +

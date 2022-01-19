@@ -3,6 +3,7 @@ package net.corda.node.services.statemachine
 import co.paralleluniverse.fibers.Fiber
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.flows.Destination
+import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowInfo
 import net.corda.core.flows.FlowSession
 import net.corda.core.identity.Party
@@ -68,6 +69,7 @@ class FlowSessionImpl(
     }
 
     @Suspendable
+    @Throws(FlowException::class)
     override fun <R : Any> receive(receiveType: Class<R>) = receive(receiveType, maySkipCheckpoint = false)
 
     @Suspendable
