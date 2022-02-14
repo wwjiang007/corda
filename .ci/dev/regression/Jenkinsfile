@@ -168,6 +168,7 @@ pipeline {
                             }
                         }
                         stage('Recompile') {
+                            authenticateGradleWrapper()
                             steps {
                                 sh script: [
                                         './gradlew',
